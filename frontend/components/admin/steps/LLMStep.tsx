@@ -1,0 +1,214 @@
+/** Step 6: LLM Settings. */
+
+"use client";
+
+import React, { useMemo } from "react";
+import { useTranslations } from "next-intl";
+import { Select } from "@/components/shared/Select";
+import { Slider } from "@/components/shared/Slider";
+import { Input } from "@/components/shared/Input";
+import type { AgentConfigFormData } from "@/lib/utils/agentConfig";
+import type { ValidationError } from "@/lib/utils/validation";
+import { getFieldError } from "@/lib/utils/validation";
+
+interface LLMStepProps {
+  config: Partial<AgentConfigFormData>;
+  errors: ValidationError[];
+  onUpdate: (config: Partial<AgentConfigFormData>) => void;
+}
+
+const PROVIDER_OPTIONS = [
+  { value: "openai", label: "OpenAI" },
+  { value: "google_ai_studio", label: "Google AI Studio (Gemini)" },
+];
+
+type ModelOption = { value: string; label: string; description: string };
+
+const OPENAI_MODELS: ModelOption[] = [
+  {
+    value: "gpt-5.2",
+    label: "GPT-5.2",
+    description: "Newer GPT-5 generation — check OpenAI docs for availability in your org",
+  },
+  {
+    value: "gpt-5.1",
+    label: "GPT-5.1",
+    description: "GPT-5 family — verify model id in OpenAI dashboard if a call fails",
+  },
+  {
+    value: "gpt-5",
+    label: "GPT-5",
+    description: "Frontier GPT-5 — large context; confirm rate limits and access",
+  },
+  {
+    value: "gpt-5-mini",
+    label: "GPT-5 mini",
+    description: "Lower-latency / cost GPT-5 variant",
+  },
+  {
+    value: "gpt-5-nano",
+    label: "GPT-5 nano",
+    description: "Smallest GPT-5 variant for high-volume simple tasks",
+  },
+  { value: "gpt-4.1", label: "GPT-4.1", description: "High capability, non-reasoning flagship-class model" },
+  { value: "gpt-4o", label: "GPT-4o", description: "Fast and intelligent multimodal model" },
+  { value: "gpt-4o-mini", label: "GPT-4o Mini", description: "Fast and affordable — recommended for most use cases" },
+  { value: "o3", label: "o3", description: "Advanced reasoning model — coding, math, science" },
+  { value: "o4-mini", label: "o4-mini", description: "Cost-efficient reasoning model with fast inference" },
+  { value: "gpt-4-turbo", label: "GPT-4 Turbo (Legacy)", description: "Previous generation high-intelligence model" },
+  { value: "gpt-4", label: "GPT-4 (Legacy)", description: "Original GPT-4 model" },
+  { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo (Legacy)", description: "Lightweight model for simple tasks" },
+];
+
+const GEMINI_MODELS: ModelOption[] = [
+  {
+    value: "gemini-3.1-pro-preview",
+    label: "Gemini 3.1 Pro",
+    description: "Advanced intelligence, agentic workflows — Preview (see Google AI docs)",
+  },
+  {
+    value: "gemini-3-flash-preview",
+    label: "Gemini 3 Flash",
+    description: "Frontier multimodal performance — Preview",
+  },
+  {
+    value: "gemini-3.1-flash-lite-preview",
+    label: "Gemini 3.1 Flash-Lite",
+    description: "Most cost-efficient Gemini 3 — Preview",
+  },
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "Most advanced Gemini — deep reasoning, coding, 1M context" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "Best price-performance — low latency, high volume" },
+  { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", description: "Fastest and most budget-friendly multimodal model" },
+  { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro", description: "Previous generation capable model" },
+  { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash", description: "Previous generation fast model" },
+  { value: "gemini-1.0-pro", label: "Gemini 1.0 Pro", description: "Original Gemini Pro model" },
+];
+
+export const LLMStep: React.FC<LLMStepProps> = ({
+  config,
+  errors,
+  onUpdate,
+}) => {
+  const t = useTranslations("Wizard");
+  const provider = config.llm_provider || "openai";
+  const defaultModel = provider === "google_ai_studio" ? "gemini-2.5-flash" : "gpt-4o-mini";
+  const currentModel = config.llm_model || defaultModel;
+
+  const modelOptions = useMemo((): ModelOption[] => {
+    const base = provider === "google_ai_studio" ? GEMINI_MODELS : OPENAI_MODELS;
+    const cur = config.llm_model || defaultModel;
+    if (base.some((m) => m.value === cur)) {
+      return base;
+    }
+    return [
+      {
+        value: cur,
+        label: `${cur} (${t("modelFromConfig")})`,
+        description: "",
+      },
+      ...base,
+    ];
+  }, [provider, config.llm_model, defaultModel, t]);
+
+  const selectedModel =
+    modelOptions.find((m) => m.value === currentModel) ?? modelOptions[0];
+
+  const handleProviderChange = (newProvider: string) => {
+    const newDefault = newProvider === "google_ai_studio" ? "gemini-2.5-flash" : "gpt-4o-mini";
+    onUpdate({ llm_provider: newProvider, llm_model: newDefault });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          {t("llmTitle")}
+        </h3>
+        <p className="text-sm text-gray-600 mb-6">
+          {t("llmDesc")}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="md:col-span-2">
+          <Select
+            label={t("provider")}
+            value={provider}
+            onChange={(e) => handleProviderChange(e.target.value)}
+            options={PROVIDER_OPTIONS}
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <Select
+            label={t("model")}
+            value={currentModel}
+            onChange={(e) => onUpdate({ llm_model: e.target.value })}
+            options={modelOptions.map(({ value, label }) => ({ value, label }))}
+            error={getFieldError(errors, "llm_model")}
+          />
+          {selectedModel?.description && (
+            <p className="mt-1 text-xs text-gray-600 italic">
+              {selectedModel.description}
+            </p>
+          )}
+          {provider === "google_ai_studio" && (
+            <p className="mt-1 text-xs text-gray-500">
+              {t("googleEnvHint")}
+            </p>
+          )}
+        </div>
+
+        <div className="md:col-span-2">
+          <Slider
+            label={t("temperature")}
+            value={config.llm_temperature ?? 0.2}
+            min={0}
+            max={2}
+            step={0.1}
+            onChange={(e) => onUpdate({ llm_temperature: parseFloat(e.target.value) })}
+            error={getFieldError(errors, "llm_temperature")}
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            {t("temperatureHint")}
+          </p>
+        </div>
+
+        <div className="md:col-span-2">
+          <Input
+            type="number"
+            label={t("maxOutputTokens")}
+            value={config.llm_max_tokens ?? 600}
+            onChange={(e) => onUpdate({ llm_max_tokens: parseInt(e.target.value) || 600 })}
+            error={getFieldError(errors, "llm_max_tokens")}
+            min={1}
+            max={4096}
+            helperText={t("maxTokensHelper")}
+          />
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="mt-8 p-6 bg-[#EEEAE7]/10 border border-[#251D1C]/20 rounded-sm">
+        <h4 className="text-sm font-medium text-gray-700 mb-4">
+          {t("llmPreview")}
+        </h4>
+        <div className="bg-white p-4 rounded-sm border border-[#251D1C]/20 space-y-2 text-sm">
+          <p className="text-gray-600">
+            <strong>{t("provider")}:</strong>{" "}
+            {provider === "google_ai_studio" ? "Google AI Studio" : "OpenAI"}
+          </p>
+          <p className="text-gray-600">
+            <strong>{t("model")}:</strong> {currentModel}
+          </p>
+          <p className="text-gray-600">
+            <strong>{t("temperature")}:</strong> {config.llm_temperature ?? 0.2}
+          </p>
+          <p className="text-gray-600">
+            <strong>{t("maxOutputTokens")}:</strong> {config.llm_max_tokens ?? 600}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};

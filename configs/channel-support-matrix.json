@@ -1,0 +1,84 @@
+{
+  "channels": ["telegram", "viber", "instagram", "tiktok", "web_chat"],
+  "capabilities": [
+    "text_in",
+    "text_out",
+    "images",
+    "media_other",
+    "quick_replies",
+    "typing",
+    "restart_command",
+    "proactive_first_message",
+    "response_window",
+    "human_handoff",
+    "notes"
+  ],
+  "legend": ["yes", "limited", "no"],
+  "matrix": {
+    "telegram": {
+      "text_in": "yes",
+      "text_out": "yes",
+      "images": "yes",
+      "media_other": "yes",
+      "quick_replies": "yes",
+      "typing": "no",
+      "restart_command": "yes",
+      "proactive_first_message": "yes",
+      "response_window": "none",
+      "human_handoff": "yes",
+      "notes": "telegram_media_and_commands"
+    },
+    "viber": {
+      "text_in": "yes",
+      "text_out": "yes",
+      "images": "yes",
+      "media_other": "limited",
+      "quick_replies": "yes",
+      "typing": "no",
+      "restart_command": "no",
+      "proactive_first_message": "limited",
+      "response_window": "none",
+      "human_handoff": "yes",
+      "notes": "viber_welcome_on_start"
+    },
+    "instagram": {
+      "text_in": "yes",
+      "text_out": "yes",
+      "images": "yes",
+      "media_other": "limited",
+      "quick_replies": "no",
+      "typing": "no",
+      "restart_command": "no",
+      "proactive_first_message": "no",
+      "response_window": "24h",
+      "human_handoff": "yes",
+      "notes": "instagram_user_must_start"
+    },
+    "tiktok": {
+      "text_in": "yes",
+      "text_out": "yes",
+      "images": "limited",
+      "media_other": "no",
+      "quick_replies": "no",
+      "typing": "no",
+      "restart_command": "no",
+      "proactive_first_message": "no",
+      "response_window": "48h_10",
+      "human_handoff": "yes",
+      "notes": "tiktok_text_fallback"
+    },
+    "web_chat": {
+      "text_in": "yes",
+      "text_out": "yes",
+      "images": "yes",
+      "media_other": "limited",
+      "quick_replies": "no",
+      "typing": "yes",
+      "restart_command": "no",
+      "proactive_first_message": "yes",
+      "response_window": "none",
+      "human_handoff": "yes",
+      "notes": "web_chat_in_app_test"
+    }
+  }
+}

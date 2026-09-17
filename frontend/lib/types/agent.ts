@@ -1,0 +1,239 @@
+/** Types for agents and configurations. */
+
+export interface Agent {
+  agent_id: string;
+  config: AgentConfig;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface AgentConfig {
+  version: string;
+  agent_id: string;
+  role: string;
+  project: string;
+  environment: string;
+  privacy: PrivacyConfig;
+  security: SecurityConfig;
+  channels: ChannelsConfig;
+  profile: ProfileConfig;
+  style: StyleConfig;
+  working_hours: WorkingHoursConfig;
+  restrictions: RestrictionsConfig;
+  handoff: HandoffConfig;
+  escalation: EscalationConfig;
+  llm: LLMConfig;
+  embeddings: EmbeddingsConfig;
+  moderation: ModerationConfig;
+  prompts: PromptsConfig;
+  rag: RAGConfig;
+  monitoring: MonitoringConfig;
+  workflow?: WorkflowConfig;
+}
+
+export interface PrivacyConfig {
+  consent_model: string;
+  purpose_limitation: string;
+  message_retention: Record<string, any>;
+  metadata_retention: Record<string, any>;
+  training_usage: Record<string, any>;
+}
+
+export interface SecurityConfig {
+  access_control: string;
+  audit_log: boolean;
+}
+
+export interface ChannelsConfig {
+  primary: string;
+  supported: string[];
+  future: string[];
+}
+
+export interface ProfileConfig {
+  agent_display_name: string;
+  /** @deprecated Legacy field, use agent_display_name. Kept for backward compat with pre-migration API responses. */
+  doctor_display_name?: string;
+  company_display_name: string;
+  specialty: string;
+  languages: string[];
+  geo: string;
+  audience: string;
+}
+
+export interface StyleConfig {
+  tone: string;
+  formality: string;
+  empathy_level: number;
+  depth_level: number;
+  message_length: string;
+  persuasion: string;
+}
+
+export interface WorkingHoursConfig {
+  timezone: string;
+  schedule: Record<string, string[]>;
+  after_hours_behavior: Record<string, any>;
+}
+
+export interface RestrictionsConfig {
+  no_diagnosis: boolean;
+  no_treatment_recommendations: boolean;
+  no_drug_advice: boolean;
+  no_test_interpretation: boolean;
+  no_pre_procedure_recommendations: boolean;
+  no_slot_selection: boolean;
+  no_repeat_patients: boolean;
+  forbidden_claims: string[];
+  content_safety: Record<string, any>;
+}
+
+export interface HandoffConfig {
+  always_possible: boolean;
+  immediate_takeover_supported: boolean;
+  default_handoff_target: string;
+  stop_ai_after_handoff: boolean;
+}
+
+export interface EscalationCustomRule {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface EscalationConfig {
+  /** If false, backend skips LLM escalation classifier entirely */
+  enabled?: boolean;
+  detect_contact: boolean;
+  custom_rules: EscalationCustomRule[];
+  // Legacy fields — may be present in older agent configs
+  medical_question_policy?: string;
+  urgent_case_policy?: string;
+  repeat_patient_policy?: string;
+  pre_procedure_policy?: string;
+  triggers?: Record<string, any>;
+  actions?: Record<string, any>;
+}
+
+export interface LLMConfig {
+  provider: string;
+  api: string;
+  model: string;
+  temperature: number;
+  max_output_tokens: number;
+  timeout?: number;
+}
+
+export interface EmbeddingsConfig {
+  provider: string;
+  model: string;
+  dimensions: number;
+  batch_size?: number;
+}
+
+export interface ModerationConfig {
+  provider: string;
+  model?: string;
+  enabled: boolean;
+  mode: string;
+  categories: string[];
+  action_on_violation?: string;
+}
+
+export interface PromptsConfig {
+  system: Record<string, string>;
+  templates: Record<string, string>;
+}
+
+export interface RAGConfig {
+  enabled: boolean;
+  embeddings_provider?: string;
+  vision_provider?: string;
+  vector_store: Record<string, any>;
+  /** Typical keys: `top_k` (1–50), `score_threshold` (0–1) */
+  retrieval: Record<string, any>;
+  scope: string;
+  sources: RAGSource[];
+}
+
+export interface RAGSource {
+  id: string;
+  type: string;
+  title: string;
+  content: string;
+}
+
+export interface MonitoringConfig {
+  admin_panel_required: boolean;
+  flags: Record<string, any>;
+  kpi_targets_mvp: Record<string, number>;
+}
+
+export interface WorkflowTimerTrigger {
+  delay_seconds: number;
+  action_type: "static" | "agent";
+  message_template: string;
+  prompt?: string | null;
+}
+
+export interface WorkflowTransition {
+  condition: string;
+  next_step_id: string;
+  is_forced: boolean;
+  is_fallback?: boolean;
+  /** If set, transition fires when user_message exactly matches this quick-reply label. */
+  match_quick_reply?: string | null;
+}
+
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  instructions: string;
+  collect: string[];
+  required: boolean;
+  transitions: WorkflowTransition[];
+  timer_trigger?: WorkflowTimerTrigger | null;
+  quick_replies: string[];
+  /** If set, skip this step when the named questionnaire field already has a value for the user. */
+  skip_if_questionnaire_field?: string | null;
+  /** When true, extracted collect[] values are also written to questionnaire_responses. */
+  collect_to_questionnaire?: boolean;
+  /** When true, LLM-evaluated transitions run even if collect[] is not yet complete (sufficiency-style advance). */
+  evaluate_transition_conditions_when_collect_incomplete?: boolean;
+}
+
+export interface WorkflowAutoStep {
+  id: string;
+  name: string;
+  source_id: string;
+  /** When delay starts: entering source step (default) or leaving that step (source must be a regular step). */
+  schedule_anchor?: "on_step_enter" | "on_step_exit";
+  delay_seconds: number;
+  action_type: "static" | "agent";
+  message_template: string;
+  prompt: string;
+  condition?: string | null;
+  /** Default true: pending job cleared on workflow step change; false keeps until fire or hard reset. */
+  cancel_on_workflow_step_change?: boolean;
+  /** If true, after a successful user-visible send this auto-step id is not scheduled again until /restart (new conversation). */
+  once_per_conversation?: boolean;
+  telegram_attachment_type?: "none" | "video_url" | "video_note";
+  telegram_video_url?: string | null;
+  telegram_video_note_file_id?: string | null;
+}
+
+export interface WorkflowConfig {
+  enabled: boolean;
+  start_step_id: string;
+  steps: WorkflowStep[];
+  auto_steps: WorkflowAutoStep[];
+}
+
+
+
+
+
+
+
+

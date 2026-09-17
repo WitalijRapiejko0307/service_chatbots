@@ -1,0 +1,19 @@
+# Railway-style layout (do not run the Railway CLI from this repo).
+#
+# Intended services:
+#   1. postgres (plugin)
+#   2. redis (plugin)
+#   3. backend — docker/Dockerfile.backend
+#   4. frontend — docker/Dockerfile.frontend
+#
+# See docs/deploy.md for env vars and HTTPS webhook notes.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "docker/Dockerfile.backend"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

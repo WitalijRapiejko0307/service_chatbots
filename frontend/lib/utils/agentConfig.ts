@@ -1,0 +1,598 @@
+/** Utilities for working with agent configuration. */
+
+export interface ConversationExample {
+  id: string;
+  user_message: string; // English only
+  agent_response: string; // English only
+  category?: "booking" | "info" | "hours" | "custom";
+}
+
+export interface EscalationRule {
+  id: string;
+  name: string;        // short label, e.g. "Urgent request"
+  description: string; // what the agent should do, e.g. "Transfer to human immediately"
+}
+
+// ---------------------------------------------------------------------------
+// Workflow types
+// ---------------------------------------------------------------------------
+
+export interface WorkflowTimerTrigger {
+  delay_seconds: number;
+  action_type: "static" | "agent";
+  message_template: string;
+  prompt?: string | null;
+}
+
+export interface WorkflowTransition {
+  condition: string;       // natural-language condition for LLM evaluator
+  next_step_id: string;
+  is_forced: boolean;      // if true, user cannot advance until condition is met
+  is_fallback: boolean;    // if true, this is the "else" branch (taken when no condition matched)
+  /** If set, transition fires when user_message exactly matches this quick-reply label. */
+  match_quick_reply?: string | null;
+}
+
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  instructions: string;
+  collect: string[];
+  required: boolean;
+  transitions: WorkflowTransition[];
+  timer_trigger?: WorkflowTimerTrigger | null;
+  quick_replies: string[];
+  /** Skip this step if the named questionnaire field already has a value for the user. */
+  skip_if_questionnaire_field?: string | null;
+  /** Also write extracted collect[] values to questionnaire_responses (no FSM). */
+  collect_to_questionnaire?: boolean;
+  /** Evaluate conditional transitions before collect[] is complete (sufficiency advance). */
+  evaluate_transition_conditions_when_collect_incomplete?: boolean;
+}
+
+export type TelegramAutoStepAttachment = "none" | "video_url" | "video_note";
+
+export interface WorkflowAutoStep {
+  id: string;
+  name: string;
+  source_id: string;
+  /** Default on_step_enter when omitted (matches backend). */
+  schedule_anchor?: "on_step_enter" | "on_step_exit";
+  delay_seconds: number;
+  action_type: "static" | "agent";
+  message_template: string;
+  prompt: string;
+  condition?: string | null;
+  cancel_on_workflow_step_change?: boolean;
+  /** After successful send, do not schedule this auto-step again until chat restart. */
+  once_per_conversation?: boolean;
+  /** Telegram-only: optional video (URL) or video note (file_id). Ignored on other channels. */
+  telegram_attachment_type?: TelegramAutoStepAttachment;
+  telegram_video_url?: string | null;
+  telegram_video_note_file_id?: string | null;
+}
+
+export interface WorkflowFormStep extends WorkflowStep {
+  // Local UI-only fields — not serialised to the API payload
+  _localId?: string;
+  _position?: { x: number; y: number };
+}
+
+export interface WorkflowFormAutoStep extends WorkflowAutoStep {
+  // Local UI-only fields — not serialised to the API payload
+  _position?: { x: number; y: number };
+  _delay_unit?: "seconds" | "minutes" | "hours" | "days";
+}
+
+// Standard examples (pre-filled)
+const DEFAULT_RAG_TOP_K = 6;
+const DEFAULT_RAG_SCORE_THRESHOLD = 0.2;
+
+function clampRagTopK(value: unknown): number {
+  const n = typeof value === "number" && !Number.isNaN(value) ? Math.round(value) : DEFAULT_RAG_TOP_K;
+  return Math.min(50, Math.max(1, n));
+}
+
+function clampRagScoreThreshold(value: unknown): number {
+  const n =
+    typeof value === "number" && !Number.isNaN(value) ? value : DEFAULT_RAG_SCORE_THRESHOLD;
+  return Math.min(1, Math.max(0, n));
+}
+
+export const DEFAULT_EXAMPLES: ConversationExample[] = [
+  {
+    id: "example_pricing",
+    category: "info",
+    user_message: "How much does this service cost?",
+    agent_response:
+      "Thank you for your question! Pricing depends on the specific service and your individual needs. To give you accurate information, I'd recommend scheduling a consultation — our team will walk you through all available options and costs. Would you like me to help you set that up? Just leave your phone number and we'll be in touch shortly.",
+  },
+  {
+    id: "example_booking",
+    category: "booking",
+    user_message: "How do I book a service?",
+    agent_response:
+      "Booking is simple! Please share your phone number, and our team will contact you to confirm the details, check availability, and find a time that works best for you. We typically respond within a few hours during business hours.",
+  },
+  {
+    id: "example_choice",
+    category: "custom",
+    user_message: "Can you help me choose the right option for me?",
+    agent_response:
+      "Of course, I'd be happy to help guide you! To point you in the right direction, could you tell me a bit more about what you're looking for or what your main concern is? Once I understand your situation better, I can suggest the most suitable option — or connect you with our specialist directly.",
+  },
+];
+
+export interface AgentConfigFormData {
+  // Basic Info
+  agent_id: string;
+  agent_display_name: string;
+  company_display_name: string;
+  languages?: string[]; // Languages the agent can communicate in
+
+  // Style (Step 2)
+  tone?: string;
+  formality?: string;
+  empathy_level?: number;
+  depth_level?: number;
+  message_length?: string;
+  persuasion?: string;
+
+  // RAG
+  rag_enabled: boolean;
+  rag_embeddings_provider?: string;
+  rag_vision_provider?: string;
+  /** Google AI vision model id; empty = backend default (gemini-3.1-pro-preview) */
+  rag_vision_model?: string;
+  /** RAG retrieval: number of chunks (1–50) */
+  rag_top_k?: number;
+  /** RAG retrieval: minimum similarity 0–1 */
+  rag_score_threshold?: number;
+  rag_documents: Array<{
+    id: string;
+    title: string;
+    content: string;
+  }>;
+
+  // Escalation — master switch for LLM classifier (Step 5)
+  escalation_enabled?: boolean;
+
+  // Escalation - contact detection toggle (Step 5)
+  escalation_detect_contact?: boolean;
+
+  // Escalation - free-form custom rules (Step 5)
+  escalation_rules?: EscalationRule[];
+
+  // LLM Settings (Step 6)
+  llm_provider?: string;
+  llm_model?: string;
+  llm_temperature?: number;
+  llm_max_tokens?: number;
+
+  // Examples (Step 3)
+  examples?: ConversationExample[];
+
+  // System Prompts (Step 7)
+  system_persona?: string;
+  system_hard_rules?: string;
+  system_goal?: string;
+
+  /** Editable string templates (restart welcome, workflow static messages, etc.) */
+  prompt_templates?: Record<string, string>;
+
+  /** Moderation (Step 7 — Review) */
+  moderation_provider?: string;
+  moderation_model?: string;
+  moderation_enabled?: boolean;
+
+  // Workflow (Step 8)
+  workflow_enabled?: boolean;
+  workflow_start_step_id?: string;
+  workflow_steps?: WorkflowFormStep[];
+  workflow_auto_steps?: WorkflowFormAutoStep[];
+}
+
+/**
+ * Generate default agent configuration.
+ */
+export function generateDefaultConfig(): Partial<AgentConfigFormData> {
+  return {
+    rag_enabled: false,
+    rag_embeddings_provider: "openai",
+    rag_vision_provider: "openai",
+    rag_documents: [],
+    languages: ["ru", "en"],
+    // Style defaults
+    tone: "friendly_professional",
+    formality: "semi_formal",
+    empathy_level: 7,
+    depth_level: 5,
+    message_length: "short_to_medium",
+    persuasion: "soft",
+    // Examples defaults
+    examples: [...DEFAULT_EXAMPLES],
+    // Escalation
+    escalation_enabled: true,
+    escalation_detect_contact: true,
+    escalation_rules: [],
+    // LLM defaults
+    llm_provider: "openai",
+    llm_model: "gpt-4o-mini",
+    llm_temperature: 0.2,
+    llm_max_tokens: 600,
+    moderation_provider: "openai",
+    moderation_model: "omni-moderation-latest",
+    moderation_enabled: true,
+    rag_top_k: DEFAULT_RAG_TOP_K,
+    rag_score_threshold: DEFAULT_RAG_SCORE_THRESHOLD,
+    // System prompt defaults (empty — user fills in)
+    system_persona: "",
+    system_hard_rules: "",
+    system_goal: "",
+    prompt_templates: {},
+    // Workflow defaults (Step 8)
+    workflow_enabled: false,
+    workflow_start_step_id: "step_1",
+    workflow_steps: [],
+    workflow_auto_steps: [],
+  };
+}
+
+/**
+ * Convert existing agent config to form data (for cloning/editing).
+ */
+export function agentConfigToFormData(
+  agentConfig: Record<string, any>
+): Partial<AgentConfigFormData> {
+  const formData: Partial<AgentConfigFormData> = {
+    // Basic Info
+    agent_id: agentConfig.agent_id || "",
+    agent_display_name: agentConfig.profile?.agent_display_name || agentConfig.profile?.doctor_display_name || "",
+    company_display_name: agentConfig.profile?.company_display_name || "",
+
+    // Style
+    tone: agentConfig.style?.tone,
+    formality: agentConfig.style?.formality,
+    empathy_level: agentConfig.style?.empathy_level,
+    depth_level: agentConfig.style?.depth_level,
+    message_length: agentConfig.style?.message_length,
+    persuasion: agentConfig.style?.persuasion,
+
+    // RAG
+    rag_enabled: agentConfig.rag?.enabled || false,
+    rag_documents:
+      agentConfig.rag?.sources?.map((source: any, index: number) => ({
+        id: source.id || `doc_${index}`,
+        title: source.title || "",
+        content: source.content || "",
+      })) || [],
+
+    // Escalation
+    escalation_enabled: agentConfig.escalation?.enabled !== false,
+    escalation_detect_contact: agentConfig.escalation?.detect_contact ?? true,
+    escalation_rules: agentConfig.escalation?.custom_rules?.map((r: any, i: number) => ({
+      id: r.id || `rule_${i}`,
+      name: r.name || "",
+      description: r.description || "",
+    })) || [],
+
+    // Languages
+    languages: agentConfig.profile?.languages || ["ru", "en"],
+
+    // Examples
+    examples:
+      agentConfig.prompts?.examples && agentConfig.prompts.examples.length > 0
+        ? agentConfig.prompts.examples.map((ex: any, index: number) => ({
+            id: ex.id || `example_${index}_${Date.now()}`,
+            user_message: ex.user_message || "",
+            agent_response: ex.agent_response || "",
+            category: ex.category,
+          }))
+        : DEFAULT_EXAMPLES,
+
+    // System prompts
+    system_persona: agentConfig.prompts?.system?.persona || "",
+    system_hard_rules: agentConfig.prompts?.system?.hard_rules || "",
+    system_goal: agentConfig.prompts?.system?.goal || "",
+    prompt_templates:
+      agentConfig.prompts?.templates && typeof agentConfig.prompts.templates === "object"
+        ? { ...agentConfig.prompts.templates }
+        : {},
+
+    // LLM
+    llm_provider: agentConfig.llm?.provider || "openai",
+    llm_model: agentConfig.llm?.model,
+    llm_temperature: agentConfig.llm?.temperature,
+    llm_max_tokens: agentConfig.llm?.max_output_tokens,
+    // RAG providers
+    rag_embeddings_provider: agentConfig.rag?.embeddings_provider || agentConfig.embeddings?.provider || "openai",
+    rag_vision_provider: agentConfig.rag?.vision_provider || agentConfig.llm?.provider || "openai",
+    rag_vision_model: agentConfig.rag?.vision_model,
+    rag_top_k: clampRagTopK(agentConfig.rag?.retrieval?.top_k),
+    rag_score_threshold: clampRagScoreThreshold(agentConfig.rag?.retrieval?.score_threshold),
+    moderation_provider: agentConfig.moderation?.provider || "openai",
+    moderation_model: agentConfig.moderation?.model,
+    moderation_enabled: agentConfig.moderation?.enabled !== false,
+
+    // Workflow
+    workflow_enabled: agentConfig.workflow?.enabled === true,
+    workflow_start_step_id: agentConfig.workflow?.start_step_id || "step_1",
+    workflow_steps: (agentConfig.workflow?.steps || []).map((s: any, i: number) => ({
+      id: s.id || `step_${i + 1}`,
+      name: s.name || "",
+      instructions: s.instructions || "",
+      collect: s.collect || [],
+      required: s.required || false,
+      transitions: (s.transitions || []).map((t: any) => ({
+        condition: t.condition || "",
+        next_step_id: t.next_step_id || "",
+        is_forced: t.is_forced || false,
+        is_fallback: t.is_fallback || false,
+        match_quick_reply: t.match_quick_reply ?? null,
+      })),
+      timer_trigger: s.timer_trigger
+        ? {
+            delay_seconds: s.timer_trigger.delay_seconds,
+            action_type: (s.timer_trigger.action_type as "static" | "agent") || "static",
+            message_template: s.timer_trigger.message_template || "",
+            prompt: s.timer_trigger.prompt ?? null,
+          }
+        : undefined,
+      quick_replies: Array.isArray(s.quick_replies) ? s.quick_replies : [],
+      skip_if_questionnaire_field: s.skip_if_questionnaire_field ?? null,
+      collect_to_questionnaire: s.collect_to_questionnaire ?? false,
+      evaluate_transition_conditions_when_collect_incomplete:
+        s.evaluate_transition_conditions_when_collect_incomplete ?? false,
+    })) as WorkflowFormStep[],
+    workflow_auto_steps: (agentConfig.workflow?.auto_steps || []).map((a: any) => ({
+      id: a.id || "",
+      name: a.name || "",
+      source_id: a.source_id || "",
+      schedule_anchor: (a.schedule_anchor as "on_step_enter" | "on_step_exit") || "on_step_enter",
+      delay_seconds: a.delay_seconds || 60,
+      action_type: (a.action_type as "static" | "agent") || "static",
+      message_template: a.message_template || "",
+      prompt: a.prompt || "",
+      condition: a.condition ?? null,
+      cancel_on_workflow_step_change:
+        typeof a.cancel_on_workflow_step_change === "boolean"
+          ? a.cancel_on_workflow_step_change
+          : true,
+      once_per_conversation:
+        typeof a.once_per_conversation === "boolean" ? a.once_per_conversation : false,
+      telegram_attachment_type:
+        (a.telegram_attachment_type as TelegramAutoStepAttachment) || "none",
+      telegram_video_url: a.telegram_video_url ?? null,
+      telegram_video_note_file_id: a.telegram_video_note_file_id ?? null,
+    })) as WorkflowFormAutoStep[],
+  };
+
+  return formData;
+}
+
+/**
+ * Default prompt templates used when user leaves fields empty.
+ */
+const DEFAULT_PERSONA = `You are an agent named {agent_display_name} representing {company_display_name}.
+Your style is friendly and professional. You help customers with FAQs, service information, and lead capture.
+When you do not know an answer, say so honestly and offer to connect them with a human operator.`;
+
+const DEFAULT_HARD_RULES = `Do not invent prices, discounts, or availability — use only information from the knowledge base or tell the user a team member will confirm.
+Do not provide medical, legal, or financial advice unless explicitly covered in uploaded FAQ content.
+When the user shares contact details or asks for a human, escalate to an operator.
+Do not promise outcomes or guaranteed response times unless documented in the knowledge base.`;
+
+const DEFAULT_GOAL = `Primary goal: answer common questions quickly, capture leads when appropriate, and hand off to a human when needed — without pressure.`;
+
+/**
+ * Convert form data to agent config object (for API).
+ */
+export function formDataToAgentConfig(
+  formData: AgentConfigFormData
+): Record<string, any> {
+  const config: Record<string, any> = {
+    agent_id: formData.agent_id,
+    project: formData.company_display_name || "Default Project",
+    profile: {
+      agent_display_name: formData.agent_display_name,
+      company_display_name: formData.company_display_name,
+      languages: formData.languages || ["ru", "en"],
+    },
+    style: {
+      tone: formData.tone || "friendly_professional",
+      formality: formData.formality || "semi_formal",
+      empathy_level: formData.empathy_level ?? 7,
+      depth_level: formData.depth_level ?? 5,
+      message_length: formData.message_length || "short_to_medium",
+      persuasion: formData.persuasion || "soft",
+    },
+    llm: {
+      provider: formData.llm_provider || "openai",
+      api: "responses",
+      model: formData.llm_model || "gpt-4o-mini",
+      temperature: formData.llm_temperature ?? 0.2,
+      max_output_tokens: formData.llm_max_tokens ?? 600,
+      timeout: 30,
+    },
+    prompts: {
+      system: {
+        persona: formData.system_persona || DEFAULT_PERSONA,
+        hard_rules: formData.system_hard_rules || DEFAULT_HARD_RULES,
+        goal: formData.system_goal || DEFAULT_GOAL,
+      },
+      examples:
+        formData.examples && formData.examples.length > 0
+          ? formData.examples.map((ex, index) => ({
+              id: ex.id || `example_${index}_${Date.now()}`,
+              user_message: ex.user_message,
+              agent_response: ex.agent_response,
+              category: ex.category,
+            }))
+          : [],
+      templates:
+        formData.prompt_templates && Object.keys(formData.prompt_templates).length > 0
+          ? { ...formData.prompt_templates }
+          : {},
+    },
+    rag: {
+      enabled: formData.rag_enabled,
+      embeddings_provider: formData.rag_embeddings_provider || formData.llm_provider || "openai",
+      vision_provider: formData.rag_vision_provider || formData.llm_provider || "openai",
+      vision_model:
+        formData.rag_vision_provider === "google_ai_studio"
+          ? formData.rag_vision_model?.trim() || null
+          : null,
+      vector_store: {
+        provider: "opensearch",
+        index_name: `agent_${formData.agent_id}_documents`,
+      },
+      retrieval: {
+        top_k: clampRagTopK(formData.rag_top_k),
+        score_threshold: clampRagScoreThreshold(formData.rag_score_threshold),
+      },
+      scope: "agent_only",
+      sources: formData.rag_enabled
+        ? formData.rag_documents.map((doc) => ({
+            id: doc.id,
+            type: "text",
+            title: doc.title,
+            content: doc.content,
+          }))
+        : [],
+    },
+    moderation: {
+      provider: formData.moderation_provider || "openai",
+      model:
+        formData.moderation_model ||
+        (formData.moderation_provider === "google_ai_studio"
+          ? "gemini-2.0-flash"
+          : "omni-moderation-latest"),
+      enabled: formData.moderation_enabled !== false,
+      mode: "pre_and_post",
+    },
+    escalation: {
+      enabled: formData.escalation_enabled !== false,
+      detect_contact: formData.escalation_detect_contact ?? true,
+      custom_rules: (formData.escalation_rules || []).map((rule) => ({
+        id: rule.id,
+        name: rule.name,
+        description: rule.description,
+      })),
+    },
+    handoff: {
+      always_possible: true,
+      immediate_takeover_supported: true,
+      default_handoff_target: "operator",
+      stop_ai_after_handoff: true,
+    },
+    channels: {
+      primary: "web_chat",
+      supported: ["web_chat", "telegram", "viber", "instagram", "tiktok"],
+      future: [],
+    },
+    workflow: {
+      enabled: formData.workflow_enabled === true,
+      start_step_id: formData.workflow_start_step_id || "step_1",
+      steps: (formData.workflow_steps || []).map((s) => ({
+        id: s.id,
+        name: s.name,
+        instructions: s.instructions,
+        collect: s.collect || [],
+        required: s.required || false,
+        transitions: (s.transitions || []).map((t) => ({
+          condition: t.condition,
+          next_step_id: t.next_step_id,
+          is_forced: t.is_forced || false,
+          is_fallback: t.is_fallback || false,
+          ...(t.match_quick_reply ? { match_quick_reply: t.match_quick_reply } : {}),
+        })),
+        timer_trigger: s.timer_trigger
+          ? {
+              delay_seconds: s.timer_trigger.delay_seconds,
+              action_type: s.timer_trigger.action_type || "static",
+              message_template: s.timer_trigger.message_template || "",
+              prompt: s.timer_trigger.prompt || null,
+            }
+          : null,
+        quick_replies: Array.isArray(s.quick_replies) ? s.quick_replies : [],
+        skip_if_questionnaire_field: s.skip_if_questionnaire_field ?? null,
+        collect_to_questionnaire: s.collect_to_questionnaire ?? false,
+        evaluate_transition_conditions_when_collect_incomplete:
+          s.evaluate_transition_conditions_when_collect_incomplete ?? false,
+      })),
+      auto_steps: (formData.workflow_auto_steps || []).map((a) => ({
+        id: a.id,
+        name: a.name,
+        source_id: a.source_id,
+        schedule_anchor: a.schedule_anchor ?? "on_step_enter",
+        delay_seconds: a.delay_seconds,
+        action_type: a.action_type || "static",
+        message_template: a.message_template || "",
+        prompt: a.prompt || "",
+        condition: a.condition ?? null,
+        cancel_on_workflow_step_change: a.cancel_on_workflow_step_change ?? true,
+        once_per_conversation: a.once_per_conversation ?? false,
+        telegram_attachment_type: a.telegram_attachment_type ?? "none",
+        telegram_video_url:
+          a.telegram_attachment_type === "video_url"
+            ? (a.telegram_video_url || "").trim() || null
+            : null,
+        telegram_video_note_file_id:
+          a.telegram_attachment_type === "video_note"
+            ? (a.telegram_video_note_file_id || "").trim() || null
+            : null,
+      })),
+    },
+  };
+
+  // Embeddings config (for RAG)
+  const embeddingsProvider = formData.rag_embeddings_provider || formData.llm_provider || "openai";
+  config.embeddings = {
+    provider: embeddingsProvider,
+    model: embeddingsProvider === "google_ai_studio" ? "text-embedding-004" : "text-embedding-3-small",
+    dimensions: 1536,
+  };
+
+  return config;
+}
+
+/**
+ * Transliterate Russian/Cyrillic characters to Latin.
+ */
+function transliterate(text: string): string {
+  const lowercaseMap: Record<string, string> = {
+    а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo", ж: "zh",
+    з: "z", и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o",
+    п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts",
+    ч: "ch", ш: "sh", щ: "shch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu",
+    я: "ya",
+  };
+  const uppercaseMap: Record<string, string> = {
+    А: "a", Б: "b", В: "v", Г: "g", Д: "d", Е: "e", Ё: "yo", Ж: "zh",
+    З: "z", И: "i", Й: "y", К: "k", Л: "l", М: "m", Н: "n", О: "o",
+    П: "p", Р: "r", С: "s", Т: "t", У: "u", Ф: "f", Х: "kh", Ц: "ts",
+    Ч: "ch", Ш: "sh", Щ: "shch", Ъ: "", Ы: "y", Ь: "", Э: "e", Ю: "yu",
+    Я: "ya",
+  };
+  const transliterationMap = { ...lowercaseMap, ...uppercaseMap };
+  return text
+    .split("")
+    .map((char) => transliterationMap[char] || char)
+    .join("");
+}
+
+/**
+ * Generate agent ID from company name and optional person / secondary label.
+ */
+export function generateAgentId(clinicName: string, personName?: string): string {
+  let combined = clinicName.trim();
+  if (personName && personName.trim()) {
+    combined = `${clinicName.trim()}_${personName.trim()}`;
+  }
+  const transliterated = transliterate(combined);
+  return transliterated
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .substring(0, 50);
+}

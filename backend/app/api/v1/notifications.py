@@ -1,0 +1,349 @@
+"""Notification configs API endpoints."""
+
+import logging
+import uuid
+from typing import Any, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+
+from app.api.auth import require_admin
+from app.config import get_settings
+from app.dependencies import CommonDependencies
+from app.models.notification_config import NotificationConfig, NotificationType
+from app.services.telegram_notify import send_telegram_notification, verify_telegram_bot_token
+from app.storage.resolver import get_secrets_manager
+from app.utils.datetime_utils import to_utc_iso_string
+from app.utils.enum_helpers import get_enum_value
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+
+class CreateNotificationConfigRequest(BaseModel):
+    """Request to create a notification config."""
+
+    notification_type: str = Field(..., description="Notification type (e.g., 'telegram')")
+    bot_token: str = Field(..., description="Telegram bot token")
+    chat_id: str = Field(..., description="Telegram chat ID for receiving notifications")
+    description: Optional[str] = Field(None, description="Optional description")
+
+
+class UpdateNotificationConfigRequest(BaseModel):
+    """Request to update a notification config."""
+
+    is_active: Optional[bool] = Field(None, description="Whether config is active")
+    bot_token: Optional[str] = Field(None, description="New bot token")
+    chat_id: Optional[str] = Field(None, description="New chat ID")
+    description: Optional[str] = Field(None, description="Updated description")
+
+
+class NotificationConfigResponse(BaseModel):
+    """Response for notification config."""
+
+    config_id: str
+    notification_type: str
+    chat_id: str
+    is_active: bool
+    description: Optional[str]
+    created_at: str
+    updated_at: str
+    created_by: Optional[str]
+
+    @classmethod
+    def from_config(cls, config: NotificationConfig) -> "NotificationConfigResponse":
+        """Create response from config model."""
+        return cls(
+            config_id=config.config_id,
+            notification_type=get_enum_value(config.notification_type),
+            chat_id=config.chat_id,
+            is_active=config.is_active,
+            description=config.description,
+            created_at=to_utc_iso_string(config.created_at),
+            updated_at=to_utc_iso_string(config.updated_at),
+            created_by=config.created_by,
+        )
+
+
+@router.get(
+    "/notifications",
+    response_model=list[NotificationConfigResponse],
+)
+async def list_notification_configs(
+    active_only: bool = False,
+    deps: CommonDependencies = Depends(),
+    _admin: str = require_admin(),
+):
+    """List all notification configs."""
+    try:
+        configs = await deps.db.list_notification_configs(active_only=active_only)
+        return [NotificationConfigResponse.from_config(config) for config in configs]
+    except Exception as e:
+        logger.error(f"Failed to list notification configs: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list notification configs: {str(e)}",
+        )
+
+
+@router.post(
+    "/notifications",
+    response_model=NotificationConfigResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_notification_config(
+    request: CreateNotificationConfigRequest,
+    deps: CommonDependencies = Depends(),
+    _admin: str = require_admin(),
+):
+    """Create a new notification config."""
+    try:
+        NotificationType(request.notification_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid notification type: {request.notification_type}",
+        )
+
+    if not request.bot_token.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bot token cannot be empty",
+        )
+
+    if request.notification_type == NotificationType.TELEGRAM.value:
+        try:
+            is_valid = await verify_telegram_bot_token(request.bot_token)
+            if not is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid bot token. Please verify the token is correct.",
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to verify bot token: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to verify bot token: {str(e)}",
+            )
+
+    try:
+        config_id = str(uuid.uuid4())
+
+        secrets_manager = get_secrets_manager()
+        secret_name = await secrets_manager.create_notification_token_secret(
+            config_id=config_id,
+            bot_token=request.bot_token,
+        )
+
+        config = NotificationConfig(
+            config_id=config_id,
+            notification_type=NotificationType(request.notification_type),
+            bot_token_secret_name=secret_name,
+            chat_id=request.chat_id,
+            is_active=True,
+            description=request.description,
+            created_by=_admin,
+        )
+
+        await deps.db.create_notification_config(config)
+
+        logger.info(
+            f"Created notification config: {config_id}, type: {request.notification_type}"
+        )
+        return NotificationConfigResponse.from_config(config)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Failed to create notification config: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create notification config: {str(e)}",
+        )
+
+
+@router.get(
+    "/notifications/{config_id}",
+    response_model=NotificationConfigResponse,
+)
+async def get_notification_config(
+    config_id: str,
+    deps: CommonDependencies = Depends(),
+    _admin: str = require_admin(),
+):
+    """Get notification config by ID."""
+    config = await deps.db.get_notification_config(config_id)
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Notification config {config_id} not found",
+        )
+    return NotificationConfigResponse.from_config(config)
+
+
+@router.put(
+    "/notifications/{config_id}",
+    response_model=NotificationConfigResponse,
+)
+async def update_notification_config(
+    config_id: str,
+    request: UpdateNotificationConfigRequest,
+    deps: CommonDependencies = Depends(),
+    _admin: str = require_admin(),
+):
+    """Update notification config."""
+    config = await deps.db.get_notification_config(config_id)
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Notification config {config_id} not found",
+        )
+
+    update_kwargs: dict[str, Any] = {}
+
+    if request.is_active is not None:
+        update_kwargs["is_active"] = request.is_active
+
+    if request.chat_id is not None:
+        update_kwargs["chat_id"] = request.chat_id
+
+    if request.description is not None:
+        update_kwargs["description"] = request.description
+
+    if request.bot_token is not None:
+        if not request.bot_token.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Bot token cannot be empty",
+            )
+        secrets_manager = get_secrets_manager()
+        if get_enum_value(config.notification_type) == NotificationType.TELEGRAM.value:
+            try:
+                is_valid = await verify_telegram_bot_token(request.bot_token)
+                if not is_valid:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invalid bot token. Please verify the token is correct.",
+                    )
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"Failed to verify bot token: {e}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to verify bot token: {str(e)}",
+                )
+
+        await secrets_manager.update_notification_token_secret(
+            secret_name=config.bot_token_secret_name,
+            bot_token=request.bot_token,
+            created_at=to_utc_iso_string(config.created_at),
+        )
+
+    if update_kwargs:
+        updated_config = await deps.db.update_notification_config(
+            config_id, **update_kwargs
+        )
+        if not updated_config:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update notification config",
+            )
+        return NotificationConfigResponse.from_config(updated_config)
+
+    return NotificationConfigResponse.from_config(config)
+
+
+@router.delete(
+    "/notifications/{config_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_notification_config(
+    config_id: str,
+    deps: CommonDependencies = Depends(),
+    _admin: str = require_admin(),
+):
+    """Delete notification config and its secret."""
+    config = await deps.db.get_notification_config(config_id)
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Notification config {config_id} not found",
+        )
+
+    try:
+        secrets_manager = get_secrets_manager()
+        try:
+            await secrets_manager.delete_notification_token_secret(config.bot_token_secret_name)
+        except Exception as e:
+            logger.warning(
+                f"Failed to delete secret for config {config_id}: {e}",
+                exc_info=True,
+            )
+
+        await deps.db.delete_notification_config(config_id)
+
+        logger.info(f"Deleted notification config: {config_id}")
+    except Exception as e:
+        logger.error(f"Failed to delete notification config: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete notification config: {str(e)}",
+        )
+
+
+@router.post(
+    "/notifications/{config_id}/test",
+    status_code=status.HTTP_200_OK,
+)
+async def test_notification(
+    config_id: str,
+    deps: CommonDependencies = Depends(),
+    _admin: str = require_admin(),
+):
+    """Send a test Telegram notification via Bot API sendMessage."""
+    config = await deps.db.get_notification_config(config_id)
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Notification config {config_id} not found",
+        )
+
+    if not config.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Notification config is not active",
+        )
+
+    try:
+        secrets_manager = get_secrets_manager()
+        bot_token = await secrets_manager.get_notification_bot_token(
+            config.bot_token_secret_name
+        )
+
+        settings = get_settings()
+        app_label = settings.app_name or "Service ChatBot"
+        test_message = (
+            f"✅ Test Notification\n\n"
+            f"This is a test notification from {app_label}.\n"
+            f"Config ID: {config_id}\n"
+            f"If you received this message, your notification settings are working correctly!"
+        )
+
+        await send_telegram_notification(
+            bot_token=bot_token,
+            chat_id=config.chat_id,
+            message_text=test_message,
+        )
+
+        return {"status": "success", "message": "Test notification sent successfully"}
+    except Exception as e:
+        logger.error(f"Failed to send test notification: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send test notification: {str(e)}",
+        )

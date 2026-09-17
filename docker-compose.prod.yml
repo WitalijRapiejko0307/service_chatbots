@@ -1,0 +1,112 @@
+name: service-chatbot-prod
+
+# Production-style Compose. Does not publish 80/443 (no reverse proxy in this file).
+# Viber / Instagram / TikTok webhooks need a public HTTPS APP_URL in front of the API.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Env: root `.env` (Postgres) + `backend/.env` (API). Set ENVIRONMENT=production
+# and a valid SECRET_ENCRYPTION_KEY. Messenger webhook paths are not IP-rate-limited.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agent}
+      POSTGRES_DB: ${POSTGRES_DB:-service_chatbot}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agent} -d ${POSTGRES_DB:-service_chatbot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - service-chatbot-prod
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - service-chatbot-prod
+
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    env_file:
+      - backend/.env
+    command: ["python", "scripts/init_db.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - service-chatbot-prod
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    networks:
+      - service-chatbot-prod
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    restart: unless-stopped
+    env_file:
+      - frontend/.env.local
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/admin/login"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    networks:
+      - service-chatbot-prod
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  service-chatbot-prod:
+    driver: bridge
