@@ -11,7 +11,7 @@ This file is documentation only. It does not log in to Railway or deploy to a li
 | Postgres 16 | `postgres:16` | internal | `DATABASE_URL` |
 | Redis 7 | `redis:7` | internal | `REDIS_URL` — rate limits + debounce |
 | API | `docker/Dockerfile.backend` | 8000 | `uvicorn app.main:app` (no `--reload`) |
-| Frontend | `docker/Dockerfile.frontend` | 3000 | Next.js standalone; off-localhost the client uses relative URLs |
+| Frontend | `docker/Dockerfile.frontend` | 3000 | Next.js standalone. For two public domains, bake `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_WS_URL` at **build** time. If those are unset, the browser uses relative URLs (nginx/ALB same-origin). |
 
 Run locally in production mode:
 
@@ -46,12 +46,15 @@ Those platforms reject self-signed and often `http://` webhooks. Put a trusted r
 
 ## Railway-style
 
-Provision four pieces: Postgres, Redis, API, frontend.
+Provision four pieces: Postgres, Redis, API, frontend. Split-service rollout: [railway-option1-frontend-service.md](railway-option1-frontend-service.md).
 
-- API: Dockerfile `docker/Dockerfile.backend`, health check `/health`.
-- Frontend: Dockerfile `docker/Dockerfile.frontend`. Pass `NEXT_PUBLIC_API_URL` at **build** time only if the browser cannot use same-origin relative URLs.
-- Wire `DATABASE_URL` and `REDIS_URL` from the plugins.
-- Run `python scripts/init_db.py` once (or on each deploy) before serving traffic. Compose prod uses a one-shot `migrate` service.
+- API: Dockerfile `docker/Dockerfile.backend`, health check `/health`. Public domain on port 8000. Set `APP_URL` to that HTTPS origin. `CORS_ORIGINS` must include the frontend origin.
+- Frontend: Dockerfile `docker/Dockerfile.frontend` via `RAILWAY_CONFIG_FILE=railway.frontend.toml` (do not inherit the root `railway.toml`). Public domain on port 3000. Bake at build:
+  - `NEXT_PUBLIC_API_URL=https://<api-host>`
+  - `NEXT_PUBLIC_WS_URL=wss://<api-host>`
+  Changing the API domain requires a frontend rebuild.
+- Wire `DATABASE_URL` and `REDIS_URL` from the plugins to the API only.
+- Run `python scripts/init_db.py` once (or on each deploy as pre-deploy) before serving traffic. Compose prod uses a one-shot `migrate` service.
 
 Do not run a second FastAPI process for background jobs.
 

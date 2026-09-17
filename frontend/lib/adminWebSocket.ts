@@ -1,5 +1,6 @@
 /** Admin WebSocket client for real-time admin dashboard updates. */
 
+import { getWebSocketBaseUrl } from "./backendUrls";
 import { getAdminToken } from "./auth";
 import type { Conversation } from "./types/conversation";
 
@@ -7,21 +8,6 @@ type AdminMessageHandler = (message: AdminWebSocketMessage) => void;
 type ErrorHandler = (error: Error) => void;
 type ConnectionStateHandler = (connected: boolean) => void;
 
-// Use relative WebSocket URL when running on same domain (via ALB)
-// Convert http/https to ws/wss
-const getWebSocketUrl = (): string => {
-  if (typeof window !== "undefined" && window.location.host) {
-    const host = window.location.host;
-    if (host === "localhost:3000" || host.startsWith("localhost:")) {
-      return process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
-    }
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${protocol}//${host}`;
-  }
-  return process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
-};
-
-const WS_BASE_URL = getWebSocketUrl();
 
 export interface AdminWebSocketMessage {
   type:
@@ -72,7 +58,7 @@ export class AdminWebSocketClient {
 
     return new Promise((resolve, reject) => {
       this.isConnecting = true;
-      const wsUrl = `${WS_BASE_URL}/ws/admin?token=${encodeURIComponent(token)}`;
+      const wsUrl = `${getWebSocketBaseUrl()}/ws/admin?token=${encodeURIComponent(token)}`;
 
       try {
         this.ws = new WebSocket(wsUrl);

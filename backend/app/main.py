@@ -130,6 +130,7 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description="Service ChatBot API",
         lifespan=lifespan,
+        redirect_slashes=False,
     )
 
     app.add_middleware(RequestIDMiddleware)

@@ -6,17 +6,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { isAuthenticated, setAdminToken } from "@/lib/auth";
+import { getApiBaseUrl } from "@/lib/backendUrls";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-
-// In production (non-localhost) the browser uses relative URLs so nginx routes /api/* to backend.
-// In local dev, fall back to localhost:8000.
-const getApiUrl = (): string => {
-  if (typeof window !== "undefined") {
-    const host = window.location.host;
-    if (!host.startsWith("localhost")) return "";
-  }
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-};
 
 type Step = "email" | "otp";
 
@@ -66,7 +57,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${getApiUrl()}/api/v1/admin/auth/request-otp`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/v1/admin/auth/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
@@ -103,7 +94,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${getApiUrl()}/api/v1/admin/auth/verify-otp`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/v1/admin/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() }),
@@ -134,7 +125,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${getApiUrl()}/api/v1/admin/auth/login-password`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/v1/admin/auth/login-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -167,7 +158,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await fetch(`${getApiUrl()}/api/v1/admin/auth/request-otp`, {
+      await fetch(`${getApiBaseUrl()}/api/v1/admin/auth/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),

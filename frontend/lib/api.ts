@@ -76,44 +76,7 @@ export interface CloudinaryImportResultItem {
   warning?: string;
 }
 
-// Use relative URLs when running on same domain (via ALB)
-// This automatically uses the same protocol (HTTP/HTTPS) as the page
-// Fallback to absolute URL only for development (localhost)
-// IMPORTANT: This function must be called at runtime, not at module load time
-// because in Next.js SSR, window is not available during module initialization
-const getApiBaseUrl = (): string => {
-  // CRITICAL: If running in browser (client-side), ALWAYS use relative URLs for production
-  // This ensures the same protocol (HTTPS) as the page, preventing Mixed Content errors
-  if (typeof window !== "undefined" && window.location) {
-    const host = window.location.host;
-    // If not localhost, ALWAYS use relative URLs (empty string)
-    // Ignore NEXT_PUBLIC_API_URL in browser to prevent Mixed Content issues
-    if (host !== "localhost:3000" && !host.startsWith("localhost:")) {
-      return ""; // Relative URL - uses same protocol as page (HTTPS if page is HTTPS)
-    }
-    // For localhost development, use HTTP localhost
-    return "http://localhost:8000";
-  }
-  
-  // Server-side rendering: In production, use relative URLs to avoid Mixed Content
-  // Next.js will resolve relative URLs using the same protocol as the incoming request
-  // This prevents SSR from making HTTP requests when the page is served over HTTPS
-  const isProduction = process.env.NODE_ENV === "production";
-  
-  if (isProduction) {
-    // In production SSR, use relative URL (empty string)
-    // Next.js will use the same protocol as the request (HTTPS)
-    return "";
-  }
-  
-  // Development SSR: Use NEXT_PUBLIC_API_URL if set, otherwise localhost
-  if (typeof process !== "undefined" && process.env && process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-  
-  // Final fallback: localhost for development
-  return "http://localhost:8000";
-};
+import { getApiBaseUrl } from "./backendUrls";
 
 class ApiError extends Error {
   constructor(

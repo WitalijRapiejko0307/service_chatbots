@@ -1,26 +1,12 @@
 /** WebSocket client for real-time communication. */
 
+import { getWebSocketBaseUrl } from "./backendUrls";
 import type { WebSocketMessage } from "./types/message";
 
 type MessageHandler = (message: WebSocketMessage) => void;
 type ErrorHandler = (error: Error) => void;
 type ConnectionStateHandler = (connected: boolean) => void;
 
-// Use relative WebSocket URL when running on same domain (via ALB)
-// Convert http/https to ws/wss
-const getWebSocketUrl = (): string => {
-  if (typeof window !== "undefined" && window.location.host) {
-    const host = window.location.host;
-    if (host === "localhost:3000" || host.startsWith("localhost:")) {
-      return process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
-    }
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${protocol}//${host}`;
-  }
-  return process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
-};
-
-const WS_BASE_URL = getWebSocketUrl();
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -46,7 +32,7 @@ export class WebSocketClient {
 
     return new Promise((resolve, reject) => {
       this.isConnecting = true;
-      const wsUrl = `${WS_BASE_URL}/ws/${this.conversationId}`;
+      const wsUrl = `${getWebSocketBaseUrl()}/ws/${this.conversationId}`;
 
       try {
         this.ws = new WebSocket(wsUrl);
