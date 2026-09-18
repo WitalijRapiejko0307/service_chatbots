@@ -1,11 +1,7 @@
-# Railway-style layout (do not run the Railway CLI from this repo).
+# API service only. Set RAILWAY_CONFIG_FILE=railway.backend.toml on service_chatbots.
+# Do not keep a root railway.toml — it would apply the backend Dockerfile to frontend too.
 #
-# Intended services:
-#   1. postgres (plugin)
-#   2. redis (plugin)
-#   3. backend — docker/Dockerfile.backend
-#   4. frontend — docker/Dockerfile.frontend
-#
+# Frontend: railway.frontend.toml (RAILWAY_CONFIG_FILE on that service).
 # See docs/deploy.md for env vars and HTTPS webhook notes.
 
 [build]

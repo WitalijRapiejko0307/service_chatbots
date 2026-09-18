@@ -1,6 +1,5 @@
 # Config for the Railway frontend service only.
-# Set RAILWAY_CONFIG_FILE=railway.frontend.toml on that service so it does not
-# inherit the root railway.toml (backend Dockerfile + /health).
+# Set RAILWAY_CONFIG_FILE=railway.frontend.toml on that service.
 
 [build]
 builder = "DOCKERFILE"
