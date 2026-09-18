@@ -165,6 +165,21 @@ async def create_agent(
     return AgentResponse(**agent_data)
 
 
+@router.get("", response_model=list[AgentResponse])
+@router.get("/", response_model=list[AgentResponse])
+async def list_agents(
+    active_only: bool = Query(default=True, description="Filter only active agents"),
+    deps: CommonDependencies = Depends(),
+):
+    """List all agents.
+
+    Both `/api/v1/agents` and `/api/v1/agents/` are registered because the app
+    disables slash redirects (so POST bodies are not dropped on 307).
+    """
+    agents = await deps.db.list_agents(active_only=active_only)
+    return [AgentResponse(**agent) for agent in agents]
+
+
 @router.get("/{agent_id}", response_model=AgentResponse)
 async def get_agent(
     agent_id: str,
@@ -175,16 +190,6 @@ async def get_agent(
     if not agent:
         raise AgentNotFoundError(agent_id)
     return AgentResponse(**agent)
-
-
-@router.get("/", response_model=list[AgentResponse])
-async def list_agents(
-    active_only: bool = Query(default=True, description="Filter only active agents"),
-    deps: CommonDependencies = Depends(),
-):
-    """List all agents."""
-    agents = await deps.db.list_agents(active_only=active_only)
-    return [AgentResponse(**agent) for agent in agents]
 
 
 @router.put("/{agent_id}", response_model=AgentResponse)

@@ -228,7 +228,7 @@ export const api = {
   },
 
   async listAgents(activeOnly: boolean = true): Promise<Agent[]> {
-    return request<Agent[]>(`/api/v1/agents?active_only=${activeOnly}`);
+    return request<Agent[]>(`/api/v1/agents/?active_only=${activeOnly}`);
   },
 
   async createAgent(agentId: string, config: any): Promise<Agent> {
