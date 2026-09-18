@@ -178,7 +178,22 @@ class PostgresSecretsManager:
         access_token: str,
         metadata: dict,
     ) -> None:
-        secret_value = json.dumps({"access_token": access_token, **metadata})
+        existing: dict = {}
+        try:
+            pool = await get_pool()
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    "SELECT value_encrypted FROM secrets WHERE key = $1",
+                    secret_name,
+                )
+            if row:
+                decrypted = self._get_fernet().decrypt(row["value_encrypted"].encode()).decode()
+                parsed = json.loads(decrypted)
+                if isinstance(parsed, dict):
+                    existing = parsed
+        except Exception:
+            existing = {}
+        secret_value = json.dumps({**existing, "access_token": access_token, **(metadata or {})})
         encrypted = self._get_fernet().encrypt(secret_value.encode()).decode()
         pool = await get_pool()
         async with pool.acquire() as conn:

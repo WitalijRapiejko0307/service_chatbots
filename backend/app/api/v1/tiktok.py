@@ -1,9 +1,9 @@
-"""TikTok webhook and OAuth stub endpoints."""
+"""TikTok webhook and Login Kit OAuth endpoints."""
 
 import json
 import logging
 from typing import Optional
-from urllib.parse import urlencode
+from urllib.parse import unquote, urlencode
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -15,6 +15,8 @@ from app.dependencies import CommonDependencies
 from app.services.channel_binding_service import ChannelBindingService
 from app.services.tiktok_service import TikTokService, verify_tiktok_signature
 from app.storage.resolver import get_secrets_manager
+from app.utils.oauth_state import make_oauth_state, parse_oauth_state
+from app.utils.operator_origin import operator_origin
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +93,13 @@ def _client_wants_json(request: Request) -> bool:
     return True
 
 
+def _channels_redirect(origin: str, agent_id: str, **params: str) -> RedirectResponse:
+    return RedirectResponse(
+        url=f"{origin}/admin/agents/{agent_id}/channels?{urlencode(params)}",
+        status_code=302,
+    )
+
+
 @router.get("/tiktok/oauth/start")
 async def oauth_start(
     request: Request,
@@ -110,12 +119,19 @@ async def oauth_start(
 
     base = (settings.app_url or "").rstrip("/")
     redirect_uri = f"{base}/api/v1/tiktok/oauth/callback"
+    secret = settings.jwt_secret_key or settings.secret_encryption_key or "dev"
+    state = make_oauth_state(agent_id, secret)
+    scope = (
+        "user.info.basic,business.messaging"
+        if settings.tiktok_messaging_enabled
+        else "user.info.basic"
+    )
     params = {
         "client_key": settings.tiktok_app_id,
         "redirect_uri": redirect_uri,
         "response_type": "code",
-        "scope": "user.info.basic,business.messaging",
-        "state": agent_id,
+        "scope": scope,
+        "state": state,
     }
     url = f"https://www.tiktok.com/v2/auth/authorize/?{urlencode(params)}"
     if _client_wants_json(request):
@@ -131,39 +147,59 @@ async def oauth_callback(
     deps: CommonDependencies = Depends(),
     tiktok_service: TikTokService = Depends(get_tiktok_service),
 ):
-    if error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"OAuth error: {error}")
-    if not code or not state:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing code or state")
-
     settings = get_settings()
+    origin = operator_origin(settings)
+    secret = settings.jwt_secret_key or settings.secret_encryption_key or "dev"
+    agent_id = parse_oauth_state(state, secret) if state else None
+
+    def _fail(reason: str):
+        if agent_id:
+            return _channels_redirect(origin, agent_id, tiktok_error=reason)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=reason)
+
+    if error:
+        return _fail(error)
+    if not code or not state:
+        return _fail("missing_code" if not code else "missing_state")
+    if not agent_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state"
+        )
+
     base = (settings.app_url or "").rstrip("/")
     redirect_uri = f"{base}/api/v1/tiktok/oauth/callback"
-    exchanged = await tiktok_service.exchange_oauth_code(code, redirect_uri)
+    exchanged = await tiktok_service.exchange_oauth_code(unquote(code), redirect_uri)
+    if not exchanged or not exchanged.get("access_token") or not exchanged.get("account_id"):
+        return _fail("exchange_failed")
 
     secrets_manager = get_secrets_manager()
     binding_service = ChannelBindingService(deps.db, secrets_manager)
-    agent_id = state
     metadata = {"connected_via": "oauth"}
     if not settings.tiktok_messaging_enabled:
         metadata["pending_access"] = True
+    if exchanged.get("refresh_token"):
+        metadata["refresh_token"] = exchanged["refresh_token"]
 
-    if exchanged and exchanged.get("access_token"):
+    existing = await binding_service.get_binding_by_account_id(
+        channel_type="tiktok", account_id=exchanged["account_id"]
+    )
+    if existing:
+        await binding_service.update_binding(
+            existing.binding_id,
+            access_token=exchanged["access_token"],
+            metadata=metadata,
+        )
+        await binding_service.verify_binding(existing.binding_id)
+        binding_id = existing.binding_id
+    else:
         binding = await binding_service.create_binding(
             agent_id=agent_id,
             channel_type="tiktok",
-            channel_account_id=exchanged.get("account_id") or "tiktok",
+            channel_account_id=exchanged["account_id"],
             access_token=exchanged["access_token"],
             metadata=metadata,
         )
         await binding_service.verify_binding(binding.binding_id)
         binding_id = binding.binding_id
-    else:
-        # Credentials missing or exchange failed — still record a pending binding if possible.
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to exchange TikTok authorization code",
-        )
 
-    admin_url = f"{base}/admin/agents/{agent_id}/channels"
-    return RedirectResponse(url=f"{admin_url}?tiktok_binding={binding_id}", status_code=302)
+    return _channels_redirect(origin, agent_id, tiktok_binding=binding_id)

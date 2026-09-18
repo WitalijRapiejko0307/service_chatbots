@@ -266,6 +266,20 @@ class Settings(BaseSettings):
         description="Public base URL of the app, e.g. https://your-app.up.railway.app (no trailing slash). Required for webhook URLs.",
     )
 
+    frontend_url: Optional[str] = Field(
+        default=None,
+        alias="FRONTEND_URL",
+        description="Public frontend origin for post-OAuth 302s. Strip trailing slash.",
+    )
+
+    @field_validator("frontend_url", mode="before")
+    @classmethod
+    def _strip_frontend_url(cls, v: object) -> Optional[str]:
+        if v is None:
+            return None
+        text = str(v).strip().rstrip("/")
+        return text or None
+
     # Instagram
     instagram_app_id: Optional[str] = Field(
         default=None,

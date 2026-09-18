@@ -726,10 +726,7 @@ function ChannelCard({
   const [oauthBusy, setOauthBusy] = useState(false);
 
   const activeBinding = bindings.find((b) => b.is_active) ?? bindings[0];
-  const showOauth =
-    Boolean(oauthAvailable) &&
-    (channelType === "instagram" ||
-      (channelType === "tiktok" && tiktokMessagingEnabled !== false));
+  const showOauth = Boolean(oauthAvailable);
 
   const handleDelete = async (bindingId: string) => {
     setBusyId(bindingId);
@@ -1133,7 +1130,26 @@ export default function AgentChannelsPage() {
   }, [agentId]);
 
   useEffect(() => {
-    void load();
+    const params = new URLSearchParams(window.location.search);
+    const hasTikTokError = params.has("tiktok_error");
+    const hasTikTokBinding = params.has("tiktok_binding");
+
+    void (async () => {
+      await load();
+      // Apply after load() so its opening setError(null) cannot wipe the banner.
+      if (hasTikTokError) {
+        setError(t("oauthReturnError"));
+      }
+    })();
+
+    if (hasTikTokError || hasTikTokBinding) {
+      params.delete("tiktok_error");
+      params.delete("tiktok_binding");
+      const query = params.toString();
+      const next = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+      window.history.replaceState(null, "", next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- t is next-intl translator
   }, [load]);
 
   const byType = (type: MessengerChannel) =>

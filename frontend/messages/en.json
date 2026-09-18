@@ -486,6 +486,7 @@
     "oauthInstagram": "Connect with Instagram",
     "oauthTikTok": "Connect with TikTok",
     "oauthError": "Could not start OAuth. You can still paste a token.",
+    "oauthReturnError": "TikTok could not complete the connection. You can try again or paste a token.",
     "matrixTitle": "Channel support",
     "matrixSubtitle": "What each channel can do. Features that work only on Telegram are labeled.",
     "matrixLegendYes": "Yes",
@@ -656,5 +657,32 @@
       "step2": "After approval, create a Login Kit / OAuth token for the Business Account and paste the open_id (or business_id) and access token below.",
       "step3": "Webhook URL (per connection):"
     }
+  },
+  "Legal": {
+    "footerPrivacy": "Privacy Policy",
+    "footerTerms": "Terms of Service",
+    "privacyTitle": "Privacy Policy",
+    "termsTitle": "Terms of Service",
+    "lastUpdated": "Last updated: 18 September 2026",
+    "productName": "Service ChatBot",
+    "backHome": "Home",
+    "privacyDraft": "This page is the product privacy policy for Service ChatBot. It describes how this product processes data. It is a working draft and is not a substitute for independent legal advice.",
+    "termsDraft": "This page is the product terms of service for Service ChatBot. It is a working draft for operators and reviewers and is not a substitute for independent legal advice.",
+    "whoWeAreTitle": "Who we are",
+    "whoWeAreBody": "Service ChatBot is a web application that lets service businesses create an AI chatbot and connect it to messengers such as Telegram, Viber, Instagram, and TikTok. The product is operated by the organization that deploys this instance.",
+    "whoUsesTitle": "Operators and end users",
+    "whoUsesBody": "Operators are the people who sign in to the admin dashboard to create agents, connect channels, and handle conversations. End users are the customers or visitors who message those agents on a connected messenger. This policy covers both groups.",
+    "dataTitle": "What data we process",
+    "dataBody": "For operators we process account identifiers such as email, login session data, agent configuration, knowledge-base documents you upload, and channel connection details including tokens needed to send and receive messages. For end users we process messages, channel identifiers (for example a messenger user id or open_id), optional profile fields provided by the channel, and conversation metadata such as status and CRM stage. We process this data to run the chatbot, show an inbox to operators, and keep the service reliable.",
+    "cookiesTitle": "Cookies and session",
+    "cookiesBody": "We use a language preference cookie and a session cookie (or equivalent) so that operators stay signed in and see the admin interface in their chosen language. These are necessary for the product to work. We do not use advertising cookies on the public pages.",
+    "thirdPartiesTitle": "Third parties",
+    "thirdPartiesBody": "When you connect a channel, we send and receive data through that provider. This includes TikTok Login Kit when an operator connects a TikTok account, as well as Telegram, Viber, and Instagram (Meta) when those channels are enabled. We also use language-model and hosting providers to generate replies and run the application. Those providers process data only to deliver the requested service.",
+    "contactTitle": "Contact",
+    "contactBody": "Questions about this product policy can be sent through the operator account used to sign in to Service ChatBot, or to the organization that operates this instance. If you are an end user, contact the business whose chatbot you messaged.",
+    "termsUseTitle": "Using the product",
+    "termsUseBody": "By using Service ChatBot you agree to these terms. Operators must have the right to connect each messenger account, including TikTok via Login Kit. You must not misuse the product, attempt unauthorized access, or use it to send spam or unlawful content. Access may be suspended if these terms are broken.",
+    "termsChannelsTitle": "Connected channels",
+    "termsChannelsBody": "Channel providers (TikTok, Telegram, Viber, Instagram/Meta) have their own terms. Connecting an account through this product, including TikTok Login Kit, does not change those terms. Messaging on TikTok may remain unavailable until partner access is granted; a connection can still be saved as pending."
   }
 }

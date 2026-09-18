@@ -12,6 +12,7 @@ import hmac
 import logging
 from datetime import timedelta, timezone
 from typing import Any, Optional
+from urllib.parse import unquote
 
 import httpx
 
@@ -33,6 +34,8 @@ logger = logging.getLogger(__name__)
 TIKTOK_API_BASE = "https://business-api.tiktok.com/open_api/v1.3"
 TIKTOK_SEND_PATH = "/business/message/send/"
 TIKTOK_TOKEN_INFO_PATH = "/business/get/"
+TIKTOK_OAUTH_TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/"
+TIKTOK_OAUTH_REVOKE_URL = "https://open.tiktokapis.com/v2/oauth/revoke/"
 TIKTOK_WINDOW = timedelta(hours=48)
 TIKTOK_MAX_OUTBOUND = 10
 INBOUND_EVENT_TYPES = frozenset({"im_receive_msg", "im.receive_msg", "message", "receive_msg"})
@@ -265,38 +268,79 @@ class TikTokService:
                 exc,
             )
 
+    async def revoke_access_token(self, access_token: str) -> bool:
+        """Best-effort Login Kit token revoke. Never raises."""
+        token = (access_token or "").strip()
+        app_id = self.settings.tiktok_app_id
+        app_secret = self.settings.tiktok_app_secret
+        if not app_id or not app_secret or not token:
+            return False
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                resp = await client.post(
+                    TIKTOK_OAUTH_REVOKE_URL,
+                    data={
+                        "client_key": app_id,
+                        "client_secret": app_secret,
+                        "token": token,
+                    },
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                )
+            if resp.status_code != 200:
+                logger.warning("TikTok token revoke failed: status=%s", resp.status_code)
+                return False
+            return True
+        except Exception as e:
+            logger.warning("TikTok token revoke error: %s", type(e).__name__)
+            return False
+
     async def exchange_oauth_code(
         self, code: str, redirect_uri: str
     ) -> Optional[dict[str, Any]]:
-        """Stub OAuth token exchange when app credentials exist."""
+        """Login Kit v2 authorization-code exchange."""
         app_id = self.settings.tiktok_app_id
         app_secret = self.settings.tiktok_app_secret
-        if not app_id or not app_secret or not code:
+        decoded_code = unquote(code or "")
+        if not app_id or not app_secret or not decoded_code:
             return None
         try:
             async with httpx.AsyncClient(timeout=20.0) as client:
                 resp = await client.post(
-                    "https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/",
-                    json={
-                        "app_id": app_id,
-                        "secret": app_secret,
-                        "auth_code": code,
+                    TIKTOK_OAUTH_TOKEN_URL,
+                    data={
+                        "client_key": app_id,
+                        "client_secret": app_secret,
+                        "code": decoded_code,
                         "grant_type": "authorization_code",
                         "redirect_uri": redirect_uri,
                     },
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
                 )
-                if resp.status_code != 200:
-                    logger.warning("TikTok OAuth exchange failed: %s", resp.status_code)
-                    return None
-                data = (resp.json() or {}).get("data") or resp.json()
-                token = data.get("access_token")
-                advertiser = data.get("advertiser_id") or data.get("open_id") or data.get("business_id")
-                if not token:
-                    return None
-                return {
-                    "access_token": token,
-                    "account_id": str(advertiser or "tiktok"),
-                }
+            try:
+                body = resp.json() or {}
+            except Exception:
+                body = {}
+            nested = body.get("data") if isinstance(body.get("data"), dict) else {}
+            log_id = body.get("log_id") or nested.get("log_id")
+            logger.info(
+                "TikTok OAuth token exchange status=%s log_id=%s",
+                resp.status_code,
+                log_id,
+            )
+            if resp.status_code != 200:
+                return None
+            token = nested.get("access_token") or body.get("access_token")
+            open_id = nested.get("open_id") or body.get("open_id")
+            refresh_token = nested.get("refresh_token") or body.get("refresh_token")
+            if not token or not open_id:
+                return None
+            result: dict[str, Any] = {
+                "access_token": token,
+                "account_id": str(open_id),
+            }
+            if refresh_token:
+                result["refresh_token"] = refresh_token
+            return result
         except Exception as e:
-            logger.error("TikTok OAuth exchange error: %s", e, exc_info=True)
+            logger.error("TikTok OAuth exchange error: %s", type(e).__name__, exc_info=True)
             return None

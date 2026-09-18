@@ -166,6 +166,7 @@ def make_binding(
 
 class DummySettings:
     app_url = "https://example.test"
+    frontend_url = None
     environment = "development"
     agent_reply_debounce_seconds = 0
     jwt_secret_key = "jwt-secret-for-tests-min-32-chars"

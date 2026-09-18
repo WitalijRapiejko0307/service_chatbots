@@ -12,6 +12,14 @@ from app.utils.enum_helpers import get_enum_value
 logger = logging.getLogger(__name__)
 
 
+def _secret_and_db_metadata(metadata: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Keep refresh_token in the secrets payload; never persist it on the binding row."""
+    secret_meta = dict(metadata)
+    db_meta = dict(metadata)
+    db_meta.pop("refresh_token", None)
+    return secret_meta, db_meta
+
+
 class ChannelBindingService:
     """Service for managing channel bindings."""
 
@@ -44,11 +52,13 @@ class ChannelBindingService:
             if not get_settings().tiktok_messaging_enabled:
                 merged_metadata.setdefault("pending_access", True)
 
+        secret_metadata, db_metadata = _secret_and_db_metadata(merged_metadata)
+
         secret_name = await self.secrets_manager.create_channel_token_secret(
             binding_id=binding_id,
             channel_type=channel_type,
             access_token=access_token,
-            metadata=merged_metadata,
+            metadata=secret_metadata,
         )
 
         # Create binding record in the database
@@ -61,7 +71,7 @@ class ChannelBindingService:
             secret_name=secret_name,
             is_active=True,
             is_verified=False,
-            metadata=merged_metadata,
+            metadata=db_metadata,
             created_by=created_by,
             created_at=utc_now(),
             updated_at=utc_now(),
@@ -137,26 +147,30 @@ class ChannelBindingService:
             current_metadata = binding.metadata.copy()
             if metadata:
                 current_metadata.update(metadata)
+            secret_metadata, db_metadata = _secret_and_db_metadata(current_metadata)
             await self.secrets_manager.update_channel_token(
                 secret_name=binding.secret_name,
                 access_token=access_token,
-                metadata=current_metadata,
+                metadata=secret_metadata,
             )
             # Mark as unverified if token was updated
             update_kwargs["is_verified"] = False
+            if metadata is not None:
+                update_kwargs["metadata"] = db_metadata
 
         if metadata is not None and access_token is None:
             # Update metadata without updating token
             current_metadata = binding.metadata.copy()
             current_metadata.update(metadata)
+            secret_metadata, db_metadata = _secret_and_db_metadata(current_metadata)
             # Persist metadata to the DB column so reads via get_binding() see the update.
-            update_kwargs["metadata"] = current_metadata
+            update_kwargs["metadata"] = db_metadata
             # Also keep the Secrets Manager in sync (it stores token + metadata together).
             token = await self.secrets_manager.get_channel_token(binding.secret_name)
             await self.secrets_manager.update_channel_token(
                 secret_name=binding.secret_name,
                 access_token=token,
-                metadata=current_metadata,
+                metadata=secret_metadata,
             )
 
         if update_kwargs:
@@ -226,6 +240,8 @@ class ChannelBindingService:
 
                 svc = TikTokService(self, self.db, settings)
                 await svc.unset_webhook(binding_id)
+                if token:
+                    await svc.revoke_access_token(token)
             # Instagram webhooks are app-level in Meta; nothing to unregister per binding.
         except Exception as e:
             logger.warning(

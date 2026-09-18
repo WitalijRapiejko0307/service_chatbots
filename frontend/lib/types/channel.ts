@@ -17,7 +17,7 @@ export interface ChannelConfig {
   tiktok_messaging_enabled?: boolean;
   /** True when INSTAGRAM_APP_ID is set (OAuth button). Paste-token remains. */
   instagram_oauth_available?: boolean;
-  /** True when TIKTOK_APP_ID is set (OAuth button). Hidden if messaging disabled. */
+  /** True when TIKTOK_APP_ID is set (OAuth button), including while messaging is pending. */
   tiktok_oauth_available?: boolean;
 }
 

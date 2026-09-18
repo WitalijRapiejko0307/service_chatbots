@@ -1,7 +1,5 @@
 """Instagram webhook and optional OAuth endpoints."""
 
-import hashlib
-import hmac
 import json
 import logging
 from typing import Optional
@@ -16,6 +14,7 @@ from app.dependencies import CommonDependencies
 from app.services.channel_binding_service import ChannelBindingService
 from app.services.instagram_service import InstagramService
 from app.storage.resolver import get_secrets_manager
+from app.utils.oauth_state import make_oauth_state, parse_oauth_state
 
 logger = logging.getLogger(__name__)
 
@@ -123,21 +122,6 @@ async def handle_webhook(
     return {"status": "ok"}
 
 
-def _oauth_state(agent_id: str, secret: str) -> str:
-    digest = hmac.new(secret.encode("utf-8"), agent_id.encode("utf-8"), hashlib.sha256).hexdigest()[:16]
-    return f"{agent_id}:{digest}"
-
-
-def _parse_oauth_state(state: str, secret: str) -> Optional[str]:
-    if ":" not in state:
-        return None
-    agent_id, digest = state.split(":", 1)
-    expected = hmac.new(secret.encode("utf-8"), agent_id.encode("utf-8"), hashlib.sha256).hexdigest()[:16]
-    if not hmac.compare_digest(digest, expected):
-        return None
-    return agent_id
-
-
 def _client_wants_json(request: Request) -> bool:
     """JSON for fetch/API clients; 302 only when the browser navigates (text/html)."""
     accept = (request.headers.get("accept") or "").lower()
@@ -169,7 +153,7 @@ async def oauth_start(
     base = (settings.app_url or "").rstrip("/")
     redirect_uri = f"{base}/api/v1/instagram/oauth/callback"
     secret = settings.jwt_secret_key or settings.secret_encryption_key or "dev"
-    state = _oauth_state(agent_id, secret)
+    state = make_oauth_state(agent_id, secret)
     params = {
         "client_id": settings.instagram_app_id,
         "redirect_uri": redirect_uri,
@@ -198,7 +182,7 @@ async def oauth_callback(
 
     settings = get_settings()
     secret = settings.jwt_secret_key or settings.secret_encryption_key or "dev"
-    agent_id = _parse_oauth_state(state, secret)
+    agent_id = parse_oauth_state(state, secret)
     if not agent_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state")
 
