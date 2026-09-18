@@ -85,3 +85,7 @@ Thumbs.db
 
 # docs
 docs/
+docs/deploy.md
+docs/smoke-test.md
+docs/partner-accounts.md
+docs/development-plan.md
