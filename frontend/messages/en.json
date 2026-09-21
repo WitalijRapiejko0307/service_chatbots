@@ -612,8 +612,8 @@
     },
     "instagram": {
       "title": "Instagram",
-      "accountId": "Instagram professional / account ID *",
-      "accountIdHint": "Found in Meta Business Suite → Settings → Instagram Accounts",
+      "accountId": "Instagram account ID (optional)",
+      "accountIdHint": "Leave blank to store the Graph /me IGSID (starts with 178414…). Do not paste the Instagram Login OAuth user_id.",
       "pageToken": "Page Access Token *",
       "pathPaste": "Page token",
       "pathOauth": "Instagram Login",

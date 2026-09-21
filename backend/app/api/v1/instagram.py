@@ -211,14 +211,23 @@ async def oauth_callback(
     metadata = {"connected_via": "oauth"}
     if exchanged.get("token_expires_at"):
         metadata["token_expires_at"] = exchanged["token_expires_at"]
+    if exchanged.get("oauth_user_id"):
+        metadata["instagram_oauth_user_id"] = exchanged["oauth_user_id"]
+    account_id = exchanged["account_id"]
     existing = await binding_service.get_binding_by_account_id(
-        channel_type="instagram", account_id=exchanged["account_id"]
+        channel_type="instagram", account_id=account_id
     )
+    if not existing and exchanged.get("oauth_user_id"):
+        existing = await binding_service.get_binding_by_account_id(
+            channel_type="instagram", account_id=str(exchanged["oauth_user_id"])
+        )
     if existing:
         await binding_service.update_binding(
             existing.binding_id,
             access_token=exchanged["access_token"],
             metadata=metadata,
+            channel_account_id=account_id,
+            channel_username=exchanged.get("username"),
         )
         await binding_service.verify_binding(existing.binding_id)
         binding_id = existing.binding_id

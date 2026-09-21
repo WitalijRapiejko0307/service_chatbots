@@ -89,6 +89,8 @@ class InstagramTokenCheck:
     ok: bool
     app_review_pending: bool = False
     error: Optional[str] = None
+    account_id: Optional[str] = None
+    username: Optional[str] = None
 
 
 class InstagramService:
@@ -208,6 +210,8 @@ class InstagramService:
             channel_type=ChannelType.INSTAGRAM.value, account_id=recipient_id
         )
         if not binding or not binding.is_active:
+            binding = await self._binding_for_webhook_recipient(recipient_id)
+        if not binding or not binding.is_active:
             logger.warning(
                 "Received Instagram message for unbound or inactive account %s",
                 recipient_id,
@@ -324,16 +328,21 @@ class InstagramService:
     async def verify_access_token_detailed(
         self, access_token: str, account_id: Optional[str] = None
     ) -> InstagramTokenCheck:
-        """Graph API profile check with App Review / Advanced Access detection."""
-        target = account_id or "me"
-        url = f"{self.GRAPH_API_BASE_URL}/{target}"
+        """Graph /me check. Webhooks use this IGSID, not the OAuth user_id."""
+        del account_id  # Always resolve IGSID from /me; stored ids may be OAuth user ids.
+        url = f"{self.GRAPH_API_BASE_URL}/me"
         params = {"fields": "id,username", "access_token": access_token}
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.get(url, params=params)
                 if response.status_code == 200:
-                    logger.info("Instagram token verified for account %s", target)
-                    return InstagramTokenCheck(ok=True)
+                    data = response.json()
+                    igsid = str(data.get("id") or "")
+                    username = data.get("username")
+                    logger.info("Instagram token verified for account %s", igsid or "me")
+                    return InstagramTokenCheck(
+                        ok=True, account_id=igsid or None, username=username
+                    )
                 text = graph_error_text(response)
                 pending = is_instagram_app_review_error(
                     response.status_code, text, graph_error_code(response)
@@ -349,6 +358,83 @@ class InstagramService:
         except Exception as e:
             logger.error("Error verifying Instagram token: %s", e, exc_info=True)
             return InstagramTokenCheck(ok=False, error="Graph API request failed")
+
+    async def resolve_account_from_token(
+        self, access_token: str
+    ) -> Optional[dict[str, str]]:
+        """Return Graph /me id (IGSID) and username. Webhooks key off this id."""
+        check = await self.verify_access_token_detailed(access_token)
+        if not check.ok or not check.account_id:
+            return None
+        return {
+            "account_id": check.account_id,
+            "username": check.username or "",
+        }
+
+    async def subscribe_messaging_webhooks(
+        self, access_token: str, ig_user_id: str
+    ) -> bool:
+        """Best-effort per-account messages subscription (Meta also has an app-level callback)."""
+        if not ig_user_id:
+            return False
+        url = f"{self.GRAPH_API_BASE_URL}/{ig_user_id}/subscribed_apps"
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.post(
+                    url,
+                    params={
+                        "subscribed_fields": "messages",
+                        "access_token": access_token,
+                    },
+                )
+                if response.status_code == 200:
+                    logger.info("Instagram subscribed_apps ok for %s", ig_user_id)
+                    return True
+                logger.warning(
+                    "Instagram subscribed_apps failed: status=%s",
+                    response.status_code,
+                )
+                return False
+        except Exception as e:
+            logger.warning("Instagram subscribed_apps error: %s", type(e).__name__)
+            return False
+
+    async def _binding_for_webhook_recipient(self, recipient_id: str) -> Optional[Any]:
+        """Find a binding when stored account id is the OAuth user id, not the webhook IGSID."""
+        bindings = await self.channel_binding_service.list_bindings_by_channel(
+            ChannelType.INSTAGRAM.value, active_only=True
+        )
+        for binding in bindings:
+            oauth_id = (binding.metadata or {}).get("instagram_oauth_user_id")
+            if oauth_id and str(oauth_id) == recipient_id:
+                return await self._heal_instagram_account_id(binding, recipient_id)
+        for binding in bindings:
+            try:
+                token = await self.channel_binding_service.get_access_token(
+                    binding.binding_id
+                )
+                resolved = await self.resolve_account_from_token(token)
+            except Exception:
+                continue
+            if resolved and resolved.get("account_id") == recipient_id:
+                return await self._heal_instagram_account_id(binding, recipient_id)
+        return None
+
+    async def _heal_instagram_account_id(self, binding: Any, igsid: str) -> Any:
+        if binding.channel_account_id == igsid:
+            return binding
+        meta = dict(binding.metadata or {})
+        stored = binding.channel_account_id
+        if stored and stored != igsid:
+            meta.setdefault("instagram_oauth_user_id", stored)
+        updated = await self.channel_binding_service.update_binding(
+            binding.binding_id, channel_account_id=igsid, metadata=meta
+        )
+        logger.info(
+            "Corrected Instagram binding %s account id to webhook IGSID",
+            binding.binding_id,
+        )
+        return updated
 
     async def get_user_profile(
         self, igsid: str, access_token: str
@@ -487,24 +573,23 @@ class InstagramService:
                     token = long_data.get("access_token") or short_token
                     if long_data.get("expires_in"):
                         expires_in = int(long_data["expires_in"])
-                me = await client.get(
-                    f"{self.GRAPH_API_BASE_URL}/me",
-                    params={"fields": "id,username", "access_token": token},
-                )
-                username = None
-                if me.status_code == 200:
-                    me_data = me.json()
-                    user_id = str(me_data.get("id") or user_id)
-                    username = me_data.get("username")
-                return {
+                resolved = await self.resolve_account_from_token(token)
+                if not resolved or not resolved.get("account_id"):
+                    logger.warning("Instagram OAuth /me did not return an IGSID")
+                    return None
+                igsid = resolved["account_id"]
+                result: dict[str, Any] = {
                     "access_token": token,
-                    "account_id": user_id,
-                    "username": username,
+                    "account_id": igsid,
+                    "username": resolved.get("username") or None,
                     "expires_in": expires_in,
                     "token_expires_at": to_utc_iso_string(
                         utc_now() + timedelta(seconds=expires_in)
                     ),
                 }
+                if user_id and user_id != igsid:
+                    result["oauth_user_id"] = user_id
+                return result
         except Exception as e:
             logger.error("Instagram OAuth exchange error: %s", e, exc_info=True)
             return None

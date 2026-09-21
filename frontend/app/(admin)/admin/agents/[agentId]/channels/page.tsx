@@ -355,7 +355,6 @@ function ConnectForm({
               value={form.channel_account_id}
               onChange={(e) => set("channel_account_id", e.target.value)}
               placeholder="17841458318357324"
-              required
               autoComplete="off"
             />
             <p className="text-xs text-[#9A9590] mt-1">{t("instagram.accountIdHint")}</p>

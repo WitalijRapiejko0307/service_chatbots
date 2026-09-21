@@ -141,12 +141,23 @@ class FakeBindingService:
             return [self.binding]
         return []
 
+    async def list_bindings_by_channel(self, channel_type: str, active_only: bool = True):
+        if get_enum_value(self.binding.channel_type) != channel_type:
+            return []
+        if active_only and not self.binding.is_active:
+            return []
+        return [self.binding]
+
     async def update_binding(self, binding_id: str, **kwargs: Any) -> ChannelBinding:
         self.updated.append(kwargs)
         if "metadata" in kwargs:
             self.binding.metadata = kwargs["metadata"]
         if "is_verified" in kwargs:
             self.binding.is_verified = kwargs["is_verified"]
+        if "channel_account_id" in kwargs:
+            self.binding.channel_account_id = kwargs["channel_account_id"]
+        if "channel_username" in kwargs:
+            self.binding.channel_username = kwargs["channel_username"]
         return self.binding
 
 

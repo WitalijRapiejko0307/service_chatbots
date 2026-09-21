@@ -54,6 +54,17 @@ class ChannelBindingService:
 
         secret_metadata, db_metadata = _secret_and_db_metadata(merged_metadata)
 
+        if channel_type == ChannelType.INSTAGRAM.value:
+            channel_account_id, channel_username, db_metadata = (
+                await self._resolve_instagram_account(
+                    access_token=access_token,
+                    channel_account_id=channel_account_id,
+                    channel_username=channel_username,
+                    metadata=db_metadata,
+                )
+            )
+            secret_metadata, db_metadata = _secret_and_db_metadata(db_metadata)
+
         secret_name = await self.secrets_manager.create_channel_token_secret(
             binding_id=binding_id,
             channel_type=channel_type,
@@ -139,6 +150,8 @@ class ChannelBindingService:
         access_token: Optional[str] = None,
         metadata: Optional[dict[str, Any]] = None,
         is_verified: Optional[bool] = None,
+        channel_account_id: Optional[str] = None,
+        channel_username: Optional[str] = None,
     ) -> ChannelBinding:
         """Update channel binding."""
         binding = await self.get_binding(binding_id)
@@ -152,6 +165,12 @@ class ChannelBindingService:
 
         if is_verified is not None:
             update_kwargs["is_verified"] = is_verified
+
+        if channel_account_id is not None:
+            update_kwargs["channel_account_id"] = channel_account_id
+
+        if channel_username is not None:
+            update_kwargs["channel_username"] = channel_username
 
         if access_token is not None:
             # Update token in Secrets Manager
@@ -293,13 +312,33 @@ class ChannelBindingService:
                 )
                 latest = await self.get_binding(binding_id)
                 meta = dict((latest.metadata if latest else {}) or {})
+                igsid = check.account_id
+                stored_id = (
+                    (latest.channel_account_id if latest else None)
+                    or binding.channel_account_id
+                )
+                username = (
+                    (latest.channel_username if latest else None)
+                    or binding.channel_username
+                )
                 if check.app_review_pending:
                     meta["app_review_pending"] = True
                 elif check.ok:
                     meta.pop("app_review_pending", None)
+                if igsid and stored_id and igsid != stored_id:
+                    meta.setdefault("instagram_oauth_user_id", stored_id)
+                    stored_id = igsid
+                if check.username and not username:
+                    username = check.username
                 await self.update_binding(
-                    binding_id, is_verified=check.ok, metadata=meta
+                    binding_id,
+                    is_verified=check.ok,
+                    metadata=meta,
+                    channel_account_id=stored_id,
+                    channel_username=username,
                 )
+                if check.ok and igsid:
+                    await instagram_service.subscribe_messaging_webhooks(token, igsid)
                 return check.ok
             except Exception as e:
                 logger.error("Failed to verify Instagram binding %s: %s", binding_id, e)
@@ -418,4 +457,34 @@ class ChannelBindingService:
                 return False
 
         return binding.is_active
+
+    async def _resolve_instagram_account(
+        self,
+        access_token: str,
+        channel_account_id: str,
+        channel_username: Optional[str],
+        metadata: dict[str, Any],
+    ) -> tuple[str, Optional[str], dict[str, Any]]:
+        """Store Graph /me IGSID. Webhooks key off this id, not OAuth user_id."""
+        from app.config import get_settings
+        from app.services.instagram_service import InstagramService
+
+        meta = dict(metadata or {})
+        pasted = (channel_account_id or "").strip()
+        username = channel_username
+        ig = InstagramService(self, self.db, get_settings())
+        resolved = await ig.resolve_account_from_token(access_token)
+        if resolved and resolved.get("account_id"):
+            igsid = resolved["account_id"]
+            if pasted and pasted != igsid:
+                meta.setdefault("instagram_oauth_user_id", pasted)
+            if resolved.get("username") and not username:
+                username = resolved["username"]
+            return igsid, username, meta
+        if not pasted:
+            raise ValueError(
+                "Could not resolve Instagram account id from the token. "
+                "Use a valid access token so Graph /me can return the IGSID."
+            )
+        return pasted, username, meta
 

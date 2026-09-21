@@ -4,7 +4,7 @@ import logging
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.api.auth import require_admin
 from app.api.exceptions import AgentNotFoundError
@@ -23,7 +23,10 @@ class CreateChannelBindingRequest(BaseModel):
     """Request to create a channel binding."""
 
     channel_type: str = Field(..., description="Channel type (telegram, viber, instagram, tiktok, web_chat)")
-    channel_account_id: str = Field(..., description="Channel account ID")
+    channel_account_id: str = Field(
+        "",
+        description="Channel account ID. Instagram: optional; Graph /me IGSID is stored.",
+    )
     access_token: str = Field(..., description="Access token for the channel")
     channel_username: Optional[str] = Field(None, description="Channel username (optional, for display)")
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -37,6 +40,14 @@ class CreateChannelBindingRequest(BaseModel):
             allowed = ", ".join(c.value for c in ChannelType)
             raise ValueError(f"Invalid channel type: {v}. Allowed: {allowed}")
         return v
+
+    @model_validator(mode="after")
+    def require_account_id_except_instagram(self):
+        if self.channel_type != ChannelType.INSTAGRAM.value and not (
+            self.channel_account_id or ""
+        ).strip():
+            raise ValueError("channel_account_id is required")
+        return self
 
 
 class UpdateChannelBindingRequest(BaseModel):

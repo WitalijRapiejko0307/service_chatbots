@@ -336,6 +336,7 @@ def test_oauth_callback_redirects_to_frontend_origin():
         return_value={
             "access_token": "at-1",
             "account_id": "178414000",
+            "oauth_user_id": "28433808142947583",
             "username": "biz",
             "token_expires_at": "2026-11-20T00:00:00Z",
         }
@@ -381,6 +382,7 @@ def test_oauth_callback_redirects_to_frontend_origin():
     kwargs = instance.create_binding.await_args.kwargs
     assert kwargs["metadata"]["connected_via"] == "oauth"
     assert kwargs["metadata"]["token_expires_at"] == "2026-11-20T00:00:00Z"
+    assert kwargs["metadata"]["instagram_oauth_user_id"] == "28433808142947583"
     instance.verify_binding.assert_awaited()
 
 
@@ -440,3 +442,205 @@ async def test_verify_binding_sets_app_review_pending_metadata():
 
     assert ok is False
     assert any(item.get("metadata", {}).get("app_review_pending") is True for item in updated)
+
+
+@pytest.mark.asyncio
+async def test_verify_access_token_detailed_reads_igsid_from_me():
+    from unittest.mock import patch
+
+    igsid = "17841451200643346"
+    binding = make_binding(channel=ChannelType.INSTAGRAM, account_id="28433808142947583")
+    svc = InstagramService(FakeBindingService(binding), FakeDB(), DummySettings())
+    captured: dict = {}
+
+    class _Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def get(self, url, params=None):
+            captured["url"] = url
+            return _JsonResp(200, {"id": igsid, "username": "vitali_rapeika"})
+
+    with patch("httpx.AsyncClient", return_value=_Client()):
+        check = await svc.verify_access_token_detailed("tok", "28433808142947583")
+
+    assert check.ok is True
+    assert check.account_id == igsid
+    assert check.username == "vitali_rapeika"
+    assert captured["url"].endswith("/me")
+
+
+@pytest.mark.asyncio
+async def test_exchange_oauth_code_prefers_me_igsid():
+    from unittest.mock import patch
+
+    oauth_user_id = "28433808142947583"
+    igsid = "17841451200643346"
+    settings = DummySettings()
+    settings.instagram_app_id = "ig-app"
+    settings.instagram_app_secret = "ig-secret"
+    svc = InstagramService(
+        FakeBindingService(make_binding(channel=ChannelType.INSTAGRAM)),
+        FakeDB(),
+        settings,
+    )
+
+    class _Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def post(self, url, data=None, json=None, headers=None):
+            return _JsonResp(200, {"access_token": "short", "user_id": oauth_user_id})
+
+        async def get(self, url, params=None):
+            if str(url).rstrip("/").endswith("/me"):
+                return _JsonResp(200, {"id": igsid, "username": "vitali_rapeika"})
+            return _JsonResp(200, {"access_token": "long", "expires_in": 5184000})
+
+    with patch("httpx.AsyncClient", return_value=_Client()):
+        result = await svc.exchange_oauth_code("code", "https://api.example/callback")
+
+    assert result is not None
+    assert result["account_id"] == igsid
+    assert result["oauth_user_id"] == oauth_user_id
+    assert result["username"] == "vitali_rapeika"
+
+
+@pytest.mark.asyncio
+async def test_exchange_oauth_code_fails_without_me_igsid():
+    from unittest.mock import patch
+
+    settings = DummySettings()
+    settings.instagram_app_id = "ig-app"
+    settings.instagram_app_secret = "ig-secret"
+    svc = InstagramService(
+        FakeBindingService(make_binding(channel=ChannelType.INSTAGRAM)),
+        FakeDB(),
+        settings,
+    )
+
+    class _Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def post(self, url, data=None, json=None, headers=None):
+            return _JsonResp(200, {"access_token": "short", "user_id": "28433808142947583"})
+
+        async def get(self, url, params=None):
+            if str(url).rstrip("/").endswith("/me"):
+                return _JsonResp(400, {"error": {"message": "nope"}}, "nope")
+            return _JsonResp(200, {"access_token": "long", "expires_in": 1})
+
+    with patch("httpx.AsyncClient", return_value=_Client()):
+        result = await svc.exchange_oauth_code("code", "https://api.example/callback")
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_webhook_heals_oauth_user_id_to_igsid():
+    from unittest.mock import patch
+
+    oauth_user_id = "28433808142947583"
+    igsid = "17841451200643346"
+    db = FakeDB()
+    binding = make_binding(channel=ChannelType.INSTAGRAM, account_id=oauth_user_id)
+    svc = InstagramService(FakeBindingService(binding), db, DummySettings())
+    payload = _ig_payload(
+        mid="mid-heal",
+        text="hello from ig",
+        sender="sender-1",
+        recipient=igsid,
+    )
+
+    class _Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def get(self, url, params=None):
+            if str(url).rstrip("/").endswith("/me"):
+                return _JsonResp(200, {"id": igsid, "username": "vitali_rapeika"})
+            return _JsonResp(200, {"name": "User", "username": "sender"})
+
+    with patch("httpx.AsyncClient", return_value=_Client()):
+        await svc.handle_webhook_event(payload)
+
+    assert binding.channel_account_id == igsid
+    assert binding.metadata.get("instagram_oauth_user_id") == oauth_user_id
+    assert len(db.conversations) == 1
+    assert len(db.messages) == 1
+
+
+@pytest.mark.asyncio
+async def test_verify_binding_rewrites_stored_oauth_user_id():
+    from unittest.mock import AsyncMock, patch
+
+    from app.services.channel_binding_service import ChannelBindingService
+
+    oauth_user_id = "28433808142947583"
+    igsid = "17841451200643346"
+    db = FakeDB()
+    binding = make_binding(
+        channel=ChannelType.INSTAGRAM,
+        account_id=oauth_user_id,
+        metadata={"connected_via": "oauth"},
+    )
+    db.get_channel_binding = AsyncMock(return_value=binding)  # type: ignore[attr-defined]
+
+    class FakeSecrets:
+        async def get_channel_token(self, secret_name: str) -> str:
+            return "tok"
+
+        async def update_channel_token(self, secret_name: str, access_token: str, metadata: dict) -> None:
+            return None
+
+    svc = ChannelBindingService(db, FakeSecrets())
+    svc.get_binding = AsyncMock(return_value=binding)  # type: ignore[method-assign]
+    svc.get_access_token = AsyncMock(return_value="tok")  # type: ignore[method-assign]
+    updated: list[dict] = []
+
+    async def _update(binding_id: str, **kwargs):
+        updated.append(kwargs)
+        if "metadata" in kwargs:
+            binding.metadata = kwargs["metadata"]
+        if "is_verified" in kwargs:
+            binding.is_verified = kwargs["is_verified"]
+        if "channel_account_id" in kwargs:
+            binding.channel_account_id = kwargs["channel_account_id"]
+        return binding
+
+    svc.update_binding = _update  # type: ignore[method-assign]
+
+    class _Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def get(self, url, params=None):
+            return _JsonResp(200, {"id": igsid, "username": "vitali_rapeika"})
+
+        async def post(self, url, params=None, json=None, headers=None):
+            return _JsonResp(200, {"success": True})
+
+    with patch("httpx.AsyncClient", return_value=_Client()):
+        with patch("app.config.get_settings", return_value=DummySettings()):
+            ok = await svc.verify_binding(binding.binding_id)
+
+    assert ok is True
+    assert binding.channel_account_id == igsid
+    assert binding.metadata.get("instagram_oauth_user_id") == oauth_user_id
+    assert any(item.get("channel_account_id") == igsid for item in updated)

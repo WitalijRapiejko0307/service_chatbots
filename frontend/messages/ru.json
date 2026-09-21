@@ -612,8 +612,8 @@
     },
     "instagram": {
       "title": "Instagram",
-      "accountId": "ID профессионального аккаунта Instagram *",
-      "accountIdHint": "Meta Business Suite → Settings → Instagram Accounts",
+      "accountId": "ID аккаунта Instagram (необязательно)",
+      "accountIdHint": "Можно оставить пустым — система сохранит IGSID из Graph /me (начинается с 178414…). Не вставляйте OAuth user_id из Instagram Login.",
       "pageToken": "Page Access Token *",
       "pathPaste": "Токен страницы",
       "pathOauth": "Instagram Login",
