@@ -103,6 +103,14 @@ class FakeDB:
         self.instagram_profiles[profile.external_user_id] = profile
         return profile
 
+    async def get_instagram_profile(self, external_user_id: str) -> Optional[Any]:
+        return self.instagram_profiles.get(external_user_id)
+
+    async def list_channel_bindings_by_channel(
+        self, channel_type: str, active_only: bool = True
+    ) -> list[Any]:
+        return []
+
 
 class FakeBindingService:
     def __init__(self, binding: ChannelBinding, token: str = "test-token") -> None:

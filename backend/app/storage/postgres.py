@@ -698,6 +698,31 @@ class PostgreSQLClient:
                 logger.error(f"Failed to create ChannelBinding: {e}", exc_info=True)
         return result
 
+    async def list_channel_bindings_by_channel(
+        self,
+        channel_type: str,
+        active_only: bool = True,
+    ) -> list[ChannelBinding]:
+        where = ["channel_type = $1"]
+        params: list[Any] = [channel_type]
+        if active_only:
+            where.append("is_active = TRUE")
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                f"SELECT * FROM channel_bindings WHERE {' AND '.join(where)}",
+                *params,
+            )
+        result = []
+        for r in rows:
+            d = _row_to_binding(r)
+            d.pop("encrypted_access_token", None)
+            try:
+                result.append(ChannelBinding(**d))
+            except Exception as e:
+                logger.error(f"Failed to create ChannelBinding: {e}", exc_info=True)
+        return result
+
     async def get_channel_binding_by_account_id(
         self, channel_type: str, account_id: str
     ) -> Optional[ChannelBinding]:

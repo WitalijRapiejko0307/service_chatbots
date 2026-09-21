@@ -95,10 +95,14 @@ async def lifespan(app: FastAPI):
         run_debounce_poll_loop,
         run_timer_poll_loop,
     )
+    from app.services.instagram_service import run_instagram_token_refresh_loop
 
     shutdown_event = asyncio.Event()
     timer_task = asyncio.create_task(run_timer_poll_loop(shutdown_event))
     auto_step_task = asyncio.create_task(run_auto_step_poll_loop(shutdown_event))
+    instagram_token_task = asyncio.create_task(
+        run_instagram_token_refresh_loop(shutdown_event)
+    )
 
     debounce_task: Optional[asyncio.Task] = None
     if settings.agent_reply_debounce_seconds > 0:
@@ -109,6 +113,7 @@ async def lifespan(app: FastAPI):
     shutdown_event.set()
     await timer_task
     await auto_step_task
+    await instagram_token_task
     if debounce_task is not None:
         await debounce_task
 

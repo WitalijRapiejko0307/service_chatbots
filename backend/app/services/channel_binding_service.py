@@ -101,6 +101,17 @@ class ChannelBindingService:
             active_only=active_only,
         )
 
+    async def list_bindings_by_channel(
+        self,
+        channel_type: str,
+        active_only: bool = True,
+    ) -> list[ChannelBinding]:
+        """List bindings of a channel type across agents."""
+        return await self.db.list_channel_bindings_by_channel(
+            channel_type=channel_type,
+            active_only=active_only,
+        )
+
     async def get_binding_by_account_id(
         self, channel_type: str, account_id: str
     ) -> Optional[ChannelBinding]:
@@ -267,11 +278,29 @@ class ChannelBindingService:
                 settings = get_settings()
                 instagram_service = InstagramService(self, self.db, settings)
                 token = await self.get_access_token(binding_id)
-                is_valid = await instagram_service.verify_access_token(
+                meta = dict(binding.metadata or {})
+                if meta.get("connected_via") == "oauth":
+                    refreshed = await instagram_service.refresh_long_lived_token(token)
+                    if refreshed and refreshed.get("access_token"):
+                        token = refreshed["access_token"]
+                        if refreshed.get("token_expires_at"):
+                            meta["token_expires_at"] = refreshed["token_expires_at"]
+                        await self.update_binding(
+                            binding_id, access_token=token, metadata=meta
+                        )
+                check = await instagram_service.verify_access_token_detailed(
                     token, binding.channel_account_id
                 )
-                await self.update_binding(binding_id, is_verified=is_valid)
-                return is_valid
+                latest = await self.get_binding(binding_id)
+                meta = dict((latest.metadata if latest else {}) or {})
+                if check.app_review_pending:
+                    meta["app_review_pending"] = True
+                elif check.ok:
+                    meta.pop("app_review_pending", None)
+                await self.update_binding(
+                    binding_id, is_verified=check.ok, metadata=meta
+                )
+                return check.ok
             except Exception as e:
                 logger.error("Failed to verify Instagram binding %s: %s", binding_id, e)
                 await self.update_binding(binding_id, is_verified=False)

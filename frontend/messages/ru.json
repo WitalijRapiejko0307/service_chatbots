@@ -615,6 +615,15 @@
       "accountId": "ID профессионального аккаунта Instagram *",
       "accountIdHint": "Meta Business Suite → Settings → Instagram Accounts",
       "pageToken": "Page Access Token *",
+      "pathPaste": "Токен страницы",
+      "pathOauth": "Instagram Login",
+      "pathsHelp": "По умолчанию: вставьте Page Access Token. «Подключить через Instagram» (OAuth) — необязательный путь, если задан App ID.",
+      "connectPaste": "Вставить токен страницы",
+      "pastePathActive": "Путь с токеном: используйте Page Access Token из Graph API Explorer, не User token. После «Подключить» проверка запускается автоматически.",
+      "oauthOptional": "Подключить через Instagram (необязательно)",
+      "oauthPathNote": "Необязательный OAuth использует Instagram Login (instagram_business_basic + instagram_business_manage_messages), а не Graph API Explorer.",
+      "oauthReturnError": "Instagram не смог завершить подключение. Можно попробовать снова или вставить Page token.",
+      "tokenExpiryNote": "Page token из Graph API Explorer истекает (часто ~60 дней), если это не токен System User. Токены Instagram Login обновляются автоматически до истечения.",
       "username": "Имя пользователя Instagram (необязательно)",
       "usernamePlaceholder": "@yourbusiness",
       "appId": "App ID (необязательно)",
@@ -634,8 +643,8 @@
       "verifyTokenHintLabel": "— секретная фраза, которую вы выбираете",
       "verifyTokenSameValue": "Вставьте это же значение в поле Verify Token в Meta Console.",
       "verifyAfterSave": "После ввода обоих значений в Meta Console нажмите <strong>Verify and Save</strong> — Meta отправит тестовый запрос, система ответит автоматически.",
-      "step4": "Получите <strong>Access Token</strong>, чтобы ассистент мог отвечать. В Graph API Explorer сгенерируйте токен страницы с <code>instagram_manage_messages</code> и <code>pages_manage_metadata</code>. Instagram Account ID — в Meta Business Suite → Settings → Instagram Accounts.",
-      "step5": "Введите Account ID и Page Access Token ниже и нажмите «Подключить»."
+      "step4": "Получите <strong>Page Access Token</strong> (не User token), чтобы ассистент мог отвечать. В Graph API Explorer сгенерируйте токен страницы с <code>instagram_manage_messages</code> и <code>pages_manage_metadata</code>. Instagram Account ID — в Meta Business Suite → Settings → Instagram Accounts.",
+      "step5": "Введите Account ID и Page Access Token ниже и нажмите «Подключить». Проверка запускается автоматически."
     },
     "tiktok": {
       "title": "TikTok",

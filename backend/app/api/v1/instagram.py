@@ -15,6 +15,7 @@ from app.services.channel_binding_service import ChannelBindingService
 from app.services.instagram_service import InstagramService
 from app.storage.resolver import get_secrets_manager
 from app.utils.oauth_state import make_oauth_state, parse_oauth_state
+from app.utils.operator_origin import operator_origin
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +133,13 @@ def _client_wants_json(request: Request) -> bool:
     return True
 
 
+def _channels_redirect(origin: str, agent_id: str, **params: str) -> RedirectResponse:
+    return RedirectResponse(
+        url=f"{origin}/admin/agents/{agent_id}/channels?{urlencode(params)}",
+        status_code=302,
+    )
+
+
 @router.get("/instagram/oauth/start")
 async def oauth_start(
     request: Request,
@@ -175,14 +183,20 @@ async def oauth_callback(
     deps: CommonDependencies = Depends(),
     instagram_service: InstagramService = Depends(get_instagram_service),
 ):
-    if error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"OAuth error: {error}")
-    if not code or not state:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing code or state")
-
     settings = get_settings()
+    origin = operator_origin(settings)
     secret = settings.jwt_secret_key or settings.secret_encryption_key or "dev"
-    agent_id = parse_oauth_state(state, secret)
+    agent_id = parse_oauth_state(state, secret) if state else None
+
+    def _fail(reason: str):
+        if agent_id:
+            return _channels_redirect(origin, agent_id, instagram_error=reason)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=reason)
+
+    if error:
+        return _fail(error)
+    if not code or not state:
+        return _fail("missing_code" if not code else "missing_state")
     if not agent_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OAuth state")
 
@@ -190,13 +204,13 @@ async def oauth_callback(
     redirect_uri = f"{base}/api/v1/instagram/oauth/callback"
     exchanged = await instagram_service.exchange_oauth_code(code, redirect_uri)
     if not exchanged or not exchanged.get("access_token"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to exchange Instagram authorization code",
-        )
+        return _fail("exchange_failed")
 
     secrets_manager = get_secrets_manager()
     binding_service = ChannelBindingService(deps.db, secrets_manager)
+    metadata = {"connected_via": "oauth"}
+    if exchanged.get("token_expires_at"):
+        metadata["token_expires_at"] = exchanged["token_expires_at"]
     existing = await binding_service.get_binding_by_account_id(
         channel_type="instagram", account_id=exchanged["account_id"]
     )
@@ -204,7 +218,7 @@ async def oauth_callback(
         await binding_service.update_binding(
             existing.binding_id,
             access_token=exchanged["access_token"],
-            metadata={"connected_via": "oauth"},
+            metadata=metadata,
         )
         await binding_service.verify_binding(existing.binding_id)
         binding_id = existing.binding_id
@@ -214,11 +228,10 @@ async def oauth_callback(
             channel_type="instagram",
             channel_account_id=exchanged["account_id"],
             access_token=exchanged["access_token"],
-            metadata={"connected_via": "oauth"},
+            metadata=metadata,
             channel_username=exchanged.get("username"),
         )
         await binding_service.verify_binding(binding.binding_id)
         binding_id = binding.binding_id
 
-    admin_url = f"{base}/admin/agents/{agent_id}/channels"
-    return RedirectResponse(url=f"{admin_url}?instagram_binding={binding_id}", status_code=302)
+    return _channels_redirect(origin, agent_id, instagram_binding=binding_id)

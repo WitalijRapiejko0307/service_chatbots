@@ -558,21 +558,33 @@ async def refresh_instagram_profile(
     deps: CommonDependencies = Depends(),
     _admin: str = require_admin(),
 ):
-    """Refresh Instagram user profile. Block D — InstagramService is not shipped yet."""
+    """Refresh Instagram user profile from Graph API."""
     conversation = await deps.db.get_conversation(conversation_id)
     if not conversation:
         raise ConversationNotFoundError(conversation_id)
 
-    conversation_channel = get_enum_value(conversation.channel)
-    if conversation_channel != MessageChannel.INSTAGRAM.value:
+    from app.services.channel_binding_service import ChannelBindingService
+    from app.services.instagram_service import InstagramService
+    from app.storage.resolver import get_secrets_manager
+
+    secrets_manager = get_secrets_manager()
+    binding_service = ChannelBindingService(deps.db, secrets_manager)
+    instagram_service = InstagramService(binding_service, deps.db, get_settings())
+    try:
+        profile, error = await instagram_service.refresh_profile_for_conversation(conversation)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This endpoint is only available for Instagram conversations",
+            detail=str(e),
         )
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Instagram profile refresh is not available until the Instagram adapter ships (Block D).",
+    if not profile:
+        return RefreshProfileResponse(error=error or "Graph API did not return a profile")
+
+    return RefreshProfileResponse(
+        name=profile.name,
+        username=profile.username,
+        profile_pic=profile.profile_pic,
     )
 
 

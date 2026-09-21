@@ -286,6 +286,9 @@ function ConnectForm({
       let channelAccountId = form.channel_account_id.trim();
       let accessToken = form.access_token.trim();
       const metadata: Record<string, unknown> = { ...(form.metadata ?? {}) };
+      if (channelType === "instagram") {
+        metadata.connected_via = "paste";
+      }
 
       if (channelType === "telegram") {
         if (!channelAccountId) {
@@ -313,7 +316,10 @@ function ConnectForm({
       };
 
       const binding = await api.createChannelBinding(agentId, payload);
-      const autoVerify = channelType === "telegram" || channelType === "viber";
+      const autoVerify =
+        channelType === "telegram" ||
+        channelType === "viber" ||
+        channelType === "instagram";
       if (autoVerify && binding.binding_id) {
         await api.verifyChannelBinding(binding.binding_id).catch(() => {});
       }
@@ -338,6 +344,9 @@ function ConnectForm({
 
       {channelType === "instagram" && (
         <>
+          <p className="text-xs text-[#443C3C] bg-[#EEEAE7]/60 rounded-sm px-3 py-2">
+            {t("instagram.pastePathActive")}
+          </p>
           <div>
             <label className={LABEL_CLASS}>{t("instagram.accountId")}</label>
             <input
@@ -637,6 +646,11 @@ function BindingRow({
           </div>
           <div className="text-xs text-[#9A9590]">
             {t("idLabel", { id: binding.channel_account_id })}
+            {channelType === "instagram" && binding.metadata?.connected_via === "oauth"
+              ? ` · ${t("instagram.pathOauth")}`
+              : channelType === "instagram"
+                ? ` · ${t("instagram.pathPaste")}`
+                : ""}
           </div>
         </div>
         <StatusBadge binding={binding} pendingAccess={pendingAccess} channelType={channelType} />
@@ -885,11 +899,17 @@ function ChannelCard({
           {guide}
 
           {!formOpen ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
+              {channelType === "instagram" && (
+                <p className="text-xs text-[#9A9590]">{t("instagram.pathsHelp")}</p>
+              )}
+              <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" onClick={() => setFormOpen(true)}>
                 {bindings.length > 0
                   ? t("addAnother", { title })
-                  : t("connectChannel", { title })}
+                  : channelType === "instagram"
+                    ? t("instagram.connectPaste")
+                    : t("connectChannel", { title })}
               </Button>
               {showOauth && (
                 <Button
@@ -902,10 +922,11 @@ function ChannelCard({
                   {oauthBusy
                     ? t("connecting")
                     : channelType === "instagram"
-                      ? t("oauthInstagram")
+                      ? t("instagram.oauthOptional")
                       : t("oauthTikTok")}
                 </Button>
               )}
+              </div>
             </div>
           ) : (
             <ConnectForm
@@ -1133,18 +1154,24 @@ export default function AgentChannelsPage() {
     const params = new URLSearchParams(window.location.search);
     const hasTikTokError = params.has("tiktok_error");
     const hasTikTokBinding = params.has("tiktok_binding");
+    const hasInstagramError = params.has("instagram_error");
+    const hasInstagramBinding = params.has("instagram_binding");
 
     void (async () => {
       await load();
       // Apply after load() so its opening setError(null) cannot wipe the banner.
       if (hasTikTokError) {
         setError(t("oauthReturnError"));
+      } else if (hasInstagramError) {
+        setError(t("instagram.oauthReturnError"));
       }
     })();
 
-    if (hasTikTokError || hasTikTokBinding) {
+    if (hasTikTokError || hasTikTokBinding || hasInstagramError || hasInstagramBinding) {
       params.delete("tiktok_error");
       params.delete("tiktok_binding");
+      params.delete("instagram_error");
+      params.delete("instagram_binding");
       const query = params.toString();
       const next = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
       window.history.replaceState(null, "", next);
@@ -1300,6 +1327,8 @@ export default function AgentChannelsPage() {
         </Step>
         <Step n={4}>{t.rich("instagram.step4", richMarks())}</Step>
         <Step n={5}>{t("instagram.step5")}</Step>
+        <p className="text-xs text-[#9A9590]">{t("instagram.oauthPathNote")}</p>
+        <p className="text-xs text-[#9A9590]">{t("instagram.tokenExpiryNote")}</p>
       </div>
     </div>
   );

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import hmac
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -19,9 +21,74 @@ from app.services.inbound_channel import (
     find_or_create_conversation,
     persist_user_message_and_maybe_reply,
 )
-from app.utils.datetime_utils import utc_now
+from app.utils.datetime_utils import parse_utc_datetime, to_utc_iso_string, utc_now
+from app.utils.enum_helpers import get_enum_value
 
 logger = logging.getLogger(__name__)
+
+TOKEN_REFRESH_INTERVAL_SECONDS = 6 * 3600
+TOKEN_REFRESH_HORIZON_DAYS = 10
+LONG_LIVED_TOKEN_DEFAULT_SECONDS = 60 * 24 * 3600
+
+_APP_REVIEW_NEEDLES = (
+    "advanced access",
+    "development mode",
+    "not been approved",
+    "not in live mode",
+    "live mode",
+    "instagram_manage_messages",
+    "insufficient permission",
+    "does not have permission",
+    "does not have the capability",
+    "permission denied",
+)
+_APP_REVIEW_CODES = {10, 200}
+
+
+def graph_error_text(response: httpx.Response) -> str:
+    """Best-effort Graph error string; never includes tokens."""
+    try:
+        data = response.json()
+    except Exception:
+        data = None
+    if isinstance(data, dict):
+        err = data.get("error")
+        if isinstance(err, dict):
+            msg = err.get("message") or err.get("error_user_msg") or err.get("error_user_title")
+            if msg:
+                return str(msg)
+        if data.get("message"):
+            return str(data["message"])
+    text = (response.text or "").strip()
+    return text[:400] if text else f"Graph API HTTP {response.status_code}"
+
+
+def graph_error_code(response: httpx.Response) -> Optional[int]:
+    try:
+        err = (response.json() or {}).get("error") or {}
+        code = err.get("code")
+        return int(code) if code is not None else None
+    except Exception:
+        return None
+
+
+def is_instagram_app_review_error(
+    status_code: int,
+    body: str,
+    error_code: Optional[int] = None,
+) -> bool:
+    """True when Graph failed because the app lacks Live / Advanced Access."""
+    if error_code in _APP_REVIEW_CODES:
+        return True
+    lower = (body or "").lower()
+    return any(needle in lower for needle in _APP_REVIEW_NEEDLES)
+
+
+@dataclass(frozen=True)
+class InstagramTokenCheck:
+    ok: bool
+    app_review_pending: bool = False
+    error: Optional[str] = None
 
 
 class InstagramService:
@@ -251,6 +318,13 @@ class InstagramService:
 
     async def verify_access_token(self, access_token: str, account_id: Optional[str] = None) -> bool:
         """Graph API profile check. Marks the token as usable without logging it."""
+        check = await self.verify_access_token_detailed(access_token, account_id)
+        return check.ok
+
+    async def verify_access_token_detailed(
+        self, access_token: str, account_id: Optional[str] = None
+    ) -> InstagramTokenCheck:
+        """Graph API profile check with App Review / Advanced Access detection."""
         target = account_id or "me"
         url = f"{self.GRAPH_API_BASE_URL}/{target}"
         params = {"fields": "id,username", "access_token": access_token}
@@ -259,53 +333,116 @@ class InstagramService:
                 response = await client.get(url, params=params)
                 if response.status_code == 200:
                     logger.info("Instagram token verified for account %s", target)
-                    return True
-                logger.warning(
-                    "Instagram token verification failed: status=%s", response.status_code
+                    return InstagramTokenCheck(ok=True)
+                text = graph_error_text(response)
+                pending = is_instagram_app_review_error(
+                    response.status_code, text, graph_error_code(response)
                 )
-                return False
+                logger.warning(
+                    "Instagram token verification failed: status=%s pending_review=%s",
+                    response.status_code,
+                    pending,
+                )
+                return InstagramTokenCheck(
+                    ok=False, app_review_pending=pending, error=text
+                )
         except Exception as e:
             logger.error("Error verifying Instagram token: %s", e, exc_info=True)
-            return False
+            return InstagramTokenCheck(ok=False, error="Graph API request failed")
 
     async def get_user_profile(
         self, igsid: str, access_token: str
-    ) -> Optional[InstagramUserProfile]:
+    ) -> tuple[Optional[InstagramUserProfile], Optional[str]]:
         url = f"{self.GRAPH_API_BASE_URL}/{igsid}"
         params = {"fields": "name,username,profile_pic", "access_token": access_token}
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(url, params=params)
                 if response.status_code != 200:
+                    error = graph_error_text(response)
                     logger.warning(
                         "Failed to fetch Instagram profile %s: %s",
                         igsid,
                         response.status_code,
                     )
-                    return None
+                    return None, error
                 data = response.json()
                 updated_at = utc_now()
-                return InstagramUserProfile(
-                    external_user_id=igsid,
-                    name=data.get("name"),
-                    username=data.get("username"),
-                    profile_pic=data.get("profile_pic"),
-                    updated_at=updated_at,
-                    ttl=int((updated_at + timedelta(days=5)).timestamp()),
+                return (
+                    InstagramUserProfile(
+                        external_user_id=igsid,
+                        name=data.get("name"),
+                        username=data.get("username"),
+                        profile_pic=data.get("profile_pic"),
+                        updated_at=updated_at,
+                        ttl=int((updated_at + timedelta(days=5)).timestamp()),
+                    ),
+                    None,
                 )
         except Exception as e:
             logger.error("Unexpected error fetching Instagram profile %s: %s", igsid, e)
-            return None
+            return None, "Graph API request failed"
 
     async def refresh_user_profile(
         self, external_user_id: str, binding_id: str
-    ) -> Optional[InstagramUserProfile]:
+    ) -> tuple[Optional[InstagramUserProfile], Optional[str]]:
         access_token = await self.channel_binding_service.get_access_token(binding_id)
-        profile = await self.get_user_profile(external_user_id, access_token)
+        profile, error = await self.get_user_profile(external_user_id, access_token)
         if profile:
             await self.db.create_or_update_instagram_profile(profile)
             logger.info("Refreshed Instagram profile for user %s", external_user_id)
-        return profile
+        return profile, error
+
+    async def refresh_profile_for_conversation(
+        self, conversation: Any
+    ) -> tuple[Optional[InstagramUserProfile], Optional[str]]:
+        """Admin Inbox refresh. Raises ValueError when the conversation is not Instagram."""
+        channel = get_enum_value(conversation.channel)
+        if channel != MessageChannel.INSTAGRAM.value:
+            raise ValueError("This endpoint is only available for Instagram conversations")
+        external_user_id = getattr(conversation, "external_user_id", None)
+        if not external_user_id:
+            return None, "Conversation has no Instagram user id"
+        bindings = await self.channel_binding_service.get_bindings_by_agent(
+            conversation.agent_id,
+            channel_type=ChannelType.INSTAGRAM.value,
+            active_only=True,
+        )
+        if not bindings:
+            return None, "No Instagram connection for this agent"
+        return await self.refresh_user_profile(external_user_id, bindings[0].binding_id)
+
+    async def refresh_long_lived_token(self, access_token: str) -> Optional[dict[str, Any]]:
+        """Refresh an Instagram Login long-lived token (not a Page token)."""
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                resp = await client.get(
+                    "https://graph.instagram.com/refresh_access_token",
+                    params={
+                        "grant_type": "ig_refresh_token",
+                        "access_token": access_token,
+                    },
+                )
+                if resp.status_code != 200:
+                    logger.warning(
+                        "Instagram token refresh failed: status=%s", resp.status_code
+                    )
+                    return None
+                data = resp.json()
+                token = data.get("access_token")
+                if not token:
+                    return None
+                expires_in = int(data.get("expires_in") or LONG_LIVED_TOKEN_DEFAULT_SECONDS)
+                return {
+                    "access_token": token,
+                    "expires_in": expires_in,
+                    "token_expires_at": to_utc_iso_string(
+                        utc_now() + timedelta(seconds=expires_in)
+                    ),
+                }
+        except Exception as e:
+            logger.error("Instagram token refresh error: %s", e, exc_info=True)
+            return None
 
     async def exchange_oauth_code(
         self, code: str, redirect_uri: str
@@ -344,8 +481,12 @@ class InstagramService:
                     },
                 )
                 token = short_token
+                expires_in = LONG_LIVED_TOKEN_DEFAULT_SECONDS
                 if long_resp.status_code == 200:
-                    token = long_resp.json().get("access_token") or short_token
+                    long_data = long_resp.json()
+                    token = long_data.get("access_token") or short_token
+                    if long_data.get("expires_in"):
+                        expires_in = int(long_data["expires_in"])
                 me = await client.get(
                     f"{self.GRAPH_API_BASE_URL}/me",
                     params={"fields": "id,username", "access_token": token},
@@ -359,7 +500,87 @@ class InstagramService:
                     "access_token": token,
                     "account_id": user_id,
                     "username": username,
+                    "expires_in": expires_in,
+                    "token_expires_at": to_utc_iso_string(
+                        utc_now() + timedelta(seconds=expires_in)
+                    ),
                 }
         except Exception as e:
             logger.error("Instagram OAuth exchange error: %s", e, exc_info=True)
             return None
+
+
+def _oauth_token_refresh_due(metadata: dict[str, Any]) -> bool:
+    if metadata.get("connected_via") != "oauth":
+        return False
+    raw = metadata.get("token_expires_at")
+    if not raw:
+        return True
+    try:
+        exp = parse_utc_datetime(str(raw))
+    except Exception:
+        return True
+    if exp is None:
+        return True
+    return exp <= utc_now() + timedelta(days=TOKEN_REFRESH_HORIZON_DAYS)
+
+
+async def refresh_expiring_instagram_oauth_tokens() -> int:
+    """Refresh Instagram Login tokens within TOKEN_REFRESH_HORIZON_DAYS of expiry."""
+    from app.config import get_settings
+    from app.dependencies import get_db
+    from app.storage.resolver import get_secrets_manager
+
+    settings = get_settings()
+    db = get_db()
+    if not hasattr(db, "list_channel_bindings_by_channel"):
+        return 0
+    secrets_manager = get_secrets_manager()
+    binding_service = ChannelBindingService(db, secrets_manager)
+    svc = InstagramService(binding_service, db, settings)
+    bindings = await db.list_channel_bindings_by_channel(
+        ChannelType.INSTAGRAM.value, active_only=True
+    )
+    refreshed = 0
+    for binding in bindings:
+        meta = dict(binding.metadata or {})
+        if not _oauth_token_refresh_due(meta):
+            continue
+        try:
+            token = await binding_service.get_access_token(binding.binding_id)
+            result = await svc.refresh_long_lived_token(token)
+            if not result or not result.get("access_token"):
+                continue
+            was_verified = binding.is_verified
+            meta["token_expires_at"] = result["token_expires_at"]
+            await binding_service.update_binding(
+                binding.binding_id,
+                access_token=result["access_token"],
+                metadata=meta,
+            )
+            await binding_service.update_binding(
+                binding.binding_id, is_verified=was_verified
+            )
+            refreshed += 1
+        except Exception as e:
+            logger.warning(
+                "Instagram OAuth token refresh skipped for binding %s: %s",
+                binding.binding_id,
+                type(e).__name__,
+            )
+    if refreshed:
+        logger.info("Refreshed %s Instagram OAuth token(s)", refreshed)
+    return refreshed
+
+
+async def run_instagram_token_refresh_loop(shutdown: asyncio.Event) -> None:
+    """Periodic Instagram Login token refresh until shutdown."""
+    while not shutdown.is_set():
+        try:
+            await refresh_expiring_instagram_oauth_tokens()
+        except Exception:
+            logger.exception("Instagram OAuth token refresh loop failed")
+        try:
+            await asyncio.wait_for(shutdown.wait(), timeout=TOKEN_REFRESH_INTERVAL_SECONDS)
+        except asyncio.TimeoutError:
+            pass

@@ -615,6 +615,15 @@
       "accountId": "Instagram professional / account ID *",
       "accountIdHint": "Found in Meta Business Suite → Settings → Instagram Accounts",
       "pageToken": "Page Access Token *",
+      "pathPaste": "Page token",
+      "pathOauth": "Instagram Login",
+      "pathsHelp": "Default: paste a Page Access Token. Connect with Instagram (OAuth) is optional when App ID is configured.",
+      "connectPaste": "Paste Page token",
+      "pastePathActive": "Paste path: use a Page Access Token from Graph API Explorer, not a User token. Verify runs automatically after Connect.",
+      "oauthOptional": "Connect with Instagram (optional)",
+      "oauthPathNote": "Optional OAuth uses Instagram Login (instagram_business_basic + instagram_business_manage_messages), not Graph API Explorer.",
+      "oauthReturnError": "Instagram could not complete the connection. You can try again or paste a Page token.",
+      "tokenExpiryNote": "Page tokens from Graph API Explorer expire (often ~60 days) unless you use a System User token. Instagram Login tokens are refreshed automatically before expiry.",
       "username": "Instagram Username (optional)",
       "usernamePlaceholder": "@yourbusiness",
       "appId": "App ID (optional)",
@@ -634,8 +643,8 @@
       "verifyTokenHintLabel": "— a secret password you choose",
       "verifyTokenSameValue": "Use this same value in the Meta Console “Verify Token” field.",
       "verifyAfterSave": "After you enter both values in Meta Console and click <strong>Verify and Save</strong>, Meta sends a test request — it responds automatically.",
-      "step4": "Get an <strong>Access Token</strong> so the assistant can reply. In Graph API Explorer generate a Page token with <code>instagram_manage_messages</code> and <code>pages_manage_metadata</code>. Copy your Instagram Account ID from Meta Business Suite → Settings → Instagram Accounts.",
-      "step5": "Enter the Account ID and Page Access Token below, then click Connect."
+      "step4": "Get a <strong>Page Access Token</strong> (not a User token) so the assistant can reply. In Graph API Explorer generate a Page token with <code>instagram_manage_messages</code> and <code>pages_manage_metadata</code>. Copy your Instagram Account ID from Meta Business Suite → Settings → Instagram Accounts.",
+      "step5": "Enter the Account ID and Page Access Token below, then click Connect. The connection is verified automatically."
     },
     "tiktok": {
       "title": "TikTok",
