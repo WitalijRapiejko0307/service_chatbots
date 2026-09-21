@@ -268,7 +268,11 @@ class InstagramService:
         if not binding:
             raise ValueError(f"Binding {binding_id} not found")
 
-        url = f"{self.GRAPH_API_BASE_URL}/{binding.channel_account_id}/messages"
+        graph_user_id = (
+            (binding.metadata or {}).get("instagram_graph_user_id")
+            or binding.channel_account_id
+        )
+        url = f"{self.GRAPH_API_BASE_URL}/{graph_user_id}/messages"
         headers = {"Authorization": f"Bearer {access_token}"}
 
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -328,20 +332,23 @@ class InstagramService:
     async def verify_access_token_detailed(
         self, access_token: str, account_id: Optional[str] = None
     ) -> InstagramTokenCheck:
-        """Graph /me check. Webhooks use this IGSID, not the OAuth user_id."""
-        del account_id  # Always resolve IGSID from /me; stored ids may be OAuth user ids.
+        """Graph /me check. Instagram Login /me id is not the webhook IGSID."""
+        del account_id
         url = f"{self.GRAPH_API_BASE_URL}/me"
-        params = {"fields": "id,username", "access_token": access_token}
+        params = {"fields": "id,username"}
+        headers = {"Authorization": f"Bearer {access_token}"}
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
-                response = await client.get(url, params=params)
+                response = await client.get(url, params=params, headers=headers)
                 if response.status_code == 200:
                     data = response.json()
-                    igsid = str(data.get("id") or "")
+                    graph_user_id = str(data.get("id") or "")
                     username = data.get("username")
-                    logger.info("Instagram token verified for account %s", igsid or "me")
+                    logger.info(
+                        "Instagram token verified for account %s", graph_user_id or "me"
+                    )
                     return InstagramTokenCheck(
-                        ok=True, account_id=igsid or None, username=username
+                        ok=True, account_id=graph_user_id or None, username=username
                     )
                 text = graph_error_text(response)
                 pending = is_instagram_app_review_error(
@@ -362,7 +369,7 @@ class InstagramService:
     async def resolve_account_from_token(
         self, access_token: str
     ) -> Optional[dict[str, str]]:
-        """Return Graph /me id (IGSID) and username. Webhooks key off this id."""
+        """Return Graph /me id and username. Webhook recipient.id is a different IGSID."""
         check = await self.verify_access_token_detailed(access_token)
         if not check.ok or not check.account_id:
             return None
@@ -382,10 +389,8 @@ class InstagramService:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.post(
                     url,
-                    params={
-                        "subscribed_fields": "messages",
-                        "access_token": access_token,
-                    },
+                    params={"subscribed_fields": "messages"},
+                    headers={"Authorization": f"Bearer {access_token}"},
                 )
                 if response.status_code == 200:
                     logger.info("Instagram subscribed_apps ok for %s", ig_user_id)
@@ -400,14 +405,15 @@ class InstagramService:
             return False
 
     async def _binding_for_webhook_recipient(self, recipient_id: str) -> Optional[Any]:
-        """Find a binding when stored account id is the OAuth user id, not the webhook IGSID."""
+        """Map webhook IGSID to a binding whose Graph /me id is different."""
         bindings = await self.channel_binding_service.list_bindings_by_channel(
             ChannelType.INSTAGRAM.value, active_only=True
         )
         for binding in bindings:
-            oauth_id = (binding.metadata or {}).get("instagram_oauth_user_id")
-            if oauth_id and str(oauth_id) == recipient_id:
+            if self._binding_knows_igsid(binding, recipient_id):
                 return await self._heal_instagram_account_id(binding, recipient_id)
+
+        token_matched: list[Any] = []
         for binding in bindings:
             try:
                 token = await self.channel_binding_service.get_access_token(
@@ -416,17 +422,42 @@ class InstagramService:
                 resolved = await self.resolve_account_from_token(token)
             except Exception:
                 continue
-            if resolved and resolved.get("account_id") == recipient_id:
+            me_id = (resolved or {}).get("account_id") or ""
+            if not me_id:
+                continue
+            stored = str(binding.channel_account_id or "")
+            meta = binding.metadata or {}
+            aliases = {
+                stored,
+                str(meta.get("instagram_oauth_user_id") or ""),
+                str(meta.get("instagram_graph_user_id") or ""),
+            }
+            if me_id in aliases or recipient_id in aliases:
                 return await self._heal_instagram_account_id(binding, recipient_id)
+            token_matched.append(binding)
+        if len(token_matched) == 1:
+            return await self._heal_instagram_account_id(token_matched[0], recipient_id)
         return None
 
+    def _binding_knows_igsid(self, binding: Any, recipient_id: str) -> bool:
+        meta = binding.metadata or {}
+        return recipient_id in {
+            str(binding.channel_account_id or ""),
+            str(meta.get("instagram_oauth_user_id") or ""),
+            str(meta.get("instagram_graph_user_id") or ""),
+            str(meta.get("instagram_igsid") or ""),
+        }
+
     async def _heal_instagram_account_id(self, binding: Any, igsid: str) -> Any:
-        if binding.channel_account_id == igsid:
-            return binding
         meta = dict(binding.metadata or {})
-        stored = binding.channel_account_id
+        stored = str(binding.channel_account_id or "")
         if stored and stored != igsid:
             meta.setdefault("instagram_oauth_user_id", stored)
+            meta.setdefault("instagram_graph_user_id", stored)
+        meta["instagram_igsid"] = igsid
+        if stored == igsid and meta.get("instagram_igsid") == igsid:
+            if binding.metadata == meta:
+                return binding
         updated = await self.channel_binding_service.update_binding(
             binding.binding_id, channel_account_id=igsid, metadata=meta
         )

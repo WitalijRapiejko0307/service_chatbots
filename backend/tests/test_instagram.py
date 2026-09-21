@@ -173,7 +173,7 @@ async def test_get_user_profile_returns_graph_error_not_none_only():
         async def __aexit__(self, *args):
             return False
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             return _JsonResp(
                 400,
                 {"error": {"message": "(#10) Application does not have permission", "code": 10}},
@@ -225,7 +225,7 @@ async def test_refresh_profile_for_conversation_success_and_wrong_channel():
         async def __aexit__(self, *args):
             return False
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             return _JsonResp(
                 200,
                 {"name": "Ada", "username": "ada", "profile_pic": "https://cdn.example/p.jpg"},
@@ -258,7 +258,7 @@ async def test_verify_access_token_detailed_marks_app_review_pending():
         async def __aexit__(self, *args):
             return False
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             return _JsonResp(
                 400,
                 {"error": {"message": "Advanced Access is required", "code": 10}},
@@ -287,7 +287,7 @@ async def test_refresh_long_lived_token_posts_ig_refresh_grant():
         async def __aexit__(self, *args):
             return False
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             captured["url"] = url
             captured["params"] = params
             return _JsonResp(200, {"access_token": "new-tok", "expires_in": 5184000})
@@ -429,7 +429,7 @@ async def test_verify_binding_sets_app_review_pending_metadata():
         async def __aexit__(self, *args):
             return False
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             return _JsonResp(
                 400,
                 {"error": {"message": "Advanced Access is required", "code": 10}},
@@ -460,7 +460,7 @@ async def test_verify_access_token_detailed_reads_igsid_from_me():
         async def __aexit__(self, *args):
             return False
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             captured["url"] = url
             return _JsonResp(200, {"id": igsid, "username": "vitali_rapeika"})
 
@@ -498,7 +498,7 @@ async def test_exchange_oauth_code_prefers_me_igsid():
         async def post(self, url, data=None, json=None, headers=None):
             return _JsonResp(200, {"access_token": "short", "user_id": oauth_user_id})
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             if str(url).rstrip("/").endswith("/me"):
                 return _JsonResp(200, {"id": igsid, "username": "vitali_rapeika"})
             return _JsonResp(200, {"access_token": "long", "expires_in": 5184000})
@@ -535,7 +535,7 @@ async def test_exchange_oauth_code_fails_without_me_igsid():
         async def post(self, url, data=None, json=None, headers=None):
             return _JsonResp(200, {"access_token": "short", "user_id": "28433808142947583"})
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             if str(url).rstrip("/").endswith("/me"):
                 return _JsonResp(400, {"error": {"message": "nope"}}, "nope")
             return _JsonResp(200, {"access_token": "long", "expires_in": 1})
@@ -569,9 +569,9 @@ async def test_webhook_heals_oauth_user_id_to_igsid():
         async def __aexit__(self, *args):
             return False
 
-        async def get(self, url, params=None):
+        async def get(self, url, params=None, headers=None):
             if str(url).rstrip("/").endswith("/me"):
-                return _JsonResp(200, {"id": igsid, "username": "vitali_rapeika"})
+                return _JsonResp(200, {"id": oauth_user_id, "username": "vitali_rapeika"})
             return _JsonResp(200, {"name": "User", "username": "sender"})
 
     with patch("httpx.AsyncClient", return_value=_Client()):
@@ -579,12 +579,14 @@ async def test_webhook_heals_oauth_user_id_to_igsid():
 
     assert binding.channel_account_id == igsid
     assert binding.metadata.get("instagram_oauth_user_id") == oauth_user_id
+    assert binding.metadata.get("instagram_graph_user_id") == oauth_user_id
+    assert binding.metadata.get("instagram_igsid") == igsid
     assert len(db.conversations) == 1
     assert len(db.messages) == 1
 
 
 @pytest.mark.asyncio
-async def test_verify_binding_rewrites_stored_oauth_user_id():
+async def test_verify_binding_keeps_webhook_igsid():
     from unittest.mock import AsyncMock, patch
 
     from app.services.channel_binding_service import ChannelBindingService
@@ -594,8 +596,8 @@ async def test_verify_binding_rewrites_stored_oauth_user_id():
     db = FakeDB()
     binding = make_binding(
         channel=ChannelType.INSTAGRAM,
-        account_id=oauth_user_id,
-        metadata={"connected_via": "oauth"},
+        account_id=igsid,
+        metadata={"connected_via": "oauth", "instagram_igsid": igsid},
     )
     db.get_channel_binding = AsyncMock(return_value=binding)  # type: ignore[attr-defined]
 
@@ -630,8 +632,8 @@ async def test_verify_binding_rewrites_stored_oauth_user_id():
         async def __aexit__(self, *args):
             return False
 
-        async def get(self, url, params=None):
-            return _JsonResp(200, {"id": igsid, "username": "vitali_rapeika"})
+        async def get(self, url, params=None, headers=None):
+            return _JsonResp(200, {"id": oauth_user_id, "username": "vitali_rapeika"})
 
         async def post(self, url, params=None, json=None, headers=None):
             return _JsonResp(200, {"success": True})
@@ -642,5 +644,5 @@ async def test_verify_binding_rewrites_stored_oauth_user_id():
 
     assert ok is True
     assert binding.channel_account_id == igsid
-    assert binding.metadata.get("instagram_oauth_user_id") == oauth_user_id
+    assert binding.metadata.get("instagram_graph_user_id") == oauth_user_id
     assert any(item.get("channel_account_id") == igsid for item in updated)

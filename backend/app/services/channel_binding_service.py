@@ -325,9 +325,13 @@ class ChannelBindingService:
                     meta["app_review_pending"] = True
                 elif check.ok:
                     meta.pop("app_review_pending", None)
-                if igsid and stored_id and igsid != stored_id:
-                    meta.setdefault("instagram_oauth_user_id", stored_id)
-                    stored_id = igsid
+                graph_id = igsid
+                if graph_id:
+                    meta["instagram_graph_user_id"] = graph_id
+                    if stored_id and stored_id != graph_id:
+                        meta.setdefault("instagram_oauth_user_id", graph_id)
+                    elif not stored_id:
+                        stored_id = graph_id
                 if check.username and not username:
                     username = check.username
                 await self.update_binding(
@@ -337,8 +341,8 @@ class ChannelBindingService:
                     channel_account_id=stored_id,
                     channel_username=username,
                 )
-                if check.ok and igsid:
-                    await instagram_service.subscribe_messaging_webhooks(token, igsid)
+                if check.ok and graph_id:
+                    await instagram_service.subscribe_messaging_webhooks(token, graph_id)
                 return check.ok
             except Exception as e:
                 logger.error("Failed to verify Instagram binding %s: %s", binding_id, e)
