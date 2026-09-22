@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { Header } from "@/components/admin/Header";
@@ -16,27 +16,26 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [checked, setChecked] = useState(false);
+  const isLoginPage = pathname === "/admin/login";
+  const authedOnClient = useSyncExternalStore(
+    () => () => {},
+    () => isAuthenticated(),
+    () => false
+  );
+  const checked = isLoginPage || authedOnClient;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
 
-  useEffect(() => {
-    // Skip auth check for the login page itself
-    if (pathname === "/admin/login") {
-      setChecked(true);
-      return;
-    }
-
-    if (!isAuthenticated()) {
-      router.replace("/admin/login");
-    } else {
-      setChecked(true);
-    }
-  }, [pathname, router]);
-
-  // Close sidebar on route change (mobile navigation)
-  useEffect(() => {
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
     setSidebarOpen(false);
-  }, [pathname]);
+  }
+
+  useEffect(() => {
+    if (!isLoginPage && !authedOnClient) {
+      router.replace("/admin/login");
+    }
+  }, [isLoginPage, authedOnClient, router]);
 
   const handleToggle = useCallback(() => setSidebarOpen((o) => !o), []);
   const handleClose = useCallback(() => setSidebarOpen(false), []);
@@ -51,7 +50,7 @@ export default function AdminLayout({
   }
 
   // Login page has its own full-page layout — don't wrap with sidebar/header
-  if (pathname === "/admin/login") {
+  if (isLoginPage) {
     return <>{children}</>;
   }
 

@@ -7,6 +7,16 @@ import { validateAgentConfig, type ValidationError } from "../utils/validation";
 
 const DRAFT_STORAGE_KEY = "agent_wizard_draft";
 
+interface WizardDraftPayload {
+  currentStep: WizardStep;
+  config: Partial<AgentConfigFormData>;
+  timestamp: number;
+  isEdit?: boolean;
+  editingAgentId?: string;
+  isClone?: boolean;
+  sourceAgentId?: string;
+}
+
 export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 interface WizardState {
@@ -108,7 +118,7 @@ export function useAgentWizard() {
     try {
       // Load existing draft to preserve edit/clone flags
       const existingDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-      let draftData: any = {
+      const draftData: WizardDraftPayload = {
         currentStep: state.currentStep,
         config: state.config,
         timestamp: Date.now(),
@@ -126,7 +136,7 @@ export function useAgentWizard() {
             draftData.isClone = true;
             draftData.sourceAgentId = parsed.sourceAgentId;
           }
-        } catch (e) {
+        } catch {
           // Ignore parse errors, use new draft
         }
       }

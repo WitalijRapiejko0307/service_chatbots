@@ -35,9 +35,9 @@ export interface AgentConfig {
 export interface PrivacyConfig {
   consent_model: string;
   purpose_limitation: string;
-  message_retention: Record<string, any>;
-  metadata_retention: Record<string, any>;
-  training_usage: Record<string, any>;
+  message_retention: Record<string, unknown>;
+  metadata_retention: Record<string, unknown>;
+  training_usage: Record<string, unknown>;
 }
 
 export interface SecurityConfig {
@@ -74,7 +74,7 @@ export interface StyleConfig {
 export interface WorkingHoursConfig {
   timezone: string;
   schedule: Record<string, string[]>;
-  after_hours_behavior: Record<string, any>;
+  after_hours_behavior: Record<string, unknown>;
 }
 
 export interface RestrictionsConfig {
@@ -86,7 +86,7 @@ export interface RestrictionsConfig {
   no_slot_selection: boolean;
   no_repeat_patients: boolean;
   forbidden_claims: string[];
-  content_safety: Record<string, any>;
+  content_safety: Record<string, unknown>;
 }
 
 export interface HandoffConfig {
@@ -112,8 +112,8 @@ export interface EscalationConfig {
   urgent_case_policy?: string;
   repeat_patient_policy?: string;
   pre_procedure_policy?: string;
-  triggers?: Record<string, any>;
-  actions?: Record<string, any>;
+  triggers?: Record<string, unknown>;
+  actions?: Record<string, unknown>;
 }
 
 export interface LLMConfig {
@@ -150,9 +150,9 @@ export interface RAGConfig {
   enabled: boolean;
   embeddings_provider?: string;
   vision_provider?: string;
-  vector_store: Record<string, any>;
+  vector_store: Record<string, unknown>;
   /** Typical keys: `top_k` (1–50), `score_threshold` (0–1) */
-  retrieval: Record<string, any>;
+  retrieval: Record<string, unknown>;
   scope: string;
   sources: RAGSource[];
 }
@@ -166,7 +166,7 @@ export interface RAGSource {
 
 export interface MonitoringConfig {
   admin_panel_required: boolean;
-  flags: Record<string, any>;
+  flags: Record<string, unknown>;
   kpi_targets_mvp: Record<string, number>;
 }
 

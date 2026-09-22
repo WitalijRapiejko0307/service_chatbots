@@ -494,8 +494,12 @@ export default function CRMPage() {
     try {
       await api.deleteCrmStage(id);
       setStages((prev) => prev.filter((s) => s.id !== id));
-    } catch (e: any) {
-      alert(e?.message ?? "Cannot delete: stage has conversations assigned.");
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Cannot delete: stage has conversations assigned.";
+      alert(message);
     } finally {
       setDeleteConfirm(null);
     }

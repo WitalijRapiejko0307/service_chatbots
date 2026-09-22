@@ -96,10 +96,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = memo(({ message }) =>
   const isAdmin = message.role === "admin";
   const isAgent = message.role === "agent";
 
+  const metadataString = (
+    key: "media_url" | "media_type" | "media_filename"
+  ): string | null => {
+    const value = message.metadata?.[key];
+    return typeof value === "string" ? value : null;
+  };
+
   // Prefer top-level fields, fall back to metadata
-  const mediaUrl      = message.media_url      ?? message.metadata?.media_url      ?? null;
-  const mediaType     = message.media_type     ?? message.metadata?.media_type     ?? null;
-  const mediaFilename = message.media_filename ?? message.metadata?.media_filename ?? null;
+  const mediaUrl = message.media_url ?? metadataString("media_url");
+  const mediaType = message.media_type ?? metadataString("media_type");
+  const mediaFilename = message.media_filename ?? metadataString("media_filename");
 
   return (
     <div className={`flex items-start gap-2 mb-4 ${isUser ? "flex-row-reverse" : "flex-row"}`}>

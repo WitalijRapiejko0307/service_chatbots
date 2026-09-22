@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Menu } from "lucide-react";
@@ -15,11 +15,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
   const router = useRouter();
   const t = useTranslations("Header");
-  const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    setEmail(getCurrentUserEmail());
-  }, []);
+  const [email] = useState<string | null>(() => getCurrentUserEmail());
 
   const handleLogout = () => {
     removeAdminToken();

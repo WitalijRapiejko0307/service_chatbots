@@ -1,7 +1,5 @@
 /** Statistics calculation and formatting utilities. */
 
-import type { StatsComparison } from "@/lib/types/stats";
-
 /**
  * Format change indicator with color.
  */

@@ -4,16 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { getActionDisplay, getResourceTypeLabel } from "@/lib/utils/auditDisplay";
 import { formatRelativeTimeDetailed, formatDateTime } from "@/lib/utils/timeFormat";
+import type { AuditLog } from "@/lib/types/api";
 
-export interface AuditLog {
-  log_id: string;
-  admin_id: string;
-  action: string;
-  resource_type: string;
-  resource_id: string;
-  timestamp: string;
-  metadata?: Record<string, any>;
-}
+export type { AuditLog };
 
 interface AuditLogRowProps {
   log: AuditLog;

@@ -9,7 +9,7 @@ export interface Message {
   role: MessageRole;
   content: string;
   timestamp: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   ttl?: number;
   media_url?: string | null;
   media_type?: string | null;  // "image" | "video" | "audio" | "document"

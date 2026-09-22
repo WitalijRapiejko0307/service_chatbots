@@ -3,6 +3,7 @@
 import { getAdminToken, removeAdminToken } from "./auth";
 import type {
   Agent,
+  AuditLog,
   CreateConversationRequest,
   CreateConversationResponse,
   Conversation,
@@ -82,7 +83,7 @@ class ApiError extends Error {
   constructor(
     public code: string,
     message: string,
-    public details?: Record<string, any>,
+    public details?: Record<string, unknown>,
     public requestId?: string
   ) {
     super(message);
@@ -174,7 +175,7 @@ async function request<T>(
       return undefined as T;
     }
 
-    let data: any;
+    let data: unknown;
     try {
       data = await response.json();
     } catch {
@@ -231,7 +232,10 @@ export const api = {
     return request<Agent[]>(`/api/v1/agents/?active_only=${activeOnly}`);
   },
 
-  async createAgent(agentId: string, config: any): Promise<Agent> {
+  async createAgent(
+    agentId: string,
+    config: Record<string, unknown>
+  ): Promise<Agent> {
     return request<Agent>(
       "/api/v1/agents/",
       {
@@ -242,7 +246,10 @@ export const api = {
     );
   },
 
-  async updateAgent(agentId: string, config: any): Promise<Agent> {
+  async updateAgent(
+    agentId: string,
+    config: Record<string, unknown>
+  ): Promise<Agent> {
     return request<Agent>(
       `/api/v1/agents/${agentId}`,
       {
@@ -531,7 +538,7 @@ export const api = {
     end_date?: string;
     sort?: string;
     limit?: number;
-  }): Promise<any[]> {
+  }): Promise<AuditLog[]> {
     const queryParams = new URLSearchParams();
     if (params?.admin_id) queryParams.append("admin_id", params.admin_id);
     if (params?.resource_type)
@@ -543,7 +550,7 @@ export const api = {
     if (params?.limit)
       queryParams.append("limit", params.limit.toString());
 
-    return request<any[]>(
+    return request<AuditLog[]>(
       `/api/v1/admin/audit?${queryParams.toString()}`,
       {},
       true // require auth

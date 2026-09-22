@@ -1,5 +1,37 @@
 /** Utilities for working with agent configuration. */
 
+import type {
+  EmbeddingsConfig,
+  EscalationConfig,
+  EscalationCustomRule,
+  LLMConfig,
+  ModerationConfig,
+  ProfileConfig,
+  PromptsConfig,
+  RAGConfig,
+  RAGSource,
+  StyleConfig,
+  WorkflowAutoStep as AgentWorkflowAutoStep,
+  WorkflowConfig,
+  WorkflowStep as AgentWorkflowStep,
+  WorkflowTransition as AgentWorkflowTransition,
+} from "@/lib/types/agent";
+
+type PromptExample = Partial<ConversationExample> & { id?: string };
+
+type AgentConfigInput = {
+  agent_id?: string;
+  profile?: Partial<ProfileConfig>;
+  style?: Partial<StyleConfig>;
+  rag?: Partial<RAGConfig> & { vision_model?: string };
+  escalation?: Partial<EscalationConfig>;
+  prompts?: Partial<PromptsConfig> & { examples?: PromptExample[] };
+  llm?: Partial<LLMConfig>;
+  embeddings?: Partial<EmbeddingsConfig>;
+  moderation?: Partial<ModerationConfig>;
+  workflow?: Partial<WorkflowConfig>;
+};
+
 export interface ConversationExample {
   id: string;
   user_message: string; // English only
@@ -242,7 +274,7 @@ export function generateDefaultConfig(): Partial<AgentConfigFormData> {
  * Convert existing agent config to form data (for cloning/editing).
  */
 export function agentConfigToFormData(
-  agentConfig: Record<string, any>
+  agentConfig: AgentConfigInput
 ): Partial<AgentConfigFormData> {
   const formData: Partial<AgentConfigFormData> = {
     // Basic Info
@@ -261,7 +293,7 @@ export function agentConfigToFormData(
     // RAG
     rag_enabled: agentConfig.rag?.enabled || false,
     rag_documents:
-      agentConfig.rag?.sources?.map((source: any, index: number) => ({
+      agentConfig.rag?.sources?.map((source: RAGSource, index: number) => ({
         id: source.id || `doc_${index}`,
         title: source.title || "",
         content: source.content || "",
@@ -270,7 +302,7 @@ export function agentConfigToFormData(
     // Escalation
     escalation_enabled: agentConfig.escalation?.enabled !== false,
     escalation_detect_contact: agentConfig.escalation?.detect_contact ?? true,
-    escalation_rules: agentConfig.escalation?.custom_rules?.map((r: any, i: number) => ({
+    escalation_rules: agentConfig.escalation?.custom_rules?.map((r: EscalationCustomRule, i: number) => ({
       id: r.id || `rule_${i}`,
       name: r.name || "",
       description: r.description || "",
@@ -282,7 +314,7 @@ export function agentConfigToFormData(
     // Examples
     examples:
       agentConfig.prompts?.examples && agentConfig.prompts.examples.length > 0
-        ? agentConfig.prompts.examples.map((ex: any, index: number) => ({
+        ? agentConfig.prompts.examples.map((ex: PromptExample, index: number) => ({
             id: ex.id || `example_${index}_${Date.now()}`,
             user_message: ex.user_message || "",
             agent_response: ex.agent_response || "",
@@ -317,13 +349,13 @@ export function agentConfigToFormData(
     // Workflow
     workflow_enabled: agentConfig.workflow?.enabled === true,
     workflow_start_step_id: agentConfig.workflow?.start_step_id || "step_1",
-    workflow_steps: (agentConfig.workflow?.steps || []).map((s: any, i: number) => ({
+    workflow_steps: (agentConfig.workflow?.steps || []).map((s: AgentWorkflowStep, i: number) => ({
       id: s.id || `step_${i + 1}`,
       name: s.name || "",
       instructions: s.instructions || "",
       collect: s.collect || [],
       required: s.required || false,
-      transitions: (s.transitions || []).map((t: any) => ({
+      transitions: (s.transitions || []).map((t: AgentWorkflowTransition) => ({
         condition: t.condition || "",
         next_step_id: t.next_step_id || "",
         is_forced: t.is_forced || false,
@@ -344,7 +376,7 @@ export function agentConfigToFormData(
       evaluate_transition_conditions_when_collect_incomplete:
         s.evaluate_transition_conditions_when_collect_incomplete ?? false,
     })) as WorkflowFormStep[],
-    workflow_auto_steps: (agentConfig.workflow?.auto_steps || []).map((a: any) => ({
+    workflow_auto_steps: (agentConfig.workflow?.auto_steps || []).map((a: AgentWorkflowAutoStep) => ({
       id: a.id || "",
       name: a.name || "",
       source_id: a.source_id || "",
@@ -389,8 +421,8 @@ const DEFAULT_GOAL = `Primary goal: answer common questions quickly, capture lea
  */
 export function formDataToAgentConfig(
   formData: AgentConfigFormData
-): Record<string, any> {
-  const config: Record<string, any> = {
+): Record<string, unknown> {
+  const config: Record<string, unknown> = {
     agent_id: formData.agent_id,
     project: formData.company_display_name || "Default Project",
     profile: {

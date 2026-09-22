@@ -3,18 +3,23 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { AdminWebSocketClient, type AdminWebSocketMessage } from "@/lib/adminWebSocket";
 import { getAdminToken } from "@/lib/auth";
+import type { Conversation } from "@/lib/types/conversation";
+
+type AdminStatsSnapshot = NonNullable<AdminWebSocketMessage["stats"]>;
 
 export function useAdminWebSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const wsClientRef = useRef<AdminWebSocketClient | null>(null);
-  const conversationUpdateHandlersRef = useRef<Set<(conversation: any) => void>>(
+  const conversationUpdateHandlersRef = useRef<
+    Set<(conversation: Conversation) => void>
+  >(new Set());
+  const escalationHandlersRef = useRef<
+    Set<(conversation: Conversation, reason?: string) => void>
+  >(new Set());
+  const statsUpdateHandlersRef = useRef<Set<(stats: AdminStatsSnapshot) => void>>(
     new Set()
   );
-  const escalationHandlersRef = useRef<Set<(conversation: any, reason?: string) => void>>(
-    new Set()
-  );
-  const statsUpdateHandlersRef = useRef<Set<(stats: any) => void>>(new Set());
 
   useEffect(() => {
     // Check if we have a token before attempting connection
@@ -85,7 +90,7 @@ export function useAdminWebSocket() {
   }, []);
 
   const onConversationUpdate = useCallback(
-    (callback: (conversation: any) => void) => {
+    (callback: (conversation: Conversation) => void) => {
       conversationUpdateHandlersRef.current.add(callback);
       return () => {
         conversationUpdateHandlersRef.current.delete(callback);
@@ -95,7 +100,7 @@ export function useAdminWebSocket() {
   );
 
   const onNewEscalation = useCallback(
-    (callback: (conversation: any, reason?: string) => void) => {
+    (callback: (conversation: Conversation, reason?: string) => void) => {
       escalationHandlersRef.current.add(callback);
       return () => {
         escalationHandlersRef.current.delete(callback);
@@ -104,7 +109,7 @@ export function useAdminWebSocket() {
     []
   );
 
-  const onStatsUpdate = useCallback((callback: (stats: any) => void) => {
+  const onStatsUpdate = useCallback((callback: (stats: AdminStatsSnapshot) => void) => {
     statsUpdateHandlersRef.current.add(callback);
     return () => {
       statsUpdateHandlersRef.current.delete(callback);

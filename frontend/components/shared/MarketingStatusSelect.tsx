@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Select } from "./Select";
 import { Textarea } from "./Textarea";
 import type { MarketingStatus } from "@/lib/types/conversation";
@@ -31,18 +31,24 @@ export const MarketingStatusSelect: React.FC<MarketingStatusSelectProps> = ({
     currentRejectionReason || ""
   );
   const [error, setError] = useState<string>("");
+  const [prevValue, setPrevValue] = useState(value);
+  const [prevRejectionReason, setPrevRejectionReason] = useState(
+    currentRejectionReason
+  );
 
-  useEffect(() => {
+  if (value !== prevValue) {
+    setPrevValue(value);
     if (value) {
       setSelectedStatus(value);
     }
-  }, [value]);
+  }
 
-  useEffect(() => {
+  if (currentRejectionReason !== prevRejectionReason) {
+    setPrevRejectionReason(currentRejectionReason);
     if (currentRejectionReason !== undefined) {
       setRejectionReason(currentRejectionReason || "");
     }
-  }, [currentRejectionReason]);
+  }
 
   const handleStatusChange = (newStatus: string) => {
     const status = newStatus as MarketingStatus;

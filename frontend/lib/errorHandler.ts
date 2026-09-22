@@ -5,7 +5,7 @@ import { ApiError } from "./api";
 export interface ErrorInfo {
   code: string;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   requestId?: string;
 }
 

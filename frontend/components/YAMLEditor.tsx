@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 
 // Dynamically import Monaco Editor to avoid SSR issues
@@ -24,6 +24,10 @@ interface YAMLEditorProps {
   error?: string;
 }
 
+const subscribeToClientMount = () => () => {};
+const getClientMounted = () => true;
+const getServerMounted = () => false;
+
 export const YAMLEditor: React.FC<YAMLEditorProps> = ({
   value,
   onChange,
@@ -32,16 +36,11 @@ export const YAMLEditor: React.FC<YAMLEditorProps> = ({
   language = "yaml",
   error,
 }) => {
-  const editorRef = useRef<any>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const handleEditorDidMount = (editor: any) => {
-    editorRef.current = editor;
-  };
+  const isMounted = useSyncExternalStore(
+    subscribeToClientMount,
+    getClientMounted,
+    getServerMounted
+  );
 
   const handleEditorChange = (value: string | undefined) => {
     if (onChange && value !== undefined) {
@@ -78,7 +77,6 @@ export const YAMLEditor: React.FC<YAMLEditorProps> = ({
           language={language}
           value={value}
           onChange={handleEditorChange}
-          onMount={handleEditorDidMount}
           options={{
             readOnly,
             minimap: { enabled: false },
@@ -98,5 +96,3 @@ export const YAMLEditor: React.FC<YAMLEditorProps> = ({
     </div>
   );
 };
-
-

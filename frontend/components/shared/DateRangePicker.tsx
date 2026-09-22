@@ -27,7 +27,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     setPreset(newPreset);
     const now = new Date();
     let start: Date;
-    let end: Date = now;
+    const end: Date = now;
 
     if (newPreset === "today") {
       start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);

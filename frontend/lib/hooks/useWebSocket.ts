@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { WebSocketClient } from "@/lib/websocket";
-import type { WebSocketMessage } from "@/lib/types/message";
 
 export function useWebSocket(conversationId: string | null) {
   const [isConnected, setIsConnected] = useState(false);
