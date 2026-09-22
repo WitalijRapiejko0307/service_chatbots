@@ -20,6 +20,7 @@ from app.config import Settings
 from app.models.channel_binding import ChannelType
 from app.models.message import MessageChannel
 from app.services.channel_binding_service import ChannelBindingService
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.services.inbound_channel import (
     find_or_create_conversation,
     persist_operator_message,
@@ -339,7 +340,7 @@ class TikTokService:
         meta = dict(conversation.metadata or {})
         meta["tiktok_outbound_count"] = int(meta.get("tiktok_outbound_count") or 0) + 1
         try:
-            await db.update_conversation(conversation_id, metadata=meta)
+            await update_conversation_with_notifications(db, conversation_id, metadata=meta)
         except Exception as exc:
             logger.warning(
                 "Could not increment TikTok outbound count for %s: %s",

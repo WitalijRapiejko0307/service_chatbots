@@ -21,6 +21,7 @@ from app.models.agent_config import AgentConfig
 from app.models.conversation import ConversationStatus
 from app.models.message import Message, MessageChannel, MessageRole
 from app.services.channel_sender import ChannelSender
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.services.escalation_service import EscalationService, create_escalation_service
 from app.services.llm_factory import LLMFactory, get_llm_factory
 from app.services.moderation_service import ModerationService, get_moderation_service
@@ -70,7 +71,8 @@ class AgentService:
             user_message, self.agent_config
         )
         if flagged:
-            await self.db.update_conversation(
+            await update_conversation_with_notifications(
+                self.db,
                 conversation_id=conversation_id,
                 status=ConversationStatus.NEEDS_HUMAN,
                 handoff_reason="Content moderation violation",
@@ -164,7 +166,8 @@ class AgentService:
         # --- Escalation or moderation flagged from within the graph ---
         if graph_result.get("escalate"):
             escalation_type = graph_result.get("escalation_type")
-            await self.db.update_conversation(
+            await update_conversation_with_notifications(
+                self.db,
                 conversation_id=conversation_id,
                 status=ConversationStatus.NEEDS_HUMAN,
                 handoff_reason=graph_result.get("escalation_reason", "Escalation"),

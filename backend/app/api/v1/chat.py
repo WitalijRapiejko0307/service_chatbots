@@ -17,6 +17,7 @@ from app.models.agent_config import AgentConfig
 from app.models.conversation import Conversation, ConversationStatus, MarketingStatus
 from app.models.message import Message, MessageChannel, MessageRole
 from app.services.agent_reply_coordinator import cancel_timer_trigger
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.services.agent_service import create_agent_service
 from app.services.channel_sender import get_channel_sender
 from app.config import get_settings
@@ -162,7 +163,8 @@ async def close_conversation(
             status=ConversationStatus.CLOSED.value,
         )
 
-    await deps.db.update_conversation(
+    await update_conversation_with_notifications(
+        deps.db,
         conversation_id=conversation_id,
         status=ConversationStatus.CLOSED,
         closed_at=utc_now(),

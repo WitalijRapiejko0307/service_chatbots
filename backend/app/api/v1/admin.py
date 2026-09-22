@@ -16,6 +16,7 @@ from app.dependencies import CommonDependencies
 from app.models.conversation import Conversation, ConversationStatus, MarketingStatus
 from app.models.message import Message, MessageChannel, MessageRole
 from app.services.channel_sender import get_channel_sender
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.utils.datetime_utils import (
     parse_query_datetime,
     parse_utc_datetime,
@@ -170,7 +171,8 @@ async def handoff_conversation(
         raise ConversationNotFoundError(conversation_id)
 
     try:
-        updated = await deps.db.update_conversation(
+        updated = await update_conversation_with_notifications(
+            deps.db,
             conversation_id=conversation_id,
             status=ConversationStatus.HUMAN_ACTIVE,
             handoff_reason=request.reason or "Manual handoff",
@@ -221,7 +223,8 @@ async def return_to_ai(
         raise ConversationNotFoundError(conversation_id)
 
     try:
-        updated = await deps.db.update_conversation(
+        updated = await update_conversation_with_notifications(
+            deps.db,
             conversation_id=conversation_id,
             status=ConversationStatus.AI_ACTIVE,
         )
@@ -270,7 +273,8 @@ async def reset_agent_context(
 
     now = utc_now()
     try:
-        updated = await deps.db.update_conversation(
+        updated = await update_conversation_with_notifications(
+            deps.db,
             conversation_id=conversation_id,
             agent_context_reset_at=now,
         )

@@ -12,6 +12,7 @@ from app.models.conversation import ConversationStatus
 from app.models.message import MessageChannel
 from app.services.agent_service import create_agent_service
 from app.services.conversation_service import build_conversation_history_for_agent
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.storage.redis import get_redis_client
 from app.utils.datetime_utils import to_utc_iso_string, utc_now
 from app.utils.enum_helpers import get_enum_value
@@ -267,7 +268,8 @@ async def execute_agent_reply(conversation_id: str, expected_version: int) -> No
     if not result.get("escalate"):
         conv_after = await db.get_conversation(conversation_id)
         if conv_after and get_enum_value(conv_after.status) != ConversationStatus.AI_ACTIVE.value:
-            await db.update_conversation(
+            await update_conversation_with_notifications(
+                db,
                 conversation_id=conversation_id,
                 status=ConversationStatus.AI_ACTIVE,
             )

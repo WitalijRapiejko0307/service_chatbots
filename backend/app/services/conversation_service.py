@@ -6,6 +6,7 @@ from typing import Any, Optional
 from app.models.conversation import Conversation, ConversationStatus
 from app.models.message import Message, MessageRole
 from app.services.agent_service import AgentService, create_agent_service
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.utils.datetime_utils import utc_now
 from app.utils.enum_helpers import get_enum_value
 
@@ -124,7 +125,8 @@ class ConversationService:
         # Handle both enum and string status (from the database)
         status_value = get_enum_value(conversation.status)
         if status_value != ConversationStatus.AI_ACTIVE.value:
-            await self.db.update_conversation(
+            await update_conversation_with_notifications(
+                self.db,
                 conversation_id=conversation_id,
                 status=ConversationStatus.AI_ACTIVE,
             )

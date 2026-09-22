@@ -15,6 +15,7 @@ from app.models.message import Message, MessageRole
 from app.services.agent_reply_coordinator import cancel_timer_trigger, notify_user_message_saved
 from app.services.agent_service import AgentService
 from app.services.conversation_service import build_conversation_history_for_agent
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.storage.redis import get_redis_client
 from app.utils.datetime_utils import utc_now
 from app.utils.enum_helpers import get_enum_value
@@ -188,7 +189,8 @@ async def run_agent_reply_pipeline(
     if opts.update_conversation_ai_active:
         status_value = get_enum_value(conversation.status)
         if status_value != ConversationStatus.AI_ACTIVE.value:
-            await db.update_conversation(
+            await update_conversation_with_notifications(
+                db,
                 conversation_id=conversation_id,
                 status=ConversationStatus.AI_ACTIVE,
             )

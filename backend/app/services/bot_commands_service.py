@@ -10,6 +10,7 @@ import httpx
 
 from app.models.channel_binding import ChannelBinding
 from app.models.conversation import Conversation, ConversationStatus, MarketingStatus
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.utils.datetime_utils import utc_now
 from app.utils.enum_helpers import get_enum_value
 
@@ -109,7 +110,8 @@ async def handle_restart(
             ]
 
         for conv in existing:
-            await db.update_conversation(
+            await update_conversation_with_notifications(
+                db,
                 conversation_id=conv.conversation_id,
                 status=ConversationStatus.CLOSED,
                 closed_at=utc_now(),

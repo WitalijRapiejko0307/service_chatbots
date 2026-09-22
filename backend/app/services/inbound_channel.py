@@ -18,6 +18,7 @@ from typing import Any, Optional
 
 from app.models.conversation import Conversation, ConversationStatus, MarketingStatus
 from app.models.message import Message, MessageChannel, MessageRole
+from app.services.conversation_status_service import update_conversation_with_notifications
 from app.utils.datetime_utils import parse_utc_datetime, to_utc_iso_string, utc_now
 from app.utils.enum_helpers import get_enum_value
 
@@ -82,7 +83,9 @@ async def find_or_create_conversation(
             updates["external_user_username"] = username
         if updates:
             try:
-                await db.update_conversation(existing.conversation_id, **updates)
+                await update_conversation_with_notifications(
+                    db, existing.conversation_id, **updates
+                )
                 if "external_user_name" in updates:
                     existing.external_user_name = name
                 if "external_user_username" in updates:
@@ -235,7 +238,9 @@ async def persist_user_message_and_maybe_reply(
         conversation, channel_value, extra=None
     )
     try:
-        await db.update_conversation(conversation.conversation_id, metadata=conv_meta)
+        await update_conversation_with_notifications(
+            db, conversation.conversation_id, metadata=conv_meta
+        )
         conversation.metadata = conv_meta
     except Exception as exc:
         logger.warning(

@@ -1,6 +1,5 @@
 """PostgreSQL client - Railway-compatible storage layer."""
 
-import asyncio
 import json
 import logging
 import uuid
@@ -317,9 +316,6 @@ class PostgreSQLClient:
         request_type: Optional[str] = None,
         **kwargs: Any,
     ) -> Optional[Conversation]:
-        old = await self.get_conversation(conversation_id)
-        old_status = get_enum_value(old.status) if old else None
-
         updates = []
         params = []
         i = 1
@@ -356,54 +352,7 @@ class PostgreSQLClient:
                 *params,
             )
 
-        updated = await self.get_conversation(conversation_id)
-        if updated:
-            try:
-                from app.api.admin_websocket import get_admin_broadcast_manager
-                from app.models.conversation import ConversationStatus
-
-                broadcast_manager = get_admin_broadcast_manager()
-                if (
-                    status
-                    and status == ConversationStatus.NEEDS_HUMAN
-                    and (old_status is None or old_status != ConversationStatus.NEEDS_HUMAN.value)
-                ):
-                    await broadcast_manager.broadcast_new_escalation(
-                        updated, handoff_reason
-                    )
-                    try:
-                        from app.services.notification_service import NotificationService
-                        from app.storage.postgres_secrets import get_postgres_secrets_manager
-                        from app.config import get_settings
-
-                        secrets_manager = get_postgres_secrets_manager()
-                        settings = get_settings()
-                        notification_service = NotificationService(
-                            db=self,
-                            secrets_manager=secrets_manager,
-                            telegram_service=None,
-                        )
-                        agent_data = await self.get_agent(updated.agent_id)
-                        agent_display_name = "Unknown Agent"
-                        if agent_data and "config" in agent_data:
-                            from app.models.agent_config import AgentConfig
-                            agent_config = AgentConfig.from_dict(agent_data["config"])
-                            agent_display_name = agent_config.profile.agent_display_name
-                        asyncio.create_task(
-                            notification_service.send_escalation_notification(
-                                conversation=updated,
-                                escalation_reason=handoff_reason or "Escalation required",
-                                agent_display_name=agent_display_name,
-                                admin_panel_base_url=settings.app_url or None,
-                            )
-                        )
-                    except Exception as e:
-                        logger.warning(f"Failed to send escalation notifications: {e}", exc_info=True)
-                else:
-                    await broadcast_manager.broadcast_conversation_update(updated)
-            except Exception as e:
-                logger.warning(f"Failed to broadcast: {e}", exc_info=True)
-        return updated
+        return await self.get_conversation(conversation_id)
 
     async def list_conversations(
         self,
