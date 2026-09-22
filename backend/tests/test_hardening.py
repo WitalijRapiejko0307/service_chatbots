@@ -14,6 +14,7 @@ from app.services.channel_support_matrix import (
     CHANNEL_SUPPORT_MATRIX,
     get_channel_support_matrix_payload,
 )
+from app.config import require_production_debug_disabled
 from app.storage.postgres_secrets import require_production_encryption_key
 from app.utils.logging_config import redact_secrets
 from tests.conftest import DummySettings
@@ -122,3 +123,25 @@ def test_production_accepts_valid_fernet_key():
     settings.environment = "PRODUCTION"
     settings.secret_encryption_key = Fernet.generate_key().decode()
     require_production_encryption_key(settings)
+
+
+def test_production_rejects_debug_enabled():
+    settings = DummySettings()
+    settings.environment = "production"
+    settings.debug = True
+    with pytest.raises(RuntimeError, match="DEBUG must be disabled"):
+        require_production_debug_disabled(settings)
+
+
+def test_production_allows_debug_disabled():
+    settings = DummySettings()
+    settings.environment = "production"
+    settings.debug = False
+    require_production_debug_disabled(settings)
+
+
+def test_dev_allows_debug_enabled():
+    settings = DummySettings()
+    settings.environment = "development"
+    settings.debug = True
+    require_production_debug_disabled(settings)

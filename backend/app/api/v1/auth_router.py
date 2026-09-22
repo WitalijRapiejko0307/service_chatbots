@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
 from app.config import get_settings
-from app.api.auth import get_current_admin, require_super_admin
+from app.api.auth import get_current_admin, is_super_admin_email, require_super_admin
 from app.services.email_service import send_otp_email
 from app.services.password_service import hash_password, verify_password
 from app.services.otp_service import (
@@ -72,10 +72,9 @@ def _create_jwt(email: str) -> str:
         raise RuntimeError("JWT_SECRET_KEY is not configured")
 
     now = datetime.now(timezone.utc)
-    super_admins = get_super_admin_emails()
     payload = {
         "sub": email,
-        "is_super_admin": email.lower() in super_admins,
+        "is_super_admin": is_super_admin_email(email),
         "iat": now,
         "exp": now + timedelta(hours=settings.jwt_expires_hours),
     }
@@ -185,10 +184,9 @@ async def login_with_password(body: LoginPasswordBody) -> TokenResponse:
 @router.get("/me", response_model=MeResponse)
 async def get_me(current_user: str = Depends(get_current_admin)) -> MeResponse:
     """Return current user info decoded from JWT."""
-    super_admins = get_super_admin_emails()
     return MeResponse(
         email=current_user,
-        is_super_admin=current_user.lower() in super_admins if super_admins else True,
+        is_super_admin=is_super_admin_email(current_user),
     )
 
 

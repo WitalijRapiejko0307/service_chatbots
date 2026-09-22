@@ -14,6 +14,35 @@ logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
 
+_warned_empty_super_admin_list = False
+
+
+def _is_dev_auth_bypass_allowed(settings) -> bool:
+    """Allow unauthenticated dev access only outside production."""
+    if not settings.debug:
+        return False
+    env = str(getattr(settings, "environment", "") or "").lower()
+    return env != "production"
+
+
+def _warn_empty_super_admin_list() -> None:
+    global _warned_empty_super_admin_list
+    if _warned_empty_super_admin_list:
+        return
+    _warned_empty_super_admin_list = True
+    logger.warning(
+        "ALLOWED_ADMIN_EMAILS is not configured; super-admin functions are unavailable to all users."
+    )
+
+
+def is_super_admin_email(email: str) -> bool:
+    """Return True when email is in ALLOWED_ADMIN_EMAILS (case-insensitive)."""
+    allowed = get_super_admin_emails()
+    if not allowed:
+        _warn_empty_super_admin_list()
+        return False
+    return email.lower() in allowed
+
 
 async def get_current_admin(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
@@ -24,9 +53,8 @@ async def get_current_admin(
     if not credentials:
         admin_token = getattr(settings, "admin_token", None)
         if not admin_token:
-            # Allow unauthenticated access only in debug/dev mode.
-            # In production (DEBUG=False) this raises 401 to prevent accidental exposure.
-            if settings.debug:
+            # Allow unauthenticated access only in non-production debug/dev mode.
+            if _is_dev_auth_bypass_allowed(settings):
                 return "admin_user"
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -65,8 +93,8 @@ async def get_current_admin(
     if admin_token and token == admin_token:
         return "admin_user"
 
-    # 3. Dev mode: no token configured — allow access only when DEBUG=True
-    if not settings.jwt_secret_key and not admin_token and settings.debug:
+    # 3. Dev mode: no token configured — allow access only outside production
+    if not settings.jwt_secret_key and not admin_token and _is_dev_auth_bypass_allowed(settings):
         return "admin_user"
 
     raise HTTPException(
@@ -79,8 +107,7 @@ async def require_super_admin(
     current_user: str = Depends(get_current_admin),
 ) -> str:
     """Dependency that allows access only to super admins (from ALLOWED_ADMIN_EMAILS)."""
-    allowed = get_super_admin_emails()
-    if allowed and current_user.lower() not in allowed:
+    if not is_super_admin_email(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Super admin access required",

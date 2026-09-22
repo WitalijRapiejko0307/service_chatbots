@@ -344,6 +344,20 @@ class Settings(BaseSettings):
     )
 
 
+def require_production_debug_disabled(settings: Settings) -> None:
+    """Fail fast in production if DEBUG is enabled.
+
+    Development may keep DEBUG=true for local troubleshooting.
+    """
+    if str(getattr(settings, "environment", "") or "").lower() != "production":
+        return
+    if getattr(settings, "debug", False):
+        raise RuntimeError(
+            "DEBUG must be disabled when ENVIRONMENT=production. "
+            "Set DEBUG=false (or unset DEBUG) in your production environment variables."
+        )
+
+
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance."""

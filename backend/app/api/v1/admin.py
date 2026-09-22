@@ -492,6 +492,20 @@ async def send_admin_message(
                     f"Failed to deliver admin message via {conversation_channel}: {e}",
                     exc_info=True,
                 )
+                await deps.db.create_audit_log(
+                    admin_id=request.admin_id,
+                    action="send_message_failed",
+                    resource_type="conversation",
+                    resource_id=conversation_id,
+                    metadata={
+                        "message_id": message_id,
+                        "channel": conversation_channel,
+                    },
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Failed to deliver message to {conversation_channel}",
+                )
 
         await deps.db.create_audit_log(
             admin_id=request.admin_id,

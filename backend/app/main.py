@@ -50,9 +50,11 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     settings = get_settings()
+    from app.config import require_production_debug_disabled
     from app.storage.postgres_secrets import require_production_encryption_key
 
     require_production_encryption_key(settings)
+    require_production_debug_disabled(settings)
 
     logger.info(
         "Application starting",
