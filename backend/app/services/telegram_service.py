@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
 from datetime import datetime, timezone
 from typing import Any, Literal, Optional
@@ -23,6 +24,14 @@ from app.utils.enum_helpers import get_enum_value
 logger = logging.getLogger(__name__)
 
 TELEGRAM_MESSAGE_MAX_LENGTH = 4096
+TELEGRAM_WEBHOOK_SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
+
+
+def verify_telegram_webhook_secret(received: Optional[str], expected: str) -> bool:
+    """Constant-time comparison of Telegram webhook secret header value."""
+    if not received or not expected:
+        return False
+    return hmac.compare_digest(received, expected)
 
 TelegramUpdateKind = Literal["ignore", "customer", "operator"]
 

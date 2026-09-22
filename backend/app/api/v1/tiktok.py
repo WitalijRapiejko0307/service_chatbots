@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.api.auth import require_admin
+from app.api.webhook_guards import enforce_or_warn_missing_webhook_secret
 from app.config import get_settings
 from app.dependencies import CommonDependencies
 from app.services.channel_binding_service import ChannelBindingService
@@ -66,6 +67,8 @@ async def handle_webhook(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Invalid webhook signature",
             )
+    else:
+        enforce_or_warn_missing_webhook_secret("tiktok", binding_id)
 
     try:
         payload = json.loads(body.decode("utf-8") or "{}")

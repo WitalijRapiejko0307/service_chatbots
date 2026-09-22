@@ -539,7 +539,8 @@ class PostgreSQLClient:
                 WHERE conversation_id = $1
                   AND (
                     external_message_id = $2
-                    OR COALESCE(metadata::jsonb -> 'provider_message_ids', '[]'::jsonb) ? $2
+                    OR COALESCE(metadata::jsonb -> 'provider_message_ids', '[]'::jsonb)
+                       @> jsonb_build_array($2::text)
                   )
                 LIMIT 1
                 """,
@@ -557,41 +558,42 @@ class PostgreSQLClient:
             return
         pool = await get_pool()
         async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """
-                SELECT external_message_id, metadata
-                FROM messages
-                WHERE conversation_id = $1 AND message_id = $2
-                """,
-                conversation_id,
-                message_id,
-            )
-            if not row:
-                return
-            existing_ext = row["external_message_id"]
-            meta = _parse_json(row["metadata"])
-            if not isinstance(meta, dict):
-                meta = {}
-            existing_ids = meta.get("provider_message_ids") or []
-            if not isinstance(existing_ids, list):
-                existing_ids = []
-            merged = _unique_nonempty_ids([*existing_ids, *cleaned])
-            meta["provider_message_ids"] = merged
-            new_ext = existing_ext
-            if not (existing_ext and str(existing_ext).strip()):
-                new_ext = cleaned[0]
-            await conn.execute(
-                """
-                UPDATE messages
-                SET external_message_id = $3,
-                    metadata = $4
-                WHERE conversation_id = $1 AND message_id = $2
-                """,
-                conversation_id,
-                message_id,
-                new_ext,
-                json.dumps(meta),
-            )
+            async with conn.transaction():
+                row = await conn.fetchrow(
+                    """
+                    SELECT external_message_id, metadata
+                    FROM messages
+                    WHERE conversation_id = $1 AND message_id = $2
+                    """,
+                    conversation_id,
+                    message_id,
+                )
+                if not row:
+                    return
+                existing_ext = row["external_message_id"]
+                meta = _parse_json(row["metadata"])
+                if not isinstance(meta, dict):
+                    meta = {}
+                existing_ids = meta.get("provider_message_ids") or []
+                if not isinstance(existing_ids, list):
+                    existing_ids = []
+                merged = _unique_nonempty_ids([*existing_ids, *cleaned])
+                meta["provider_message_ids"] = merged
+                new_ext = existing_ext
+                if not (existing_ext and str(existing_ext).strip()):
+                    new_ext = cleaned[0]
+                await conn.execute(
+                    """
+                    UPDATE messages
+                    SET external_message_id = $3,
+                        metadata = $4
+                    WHERE conversation_id = $1 AND message_id = $2
+                    """,
+                    conversation_id,
+                    message_id,
+                    new_ext,
+                    json.dumps(meta),
+                )
 
     async def get_message(self, conversation_id: str, message_id: str) -> Optional[Message]:
         pool = await get_pool()

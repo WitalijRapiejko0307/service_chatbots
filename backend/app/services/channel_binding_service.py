@@ -1,6 +1,8 @@
 """Channel binding service."""
 
+import json
 import logging
+import secrets as secrets_module
 import uuid
 from typing import Any, Optional
 
@@ -11,12 +13,27 @@ from app.utils.enum_helpers import get_enum_value
 
 logger = logging.getLogger(__name__)
 
+TELEGRAM_WEBHOOK_SECRET_KEY = "telegram_webhook_secret"
+_TELEGRAM_WEBHOOK_SECRET_ALPHABET = (
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+)
+
+
+def generate_telegram_webhook_secret(length: int = 32) -> str:
+    """Generate a cryptographically strong secret_token for Telegram setWebhook."""
+    if length < 1 or length > 256:
+        raise ValueError("Telegram webhook secret length must be between 1 and 256")
+    return "".join(
+        secrets_module.choice(_TELEGRAM_WEBHOOK_SECRET_ALPHABET) for _ in range(length)
+    )
+
 
 def _secret_and_db_metadata(metadata: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Keep refresh_token in the secrets payload; never persist it on the binding row."""
+    """Keep sensitive fields in the secrets payload; never persist them on the binding row."""
     secret_meta = dict(metadata)
     db_meta = dict(metadata)
     db_meta.pop("refresh_token", None)
+    db_meta.pop(TELEGRAM_WEBHOOK_SECRET_KEY, None)
     return secret_meta, db_meta
 
 
@@ -142,6 +159,78 @@ class ChannelBindingService:
 
         token = await self.secrets_manager.get_channel_token(binding.secret_name)
         return token
+
+    async def _load_channel_secret_data(self, secret_name: str) -> dict[str, Any]:
+        """Load decrypted channel secret JSON (access_token + encrypted metadata fields)."""
+        loader = getattr(self.secrets_manager, "get_channel_secret_data", None)
+        if callable(loader):
+            data = await loader(secret_name)
+            return data if isinstance(data, dict) else {}
+
+        from app.storage.postgres_secrets import PostgresSecretsManager
+
+        if isinstance(self.secrets_manager, PostgresSecretsManager):
+            from cryptography.fernet import InvalidToken
+
+            from app.storage.postgres import get_pool
+
+            try:
+                fernet = self.secrets_manager._get_fernet()
+            except Exception:
+                return {}
+            pool = await get_pool()
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    "SELECT value_encrypted FROM secrets WHERE key = $1",
+                    secret_name,
+                )
+            if not row:
+                return {}
+            try:
+                decrypted = fernet.decrypt(row["value_encrypted"].encode()).decode()
+                data = json.loads(decrypted)
+                return data if isinstance(data, dict) else {}
+            except (InvalidToken, json.JSONDecodeError, TypeError):
+                return {}
+        return {}
+
+    async def get_telegram_webhook_secret(self, binding_id: str) -> Optional[str]:
+        """Return stored Telegram webhook secret for a binding, if configured."""
+        binding = await self.get_binding(binding_id)
+        if not binding:
+            return None
+        data = await self._load_channel_secret_data(binding.secret_name)
+        value = data.get(TELEGRAM_WEBHOOK_SECRET_KEY)
+        return value if isinstance(value, str) and value else None
+
+    async def set_telegram_webhook_secret(self, binding_id: str, secret: str) -> None:
+        """Persist Telegram webhook secret in encrypted channel secret storage only."""
+        binding = await self.get_binding(binding_id)
+        if not binding:
+            raise ValueError(f"Binding {binding_id} not found")
+
+        token = await self.secrets_manager.get_channel_token(binding.secret_name)
+        current = await self._load_channel_secret_data(binding.secret_name)
+        metadata = {
+            key: value
+            for key, value in current.items()
+            if key not in ("access_token", "value", TELEGRAM_WEBHOOK_SECRET_KEY)
+        }
+        metadata[TELEGRAM_WEBHOOK_SECRET_KEY] = secret
+        await self.secrets_manager.update_channel_token(
+            secret_name=binding.secret_name,
+            access_token=token,
+            metadata=metadata,
+        )
+
+    async def ensure_telegram_webhook_secret(self, binding_id: str) -> str:
+        """Return existing Telegram webhook secret or generate, store, and return a new one."""
+        existing = await self.get_telegram_webhook_secret(binding_id)
+        if existing:
+            return existing
+        secret = generate_telegram_webhook_secret()
+        await self.set_telegram_webhook_secret(binding_id, secret)
+        return secret
 
     async def update_binding(
         self,
@@ -365,7 +454,10 @@ class ChannelBindingService:
 
                 base = (settings.app_url or "").rstrip("/")
                 webhook_url = f"{base}/api/v1/telegram/webhook/{binding_id}"
-                webhook_set = await telegram_service.set_webhook(binding_id, webhook_url)
+                webhook_secret = await self.ensure_telegram_webhook_secret(binding_id)
+                webhook_set = await telegram_service.set_webhook(
+                    binding_id, webhook_url, secret_token=webhook_secret
+                )
                 metadata = dict(binding.metadata or {})
                 metadata["webhook_url"] = webhook_url
                 await self.update_binding(

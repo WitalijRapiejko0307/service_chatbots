@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.api.auth import require_admin
+from app.api.webhook_guards import enforce_or_warn_missing_webhook_secret
 from app.dependencies import CommonDependencies
 from app.services.channel_binding_service import ChannelBindingService
 from app.services.viber_service import ViberService, verify_viber_signature
@@ -63,6 +64,8 @@ async def handle_webhook(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Invalid webhook signature",
             )
+    else:
+        enforce_or_warn_missing_webhook_secret("viber", binding_id)
 
     try:
         payload = json.loads(body.decode("utf-8") or "{}")

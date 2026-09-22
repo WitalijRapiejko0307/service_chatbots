@@ -10,7 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.api.auth import require_admin
 from app.dependencies import CommonDependencies
 from app.services.channel_binding_service import ChannelBindingService
-from app.services.telegram_service import TelegramService
+from app.services.telegram_service import (
+    TELEGRAM_WEBHOOK_SECRET_HEADER,
+    TelegramService,
+    verify_telegram_webhook_secret,
+)
 from app.storage.resolver import get_secrets_manager
 from app.utils.enum_helpers import get_enum_value
 
@@ -45,8 +49,31 @@ async def handle_webhook(
             detail="Invalid binding ID format",
         )
 
+    body = await request.body()
+    stored_secret = await telegram_service.channel_binding_service.get_telegram_webhook_secret(
+        binding_id
+    )
+    received_secret = request.headers.get(TELEGRAM_WEBHOOK_SECRET_HEADER) or request.headers.get(
+        TELEGRAM_WEBHOOK_SECRET_HEADER.lower(), ""
+    )
+    if stored_secret:
+        if not verify_telegram_webhook_secret(received_secret, stored_secret):
+            logger.warning(
+                "Telegram webhook secret rejected for binding %s",
+                binding_id,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid webhook secret",
+            )
+    else:
+        logger.warning(
+            "Telegram webhook for binding %s accepted without secret verification "
+            "(legacy binding — re-verify the binding to enable webhook secret)",
+            binding_id,
+        )
+
     try:
-        body = await request.body()
         payload = json.loads(body.decode("utf-8"))
     except json.JSONDecodeError as e:
         logger.error("Failed to parse Telegram webhook payload: %s", e)
@@ -110,7 +137,10 @@ async def set_webhook(
     settings = get_settings()
     base_url = settings.app_url.rstrip("/") if settings.app_url else ""
     webhook_url = f"{base_url}/api/v1/telegram/webhook/{binding_id}"
-    success = await telegram_service.set_webhook(binding_id, webhook_url)
+    webhook_secret = await binding_service.ensure_telegram_webhook_secret(binding_id)
+    success = await telegram_service.set_webhook(
+        binding_id, webhook_url, secret_token=webhook_secret
+    )
     if success:
         return {
             "status": "ok",

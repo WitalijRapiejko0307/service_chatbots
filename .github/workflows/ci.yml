@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_USER: agent
           POSTGRES_PASSWORD: agent
-          POSTGRES_DB: service_chatbot
+          POSTGRES_DB: service_chatbot_test
         ports:
           - 5432:5432
         options: >-
@@ -36,7 +36,8 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://agent:agent@localhost:5432/service_chatbot?sslmode=disable
+      DATABASE_URL: postgresql://agent:agent@localhost:5432/service_chatbot_test?sslmode=disable
+      TEST_DATABASE_URL: postgresql://agent:agent@localhost:5432/service_chatbot_test?sslmode=disable
       REDIS_URL: redis://localhost:6379/0
       ENVIRONMENT: test
 

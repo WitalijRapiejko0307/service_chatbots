@@ -109,6 +109,7 @@ class FakeDB:
         return items[:limit]
 
     async def provider_message_id_exists(self, conversation_id: str, platform_id: str) -> bool:
+        # SQL semantics for provider_message_ids are covered by tests/integration/.
         if not platform_id or not str(platform_id).strip():
             return False
         pid = str(platform_id).strip()
