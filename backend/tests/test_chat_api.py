@@ -178,38 +178,43 @@ def test_create_conversation_agent_not_found_returns_404():
     assert resp.json()["error"]["code"] == "AGENT_NOT_FOUND"
 
 
-@pytest.mark.xfail(
-    reason="chat.py does not check agent is_active before creating conversation (chat.py:95-97)",
-    strict=False,
-)
 def test_create_conversation_inactive_agent_rejected():
-    """Desired behavior: inactive agents should not accept new conversations."""
+    """Inactive agents should not accept new conversations."""
     db = ChatApiFakeDB()
     db.agents["inactive-agent"] = _minimal_agent("inactive-agent", is_active=False)
     with chat_client(db) as (client, _service):
         resp = client.post(
             "/api/v1/chat/conversations", json={"agent_id": "inactive-agent"}
         )
-    assert resp.status_code in (400, 404)
+    assert resp.status_code == 404
+    assert resp.json()["error"]["code"] == "AGENT_NOT_FOUND"
 
 
-@pytest.mark.xfail(
-    reason="AgentIDValidator mixin is not applied to CreateConversationRequest (chat.py:31, schemas.py:42-59)",
-    strict=False,
+@pytest.mark.parametrize(
+    "agent_id",
+    [
+        "bad id!",
+        "bad@id",
+        "",
+        "   ",
+        "a" * 101,
+    ],
 )
-def test_create_conversation_invalid_agent_id_format_returns_422():
-    """Desired behavior: malformed agent_id should be rejected at validation (422)."""
+def test_create_conversation_invalid_agent_id_format_returns_422(agent_id):
+    """Malformed agent_id values should be rejected at validation (422)."""
     db = ChatApiFakeDB()
     with chat_client(db) as (client, _service):
-        resp = client.post("/api/v1/chat/conversations", json={"agent_id": "bad id!"})
+        resp = client.post("/api/v1/chat/conversations", json={"agent_id": agent_id})
     assert resp.status_code == 422
+    assert resp.json()["error"]["code"] == "VALIDATION_ERROR"
 
 
 def test_create_conversation_unknown_agent_id_returns_404():
-    # Current behavior: invalid-format ids pass Pydantic and surface as AGENT_NOT_FOUND.
     db = ChatApiFakeDB()
     with chat_client(db) as (client, _service):
-        resp = client.post("/api/v1/chat/conversations", json={"agent_id": "bad id!"})
+        resp = client.post(
+            "/api/v1/chat/conversations", json={"agent_id": "missing-agent"}
+        )
     assert resp.status_code == 404
     assert resp.json()["error"]["code"] == "AGENT_NOT_FOUND"
 

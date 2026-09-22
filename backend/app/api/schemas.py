@@ -42,7 +42,6 @@ class PaginationParams(BaseModel):
 class AgentIDValidator:
     """Validator for agent IDs."""
 
-    @staticmethod
     @field_validator("agent_id")
     @classmethod
     def validate_agent_id(cls, v: str) -> str:
@@ -62,7 +61,6 @@ class AgentIDValidator:
 class ConversationIDValidator:
     """Validator for conversation IDs."""
 
-    @staticmethod
     @field_validator("conversation_id")
     @classmethod
     def validate_conversation_id(cls, v: str) -> str:
@@ -77,7 +75,6 @@ class ConversationIDValidator:
 class MessageContentValidator:
     """Validator for message content."""
 
-    @staticmethod
     @field_validator("content")
     @classmethod
     def validate_content(cls, v: str) -> str:

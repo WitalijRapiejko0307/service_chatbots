@@ -139,6 +139,10 @@ def _period_stats_from_row(row: asyncpg.Record) -> dict[str, int]:
     return {key: int(row[key]) if row and row[key] is not None else 0 for key in PERIOD_STATS_KEYS}
 
 
+from app.storage.postgres_audit import PostgresAuditStorage
+from app.storage.postgres_instagram_profiles import PostgresInstagramProfileStorage
+
+
 def _conversation_created_in_range(
     conversation: Conversation,
     start_date: datetime,
@@ -241,12 +245,11 @@ class PostgreSQLClient:
     def __init__(self, settings: Settings):
         self.settings = settings
         self.message_ttl_seconds = settings.message_ttl_hours * 3600
+        self._audit = PostgresAuditStorage()
+        self._instagram = PostgresInstagramProfileStorage()
 
     def _calculate_ttl(self, base_time: datetime) -> int:
         return int((base_time + timedelta(seconds=self.message_ttl_seconds)).timestamp())
-
-    def _calculate_profile_ttl(self, base_time: datetime) -> int:
-        return int((base_time + timedelta(days=5)).timestamp())
 
     # Conversation operations
     async def create_conversation(self, conversation: Conversation) -> Conversation:
@@ -1048,7 +1051,7 @@ class PostgreSQLClient:
                 config_id,
             )
 
-    # Audit log operations
+    # Audit log operations (delegated to PostgresAuditStorage)
     async def create_audit_log(
         self,
         admin_id: str,
@@ -1057,33 +1060,9 @@ class PostgreSQLClient:
         resource_id: str,
         metadata: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
-        # Include a UUID so two actions on the same resource in one second do not collide.
-        log_id = f"{resource_type}_{resource_id}_{uuid.uuid4().hex}"
-        meta = json.dumps(metadata or {})
-        pool = await get_pool()
-        async with pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO audit_logs (log_id, admin_id, action, resource_type, resource_id, timestamp, metadata)
-                VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
-                """,
-                log_id,
-                admin_id,
-                action,
-                resource_type,
-                resource_id,
-                utc_now(),
-                meta,
-            )
-        return {
-            "log_id": log_id,
-            "admin_id": admin_id,
-            "action": action,
-            "resource_type": resource_type,
-            "resource_id": resource_id,
-            "timestamp": to_utc_iso_string(utc_now()),
-            "metadata": metadata or {},
-        }
+        return await self._audit.create_audit_log(
+            admin_id, action, resource_type, resource_id, metadata
+        )
 
     async def list_audit_logs(
         self,
@@ -1095,85 +1074,24 @@ class PostgreSQLClient:
         sort_desc: bool = True,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
-        where = []
-        params = []
-        i = 1
-        if admin_id:
-            where.append(f"admin_id = ${i}")
-            params.append(admin_id)
-            i += 1
-        if resource_type:
-            where.append(f"resource_type = ${i}")
-            params.append(resource_type)
-            i += 1
-        if action:
-            where.append(f"action = ${i}")
-            params.append(action)
-            i += 1
-        if start_date is not None:
-            where.append(f"timestamp >= ${i}")
-            params.append(start_date)
-            i += 1
-        if end_date is not None:
-            where.append(f"timestamp <= ${i}")
-            params.append(end_date)
-            i += 1
-        params.append(limit)
-        clause = " AND ".join(where) if where else "TRUE"
-        order = "DESC" if sort_desc else "ASC"
-        pool = await get_pool()
-        async with pool.acquire() as conn:
-            rows = await conn.fetch(
-                f"SELECT * FROM audit_logs WHERE {clause} ORDER BY timestamp {order} LIMIT ${i}",
-                *params,
-            )
-        items = []
-        for r in rows:
-            d = dict(r)
-            if "metadata" in d and isinstance(d["metadata"], str):
-                d["metadata"] = _parse_json(d["metadata"])
-            if "timestamp" in d and isinstance(d["timestamp"], datetime):
-                d["timestamp"] = to_utc_iso_string(d["timestamp"])
-            items.append(d)
-        return items
+        return await self._audit.list_audit_logs(
+            admin_id=admin_id,
+            resource_type=resource_type,
+            action=action,
+            start_date=start_date,
+            end_date=end_date,
+            sort_desc=sort_desc,
+            limit=limit,
+        )
 
-    # Instagram profile operations
+    # Instagram profile operations (delegated to PostgresInstagramProfileStorage)
     async def create_or_update_instagram_profile(
         self, profile: InstagramUserProfile
     ) -> InstagramUserProfile:
-        ttl = self._calculate_profile_ttl(profile.updated_at)
-        pool = await get_pool()
-        async with pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO instagram_profiles (external_user_id, name, username, profile_pic, updated_at, ttl)
-                VALUES ($1, $2, $3, $4, $5, $6)
-                ON CONFLICT (external_user_id) DO UPDATE SET
-                    name = EXCLUDED.name, username = EXCLUDED.username, profile_pic = EXCLUDED.profile_pic,
-                    updated_at = EXCLUDED.updated_at, ttl = EXCLUDED.ttl
-                """,
-                profile.external_user_id,
-                profile.name,
-                profile.username,
-                profile.profile_pic,
-                profile.updated_at,
-                ttl,
-            )
-        return profile
+        return await self._instagram.create_or_update_instagram_profile(profile)
 
     async def get_instagram_profile(self, external_user_id: str) -> Optional[InstagramUserProfile]:
-        pool = await get_pool()
-        async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "SELECT * FROM instagram_profiles WHERE external_user_id = $1",
-                external_user_id,
-            )
-        if not row:
-            return None
-        d = dict(row)
-        if d.get("updated_at") and isinstance(d["updated_at"], datetime):
-            d["updated_at"] = to_utc_iso_string(d["updated_at"])
-        return InstagramUserProfile(**d)
+        return await self._instagram.get_instagram_profile(external_user_id)
 
 
 @lru_cache()

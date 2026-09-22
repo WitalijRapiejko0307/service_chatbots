@@ -95,9 +95,9 @@ async def create_conversation(
     deps: CommonDependencies = Depends(),
 ):
     """Create a new conversation."""
-    # Verify agent exists
+    # Verify agent exists and is active (inactive agents are unavailable for new chats)
     agent_data = await deps.db.get_agent(request.agent_id)
-    if not agent_data:
+    if not agent_data or not agent_data.get("is_active", True):
         raise AgentNotFoundError(request.agent_id)
 
     conversation_id = str(uuid.uuid4())

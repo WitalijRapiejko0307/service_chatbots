@@ -109,7 +109,8 @@ async def pg_database() -> AsyncIterator[str]:
 
     yield url
 
-    await close_pool()
+    # The connection pool is closed by the function-scoped pg_client fixture. Closing it
+    # here would run on the session finalizer's already-closed event loop.
     get_settings.cache_clear()
 
 
