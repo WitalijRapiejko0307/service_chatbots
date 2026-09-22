@@ -19,6 +19,7 @@ from app.models.message import MessageChannel
 from app.services.channel_binding_service import ChannelBindingService
 from app.services.inbound_channel import (
     find_or_create_conversation,
+    persist_operator_message,
     persist_user_message_and_maybe_reply,
 )
 from app.utils.datetime_utils import parse_utc_datetime, to_utc_iso_string, utc_now
@@ -43,6 +44,21 @@ _APP_REVIEW_NEEDLES = (
     "permission denied",
 )
 _APP_REVIEW_CODES = {10, 200}
+
+
+def _graph_message_id(response: httpx.Response) -> Optional[str]:
+    """Return Graph ``message_id`` from a successful JSON body, or None."""
+    try:
+        data = response.json()
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    mid = data.get("message_id")
+    if mid is None:
+        return None
+    value = str(mid).strip()
+    return value or None
 
 
 def graph_error_text(response: httpx.Response) -> str:
@@ -166,6 +182,38 @@ class InstagramService:
             return "message_unsend"
         return "unknown"
 
+    def _instagram_attachment_media(
+        self, message_data: dict[str, Any]
+    ) -> tuple[Optional[str], Optional[str]]:
+        attachments = message_data.get("attachments") or []
+        if not attachments:
+            return None, None
+        attachment = attachments[0]
+        att_type = attachment.get("type", "")
+        payload_data = attachment.get("payload") or {}
+        att_url = payload_data.get("url")
+        if not att_url:
+            return None, None
+        media_type = {
+            "image": "image",
+            "video": "video",
+            "audio": "audio",
+            "file": "document",
+        }.get(att_type, "image")
+        return att_url, media_type
+
+    def _instagram_event_timestamp(self, event: dict[str, Any]) -> datetime:
+        webhook_timestamp = utc_now()
+        if "timestamp" in event:
+            try:
+                timestamp_ms = event["timestamp"]
+                webhook_timestamp = datetime.fromtimestamp(
+                    int(timestamp_ms) / 1000, tz=timezone.utc
+                )
+            except (ValueError, TypeError):
+                pass
+        return webhook_timestamp
+
     async def _process_messaging_event(self, event: dict[str, Any]) -> None:
         sender = event.get("sender", {})
         recipient = event.get("recipient", {})
@@ -178,32 +226,22 @@ class InstagramService:
         is_echo = message_data.get("is_echo", False)
         is_self = message_data.get("is_self", False)
 
-        if is_echo or is_self:
-            logger.info(
-                "Ignoring Instagram echo/self message mid=%s",
-                message_id,
-            )
-            return
-
-        media_url: Optional[str] = None
-        media_type: Optional[str] = None
-        attachments = message_data.get("attachments", [])
-        if attachments:
-            attachment = attachments[0]
-            att_type = attachment.get("type", "")
-            payload_data = attachment.get("payload", {})
-            att_url = payload_data.get("url")
-            if att_url:
-                media_url = att_url
-                media_type = {
-                    "image": "image",
-                    "video": "video",
-                    "audio": "audio",
-                    "file": "document",
-                }.get(att_type, "image")
+        media_url, media_type = self._instagram_attachment_media(message_data)
 
         if not sender_id or not recipient_id or (not message_text and not media_url):
             logger.info("Ignoring incomplete Instagram messaging event")
+            return
+
+        if is_echo or is_self:
+            await self._process_operator_echo(
+                business_id=sender_id,
+                customer_id=recipient_id,
+                message_text=message_text,
+                platform_id=message_id,
+                media_url=media_url,
+                media_type=media_type,
+                timestamp=self._instagram_event_timestamp(event),
+            )
             return
 
         binding = await self.channel_binding_service.get_binding_by_account_id(
@@ -230,16 +268,6 @@ class InstagramService:
         except Exception as exc:
             logger.debug("Instagram profile refresh skipped: %s", exc)
 
-        webhook_timestamp = utc_now()
-        if "timestamp" in event:
-            try:
-                timestamp_ms = event["timestamp"]
-                webhook_timestamp = datetime.fromtimestamp(
-                    int(timestamp_ms) / 1000, tz=timezone.utc
-                )
-            except (ValueError, TypeError):
-                pass
-
         await persist_user_message_and_maybe_reply(
             self.db,
             conversation=conversation,
@@ -251,7 +279,62 @@ class InstagramService:
             binding_id=binding.binding_id,
             media_url=media_url,
             media_type=media_type,
-            timestamp=webhook_timestamp,
+            timestamp=self._instagram_event_timestamp(event),
+        )
+
+    async def _process_operator_echo(
+        self,
+        *,
+        business_id: str,
+        customer_id: str,
+        message_text: str,
+        platform_id: Any,
+        media_url: Optional[str],
+        media_type: Optional[str],
+        timestamp: datetime,
+    ) -> None:
+        binding = await self.channel_binding_service.get_binding_by_account_id(
+            channel_type=ChannelType.INSTAGRAM.value, account_id=business_id
+        )
+        if not binding or not binding.is_active:
+            binding = await self._binding_for_webhook_recipient(business_id)
+        if not binding or not binding.is_active:
+            logger.warning(
+                "Received Instagram message for unbound or inactive account %s",
+                business_id,
+            )
+            return
+
+        mid = str(platform_id).strip() if platform_id is not None else ""
+        if not mid:
+            logger.info("Ignoring Instagram echo without message id")
+            return
+
+        conversation = await find_or_create_conversation(
+            self.db,
+            agent_id=binding.agent_id,
+            channel=MessageChannel.INSTAGRAM,
+            external_user_id=customer_id,
+        )
+
+        try:
+            await self.refresh_user_profile(customer_id, binding.binding_id)
+        except Exception as exc:
+            logger.debug("Instagram profile refresh skipped: %s", exc)
+
+        await persist_operator_message(
+            self.db,
+            conversation=conversation,
+            agent_id=binding.agent_id,
+            channel=MessageChannel.INSTAGRAM,
+            external_user_id=customer_id,
+            text=message_text,
+            external_message_id=mid,
+            binding_id=binding.binding_id,
+            media_url=media_url,
+            media_type=media_type,
+            timestamp=timestamp,
+            provider_message_ids=[mid],
         )
 
     async def send_message(
@@ -261,8 +344,11 @@ class InstagramService:
         message_text: str,
         media_url: Optional[str] = None,
         media_type: Optional[str] = None,
-    ) -> dict[str, Any]:
-        """Send text and/or media via Instagram Graph API."""
+    ) -> list[str]:
+        """Send text and/or media via Instagram Graph API.
+
+        Returns Graph ``message_id`` strings from successful POSTs only.
+        """
         access_token = await self.channel_binding_service.get_access_token(binding_id)
         binding = await self.channel_binding_service.get_binding(binding_id)
         if not binding:
@@ -297,8 +383,12 @@ class InstagramService:
                     logger.error("Instagram media send failed: %s %s", resp.status_code, resp.text)
                 else:
                     logger.info("Sent Instagram %s to %s", media_type, recipient_id)
+                    ids: list[str] = []
+                    media_id = _graph_message_id(resp)
+                    if media_id:
+                        ids.append(media_id)
                     if message_text:
-                        await client.post(
+                        text_resp = await client.post(
                             url,
                             json={
                                 "recipient": {"id": recipient_id},
@@ -306,7 +396,11 @@ class InstagramService:
                             },
                             headers=headers,
                         )
-                    return resp.json()
+                        if text_resp.status_code == 200:
+                            text_id = _graph_message_id(text_resp)
+                            if text_id:
+                                ids.append(text_id)
+                    return ids
 
             if message_text:
                 payload = {
@@ -320,9 +414,10 @@ class InstagramService:
                     )
                     response.raise_for_status()
                 logger.info("Sent Instagram message to %s", recipient_id)
-                return response.json()
+                mid = _graph_message_id(response)
+                return [mid] if mid else []
 
-        return {}
+        return []
 
     async def verify_access_token(self, access_token: str, account_id: Optional[str] = None) -> bool:
         """Graph API profile check. Marks the token as usable without logging it."""

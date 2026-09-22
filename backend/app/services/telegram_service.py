@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import httpx
 
@@ -14,6 +14,7 @@ from app.models.message import MessageChannel
 from app.services.channel_binding_service import ChannelBindingService
 from app.services.inbound_channel import (
     find_or_create_conversation,
+    persist_operator_message,
     persist_user_message_and_maybe_reply,
 )
 from app.utils.datetime_utils import utc_now
@@ -22,6 +23,31 @@ from app.utils.enum_helpers import get_enum_value
 logger = logging.getLogger(__name__)
 
 TELEGRAM_MESSAGE_MAX_LENGTH = 4096
+
+TelegramUpdateKind = Literal["ignore", "customer", "operator"]
+
+
+def classify_telegram_update(payload: dict[str, Any]) -> TelegramUpdateKind:
+    """Classify a Bot API update. ``is_bot`` is ignore, never operator.
+
+    Operator only when ``message.from_business`` is True (not a Bot API field in this slice).
+    """
+    if "pre_checkout_query" in payload or "callback_query" in payload:
+        return "ignore"
+    message_data = payload.get("message")
+    if not message_data:
+        return "ignore"
+    if "successful_payment" in message_data:
+        return "ignore"
+    from_user = message_data.get("from") or {}
+    if from_user.get("is_bot", False):
+        return "ignore"
+    if message_data.get("from_business") is True:
+        return "operator"
+    chat = message_data.get("chat") or {}
+    if not str(chat.get("id") or ""):
+        return "ignore"
+    return "customer"
 
 
 def _truncate_for_telegram_text(text: str, max_len: int = TELEGRAM_MESSAGE_MAX_LENGTH) -> str:
@@ -74,27 +100,25 @@ class TelegramService:
             if get_enum_value(binding.channel_type) != ChannelType.TELEGRAM.value:
                 return
 
-            if "pre_checkout_query" in payload or "callback_query" in payload:
-                logger.debug("Ignoring Telegram payment/callback update %s", payload.get("update_id"))
+            kind = classify_telegram_update(payload)
+            if kind == "ignore":
+                if "pre_checkout_query" in payload or "callback_query" in payload:
+                    logger.debug(
+                        "Ignoring Telegram payment/callback update %s", payload.get("update_id")
+                    )
+                elif not payload.get("message"):
+                    logger.debug("Telegram update without message: %s", payload.get("update_id"))
+                elif "successful_payment" in (payload.get("message") or {}):
+                    logger.debug("Ignoring Telegram successful_payment (payments out of scope)")
                 return
 
-            message_data = payload.get("message")
-            if not message_data:
-                logger.debug("Telegram update without message: %s", payload.get("update_id"))
-                return
-
-            if "successful_payment" in message_data:
-                logger.debug("Ignoring Telegram successful_payment (payments out of scope)")
-                return
-
+            message_data = payload.get("message") or {}
             chat = message_data.get("chat", {})
             chat_id = str(chat.get("id", "") or "")
             message_text = message_data.get("text") or message_data.get("caption") or ""
             message_id = message_data.get("message_id")
             from_user = message_data.get("from", {})
 
-            if from_user.get("is_bot", False):
-                return
             if not chat_id:
                 return
 
@@ -162,6 +186,20 @@ class TelegramService:
             username = from_user.get("username")
             user_name = f"{first_name} {last_name}".strip() or None
 
+            if kind == "operator":
+                await self._persist_telegram_operator(
+                    binding=binding,
+                    chat_id=chat_id,
+                    message_text=message_text,
+                    message_id=message_id,
+                    media_url=media_url,
+                    media_type=media_type,
+                    timestamp=message_timestamp,
+                    user_name=user_name,
+                    username=username,
+                )
+                return
+
             if message_text.startswith("/"):
                 if bot_token is None:
                     try:
@@ -208,6 +246,47 @@ class TelegramService:
         except Exception as e:
             logger.error("Error handling Telegram webhook event: %s", e, exc_info=True)
             raise
+
+    async def _persist_telegram_operator(
+        self,
+        *,
+        binding: Any,
+        chat_id: str,
+        message_text: str,
+        message_id: Any,
+        media_url: Optional[str],
+        media_type: Optional[str],
+        timestamp: datetime,
+        user_name: Optional[str],
+        username: Optional[str],
+    ) -> None:
+        platform_id = str(message_id).strip() if message_id is not None else ""
+        if not platform_id:
+            logger.info("Telegram operator event without message_id — skipping")
+            return
+
+        conversation = await find_or_create_conversation(
+            self.db,
+            agent_id=binding.agent_id,
+            channel=MessageChannel.TELEGRAM,
+            external_user_id=chat_id,
+            name=user_name,
+            username=username,
+        )
+        await persist_operator_message(
+            self.db,
+            conversation=conversation,
+            agent_id=binding.agent_id,
+            channel=MessageChannel.TELEGRAM,
+            external_user_id=chat_id,
+            text=message_text,
+            external_message_id=platform_id,
+            binding_id=binding.binding_id,
+            media_url=media_url,
+            media_type=media_type,
+            timestamp=timestamp,
+            provider_message_ids=[platform_id],
+        )
 
     async def send_message(
         self,

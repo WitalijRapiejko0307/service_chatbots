@@ -50,7 +50,7 @@ async def test_tiktok_disabled_send_is_noop():
     with patch("httpx.AsyncClient") as client_cls:
         result = await svc.send_message(binding.binding_id, "user-1", "hi")
         client_cls.assert_not_called()
-    assert result is False
+    assert result == (False, [])
 
 
 @pytest.mark.asyncio
@@ -162,7 +162,8 @@ async def test_tiktok_media_send_falls_back_to_text():
             media_type="image",
         )
 
-    assert result is True
+    assert result[0] is True
+    assert result[1] == []
     assert len(calls) == 2
     assert calls[0]["message_type"] in ("image", "file")
     assert calls[0].get("media_url")

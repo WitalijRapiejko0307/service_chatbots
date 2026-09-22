@@ -17,6 +17,80 @@ logger = logging.getLogger(__name__)
 INSTAGRAM_MESSAGING_WINDOW = timedelta(hours=24)
 
 
+def _coerce_provider_message_ids(result: Any, *, kind: str) -> list[str]:
+    """Extract platform ids from Instagram / Telegram / Viber send results.
+
+    Does not log tokens. Empty on unknown or failed shapes.
+    """
+    ids: list[str] = []
+    if result is None:
+        return ids
+
+    if kind == "telegram":
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            return ids
+        nested = result.get("result")
+        if isinstance(nested, dict) and nested.get("message_id") is not None:
+            value = str(nested["message_id"]).strip()
+            if value:
+                ids.append(value)
+        return ids
+
+    if kind == "viber":
+        if not isinstance(result, dict):
+            return ids
+        if result.get("status") not in (0, None):
+            return ids
+        token = result.get("message_token")
+        if token is not None:
+            value = str(token).strip()
+            if value:
+                ids.append(value)
+        return ids
+
+    if kind == "instagram":
+        items: list[Any]
+        if isinstance(result, list):
+            items = result
+        elif isinstance(result, dict):
+            items = [result]
+        else:
+            return ids
+        seen: set[str] = set()
+        for item in items:
+            candidate = None
+            if isinstance(item, str):
+                candidate = item
+            elif isinstance(item, dict) and item.get("message_id") is not None:
+                candidate = item.get("message_id")
+            elif item is not None and not isinstance(item, dict):
+                candidate = item
+            if candidate is None:
+                continue
+            value = str(candidate).strip()
+            if not value or value in seen:
+                continue
+            seen.add(value)
+            ids.append(value)
+        return ids
+
+    return ids
+
+
+async def _stamp_provider_ids_after_send(
+    db: Any,
+    conversation_id: str,
+    kwargs: dict[str, Any],
+    ids: list[str],
+) -> None:
+    internal_message_id = kwargs.get("message_id")
+    if not internal_message_id or not ids:
+        return
+    if not hasattr(db, "stamp_provider_message_ids"):
+        return
+    await db.stamp_provider_message_ids(conversation_id, internal_message_id, ids)
+
+
 def _build_reply_markup(quick_replies: list[str]) -> dict:
     """Build a Telegram ReplyKeyboardMarkup or remove-keyboard dict.
 
@@ -181,7 +255,7 @@ class TelegramSender(ChannelSender):
         reply_markup = (
             _build_reply_markup(quick_replies) if quick_replies is not None else None
         )
-        await self.telegram_service.send_message(
+        result = await self.telegram_service.send_message(
             binding_id=binding_id,
             chat_id=external_user_id,
             message_text=message_text,
@@ -189,6 +263,8 @@ class TelegramSender(ChannelSender):
             media_type=media_type,
             reply_markup=reply_markup,
         )
+        ids = _coerce_provider_message_ids(result, kind="telegram")
+        await _stamp_provider_ids_after_send(self.db, conversation_id, kwargs, ids)
 
 
 class ViberSender(ChannelSender):
@@ -219,7 +295,7 @@ class ViberSender(ChannelSender):
         keyboard = (
             _build_viber_keyboard(quick_replies) if quick_replies else None
         )
-        await self.viber_service.send_message(
+        result = await self.viber_service.send_message(
             binding_id=binding_id,
             receiver_id=external_user_id,
             message_text=message_text,
@@ -227,6 +303,8 @@ class ViberSender(ChannelSender):
             media_type=media_type,
             keyboard=keyboard,
         )
+        ids = _coerce_provider_message_ids(result, kind="viber")
+        await _stamp_provider_ids_after_send(self.db, conversation_id, kwargs, ids)
 
 
 class InstagramSender(ChannelSender):
@@ -260,13 +338,15 @@ class InstagramSender(ChannelSender):
                 conversation_id,
             )
             return
-        await self.instagram_service.send_message(
+        result = await self.instagram_service.send_message(
             binding_id=binding_id,
             recipient_id=external_user_id,
             message_text=message_text,
             media_url=media_url,
             media_type=media_type,
         )
+        ids = _coerce_provider_message_ids(result, kind="instagram")
+        await _stamp_provider_ids_after_send(self.db, conversation_id, kwargs, ids)
 
 
 class TikTokSender(ChannelSender):
@@ -310,15 +390,33 @@ class TikTokSender(ChannelSender):
             )
             return
 
-        sent = await self.tiktok_service.send_message(
+        result = await self.tiktok_service.send_message(
             binding_id=binding_id,
             recipient_id=external_user_id,
             message_text=message_text,
             media_url=media_url,
             media_type=media_type,
         )
+        ids: list[str] = []
+        if isinstance(result, tuple):
+            sent = bool(result[0]) if result else False
+            raw_ids = result[1] if len(result) > 1 else []
+            if isinstance(raw_ids, list):
+                seen: set[str] = set()
+                for item in raw_ids:
+                    if item is None:
+                        continue
+                    value = str(item).strip()
+                    if not value or value in seen:
+                        continue
+                    seen.add(value)
+                    ids.append(value)
+        else:
+            sent = bool(result)
         if sent and not is_human_reply:
             await self.tiktok_service.record_outbound(self.db, conversation_id)
+        if sent and ids:
+            await _stamp_provider_ids_after_send(self.db, conversation_id, kwargs, ids)
 
 
 async def _instagram_window_expired(db: Any, conversation_id: str) -> bool:

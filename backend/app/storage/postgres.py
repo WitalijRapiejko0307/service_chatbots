@@ -23,6 +23,21 @@ logger = logging.getLogger(__name__)
 _pool: Optional[asyncpg.Pool] = None
 
 
+def _unique_nonempty_ids(ids: Optional[list[Any]]) -> list[str]:
+    """Preserve order; drop empties and duplicates."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in ids or []:
+        if raw is None:
+            continue
+        value = str(raw).strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        out.append(value)
+    return out
+
+
 async def get_pool() -> asyncpg.Pool:
     """Get or create connection pool."""
     global _pool
@@ -509,6 +524,74 @@ class PostgreSQLClient:
                 ttl,
             )
         return row is not None
+
+    async def provider_message_id_exists(self, conversation_id: str, platform_id: str) -> bool:
+        """True if this conversation already stores the platform message id."""
+        if not platform_id or not str(platform_id).strip():
+            return False
+        pid = str(platform_id).strip()
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT 1
+                FROM messages
+                WHERE conversation_id = $1
+                  AND (
+                    external_message_id = $2
+                    OR COALESCE(metadata::jsonb -> 'provider_message_ids', '[]'::jsonb) ? $2
+                  )
+                LIMIT 1
+                """,
+                conversation_id,
+                pid,
+            )
+        return row is not None
+
+    async def stamp_provider_message_ids(
+        self, conversation_id: str, message_id: str, ids: list[str]
+    ) -> None:
+        """Write platform ids onto one existing row. No-op if ids empty or row missing."""
+        cleaned = _unique_nonempty_ids(ids)
+        if not cleaned:
+            return
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT external_message_id, metadata
+                FROM messages
+                WHERE conversation_id = $1 AND message_id = $2
+                """,
+                conversation_id,
+                message_id,
+            )
+            if not row:
+                return
+            existing_ext = row["external_message_id"]
+            meta = _parse_json(row["metadata"])
+            if not isinstance(meta, dict):
+                meta = {}
+            existing_ids = meta.get("provider_message_ids") or []
+            if not isinstance(existing_ids, list):
+                existing_ids = []
+            merged = _unique_nonempty_ids([*existing_ids, *cleaned])
+            meta["provider_message_ids"] = merged
+            new_ext = existing_ext
+            if not (existing_ext and str(existing_ext).strip()):
+                new_ext = cleaned[0]
+            await conn.execute(
+                """
+                UPDATE messages
+                SET external_message_id = $3,
+                    metadata = $4
+                WHERE conversation_id = $1 AND message_id = $2
+                """,
+                conversation_id,
+                message_id,
+                new_ext,
+                json.dumps(meta),
+            )
 
     async def get_message(self, conversation_id: str, message_id: str) -> Optional[Message]:
         pool = await get_pool()

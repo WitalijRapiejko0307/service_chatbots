@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import httpx
 
@@ -15,6 +15,7 @@ from app.models.message import MessageChannel
 from app.services.channel_binding_service import ChannelBindingService
 from app.services.inbound_channel import (
     find_or_create_conversation,
+    persist_operator_message,
     persist_user_message_and_maybe_reply,
 )
 from app.utils.enum_helpers import get_enum_value
@@ -31,6 +32,26 @@ VIBER_EVENT_TYPES = [
     "subscribed",
     "unsubscribed",
 ]
+
+ViberEventKind = Literal["ignore", "customer", "operator"]
+
+
+def classify_viber_event(payload: dict[str, Any]) -> ViberEventKind:
+    """Classify a Viber callback. User ``message`` stays customer.
+
+    Operator only when the sender is explicitly the business account
+    (``sender.role`` in {business, pa, account} or ``from_business`` True).
+    Viber does not send those fields on user message callbacks today.
+    """
+    if payload.get("event") != "message":
+        return "ignore"
+    sender = payload.get("sender") or {}
+    role = str(sender.get("role") or "").strip().lower()
+    if role in {"business", "pa", "account"}:
+        return "operator"
+    if payload.get("from_business") is True:
+        return "operator"
+    return "customer"
 
 
 def verify_viber_signature(raw_body: bytes, signature_hex: str, auth_token: str) -> bool:
@@ -139,6 +160,18 @@ class ViberService:
             or None
         )
 
+        kind = classify_viber_event(payload)
+        if kind == "operator":
+            await self._persist_viber_operator(
+                payload=payload,
+                binding=binding,
+                text=text,
+                platform_id=external_message_id,
+                media_url=media_url,
+                media_type=media_type,
+            )
+            return
+
         conversation = await find_or_create_conversation(
             self.db,
             agent_id=binding.agent_id,
@@ -158,6 +191,51 @@ class ViberService:
             binding_id=binding.binding_id,
             media_url=media_url,
             media_type=media_type,
+        )
+
+    async def _persist_viber_operator(
+        self,
+        *,
+        payload: dict[str, Any],
+        binding: Any,
+        text: str,
+        platform_id: Any,
+        media_url: Optional[str],
+        media_type: Optional[str],
+    ) -> None:
+        receiver = payload.get("receiver")
+        if isinstance(receiver, dict):
+            customer_id = str(receiver.get("id") or "")
+        elif isinstance(receiver, str):
+            customer_id = receiver
+        else:
+            customer_id = str((payload.get("user") or {}).get("id") or "")
+        if not customer_id:
+            logger.info("Viber operator event without customer id — skipping")
+            return
+        mid = str(platform_id).strip() if platform_id is not None else ""
+        if not mid:
+            logger.info("Viber operator event without message_token — skipping")
+            return
+
+        conversation = await find_or_create_conversation(
+            self.db,
+            agent_id=binding.agent_id,
+            channel=MessageChannel.VIBER,
+            external_user_id=customer_id,
+        )
+        await persist_operator_message(
+            self.db,
+            conversation=conversation,
+            agent_id=binding.agent_id,
+            channel=MessageChannel.VIBER,
+            external_user_id=customer_id,
+            text=text,
+            external_message_id=mid,
+            binding_id=binding.binding_id,
+            media_url=media_url,
+            media_type=media_type,
+            provider_message_ids=[mid],
         )
 
     async def send_message(

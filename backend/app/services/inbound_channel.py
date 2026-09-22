@@ -2,7 +2,8 @@
 
 Webhook adapters parse platform payloads, then call:
   1. find_or_create_conversation
-  2. persist_user_message_and_maybe_reply
+  2. persist_user_message_and_maybe_reply  (customer)
+     or persist_operator_message          (native-app operator echo)
 
 Owner UI never talks to messengers. One conversation identity per
 (agent_id, channel, external_user_id).
@@ -12,13 +13,13 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from app.config import get_settings
 from app.models.conversation import Conversation, ConversationStatus, MarketingStatus
 from app.models.message import Message, MessageChannel, MessageRole
-from app.utils.datetime_utils import to_utc_iso_string, utc_now
+from app.utils.datetime_utils import parse_utc_datetime, to_utc_iso_string, utc_now
 from app.utils.enum_helpers import get_enum_value
 
 logger = logging.getLogger(__name__)
@@ -327,4 +328,162 @@ async def persist_user_message_and_maybe_reply(
             exc_info=True,
         )
 
+    return True
+
+
+def _unique_nonempty_ids(ids: Optional[list[Any]]) -> list[str]:
+    """Preserve order; drop empties and duplicates."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in ids or []:
+        if raw is None:
+            continue
+        value = str(raw).strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        out.append(value)
+    return out
+
+
+def _as_utc_datetime(value: Any) -> Optional[datetime]:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        dt = value
+    elif isinstance(value, str):
+        try:
+            dt = parse_utc_datetime(value)
+        except (ValueError, TypeError, AttributeError):
+            return None
+        if dt is None:
+            return None
+    else:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+async def persist_operator_message(
+    db: Any,
+    *,
+    conversation: Conversation,
+    agent_id: str,
+    channel: MessageChannel | str,
+    external_user_id: str,
+    text: str,
+    external_message_id: str,
+    binding_id: Optional[str] = None,
+    media_url: Optional[str] = None,
+    media_type: Optional[str] = None,
+    timestamp: Optional[datetime] = None,
+    provider_message_ids: Optional[list[str]] = None,
+) -> bool:
+    """Persist an operator line typed in a native channel app. Never runs the agent.
+
+    Role is admin. Does not change conversation status, handoff, or request type.
+    Returns True only if a new message row was inserted.
+    """
+    channel_value = get_enum_value(channel)
+    channel_enum = (
+        channel if isinstance(channel, MessageChannel) else MessageChannel(channel_value)
+    )
+
+    ids = _unique_nonempty_ids(
+        provider_message_ids if provider_message_ids is not None else [external_message_id]
+    )
+
+    if hasattr(db, "provider_message_id_exists"):
+        for platform_id in ids:
+            try:
+                if await db.provider_message_id_exists(
+                    conversation.conversation_id, platform_id
+                ):
+                    logger.info(
+                        "Operator echo already stored for conversation %s — skipping",
+                        conversation.conversation_id,
+                    )
+                    return False
+            except Exception as exc:
+                logger.debug(
+                    "provider_message_id_exists failed for conversation %s: %s",
+                    conversation.conversation_id,
+                    exc,
+                )
+
+    message_text = text or ""
+    ts = timestamp or utc_now()
+    if hasattr(db, "list_messages"):
+        try:
+            recent = await db.list_messages(
+                conversation.conversation_id, limit=50, reverse=True
+            )
+        except Exception as exc:
+            logger.debug(
+                "list_messages failed during operator race check for %s: %s",
+                conversation.conversation_id,
+                exc,
+            )
+            recent = []
+        incoming_ts = _as_utc_datetime(ts)
+        stripped = message_text.strip()
+        for existing in recent:
+            if getattr(existing, "conversation_id", None) != conversation.conversation_id:
+                continue
+            role = get_enum_value(getattr(existing, "role", None))
+            if role not in (MessageRole.AGENT.value, MessageRole.ADMIN.value):
+                continue
+            if (getattr(existing, "content", None) or "").strip() != stripped:
+                continue
+            meta = getattr(existing, "metadata", None) or {}
+            if isinstance(meta, dict) and meta.get("source") == "external_app":
+                continue
+            existing_ts = _as_utc_datetime(getattr(existing, "timestamp", None))
+            if incoming_ts is None or existing_ts is None:
+                continue
+            if abs(incoming_ts - existing_ts) <= timedelta(seconds=15):
+                logger.info(
+                    "Operator echo race: matching outbound already in conversation %s — skipping",
+                    conversation.conversation_id,
+                )
+                return False
+
+    msg_metadata: dict[str, Any] = {
+        "source": "external_app",
+        "provider_message_ids": ids,
+    }
+    if media_url:
+        msg_metadata["media_url"] = media_url
+    if media_type:
+        msg_metadata["media_type"] = media_type
+
+    message_id = deterministic_message_id(
+        channel_value, binding_id, external_user_id, str(external_message_id)
+    )
+
+    operator_message = Message(
+        message_id=message_id,
+        conversation_id=conversation.conversation_id,
+        agent_id=agent_id,
+        role=MessageRole.ADMIN,
+        content=message_text,
+        channel=channel_enum,
+        external_message_id=str(external_message_id) if external_message_id else None,
+        external_user_id=external_user_id,
+        timestamp=ts,
+        metadata=msg_metadata,
+        media_url=media_url,
+        media_type=media_type,
+    )
+
+    inserted = await db.try_create_message(operator_message)
+    if not inserted:
+        logger.info(
+            "Duplicate operator message channel=%s external_message_id=%s user=%s — skipping",
+            channel_value,
+            external_message_id,
+            external_user_id,
+        )
+        return False
     return True

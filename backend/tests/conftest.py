@@ -96,6 +96,71 @@ class FakeDB:
         self.messages[key] = message
         return True
 
+    async def list_messages(
+        self,
+        conversation_id: str,
+        limit: int = 100,
+        reverse: bool = True,
+    ) -> list[Message]:
+        items = [m for (cid, _), m in self.messages.items() if cid == conversation_id]
+        items.sort(key=lambda m: m.timestamp or utc_now())
+        if reverse:
+            items.reverse()
+        return items[:limit]
+
+    async def provider_message_id_exists(self, conversation_id: str, platform_id: str) -> bool:
+        if not platform_id or not str(platform_id).strip():
+            return False
+        pid = str(platform_id).strip()
+        for (cid, _), msg in self.messages.items():
+            if cid != conversation_id:
+                continue
+            if msg.external_message_id == pid:
+                return True
+            meta = msg.metadata or {}
+            stored = meta.get("provider_message_ids") or []
+            if isinstance(stored, list) and pid in [str(x) for x in stored]:
+                return True
+        return False
+
+    async def stamp_provider_message_ids(
+        self, conversation_id: str, message_id: str, ids: list[str]
+    ) -> None:
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for raw in ids or []:
+            if raw is None:
+                continue
+            value = str(raw).strip()
+            if not value or value in seen:
+                continue
+            seen.add(value)
+            cleaned.append(value)
+        if not cleaned:
+            return
+        key = (conversation_id, message_id)
+        msg = self.messages.get(key)
+        if not msg:
+            return
+        if not (msg.external_message_id and str(msg.external_message_id).strip()):
+            msg.external_message_id = cleaned[0]
+        meta = dict(msg.metadata or {})
+        existing = meta.get("provider_message_ids") or []
+        if not isinstance(existing, list):
+            existing = []
+        merged: list[str] = []
+        merged_seen: set[str] = set()
+        for raw in [*existing, *cleaned]:
+            if raw is None:
+                continue
+            value = str(raw).strip()
+            if not value or value in merged_seen:
+                continue
+            merged_seen.add(value)
+            merged.append(value)
+        meta["provider_message_ids"] = merged
+        msg.metadata = meta
+
     async def get_agent(self, agent_id: str) -> Optional[dict[str, Any]]:
         return self.agents.get(agent_id)
 

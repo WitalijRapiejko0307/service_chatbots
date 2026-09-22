@@ -22,6 +22,7 @@ from app.models.message import MessageChannel
 from app.services.channel_binding_service import ChannelBindingService
 from app.services.inbound_channel import (
     find_or_create_conversation,
+    persist_operator_message,
     persist_user_message_and_maybe_reply,
 )
 from app.utils.datetime_utils import parse_utc_datetime, utc_now
@@ -39,6 +40,60 @@ TIKTOK_OAUTH_REVOKE_URL = "https://open.tiktokapis.com/v2/oauth/revoke/"
 TIKTOK_WINDOW = timedelta(hours=48)
 TIKTOK_MAX_OUTBOUND = 10
 INBOUND_EVENT_TYPES = frozenset({"im_receive_msg", "im.receive_msg", "message", "receive_msg"})
+
+
+def _tiktok_operator_customer_ids(
+    payload: dict[str, Any], binding: Any
+) -> Optional[tuple[str, str]]:
+    """Return (customer_id, platform_message_id) only for an unambiguous business-origin flag.
+
+    Current inbound keys (from_user_id, open_id, sender_id, ...) are customer ids and
+    must not be treated as the business account. ``binding`` is accepted for a future
+    account-id check but is unused until such a flag exists.
+    """
+    del binding
+    data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+    if not isinstance(data, dict):
+        data = {}
+    is_operator = (
+        data.get("is_echo") is True
+        or data.get("from_business") is True
+        or payload.get("is_echo") is True
+        or payload.get("from_business") is True
+    )
+    if not is_operator:
+        return None
+    customer_id = str(
+        data.get("to_user_id")
+        or data.get("recipient_id")
+        or data.get("to_openid")
+        or payload.get("to_user_id")
+        or payload.get("recipient_id")
+        or ""
+    )
+    platform_id = data.get("message_id") or data.get("msg_id") or payload.get("event_id")
+    if not customer_id or not platform_id:
+        return None
+    return (customer_id, str(platform_id))
+
+
+def _tiktok_platform_message_ids(data: Any) -> list[str]:
+    """Collect message_id / msg_id from a send JSON body."""
+    if not isinstance(data, dict):
+        return []
+    ids: list[str] = []
+    nested = data.get("data") if isinstance(data.get("data"), dict) else {}
+    for blob in (data, nested):
+        if not isinstance(blob, dict):
+            continue
+        for key in ("message_id", "msg_id"):
+            val = blob.get(key)
+            if val is None:
+                continue
+            value = str(val).strip()
+            if value and value not in ids:
+                ids.append(value)
+    return ids
 
 
 def verify_tiktok_signature(raw_body: bytes, signature: str, app_secret: str) -> bool:
@@ -106,6 +161,28 @@ class TikTokService:
             text = text.get("text") or ""
         message_id = data.get("message_id") or data.get("msg_id") or payload.get("event_id")
 
+        operator_ids = _tiktok_operator_customer_ids(payload, binding)
+        if operator_ids:
+            customer_id, platform_id = operator_ids
+            conversation = await find_or_create_conversation(
+                self.db,
+                agent_id=binding.agent_id,
+                channel=MessageChannel.TIKTOK,
+                external_user_id=customer_id,
+            )
+            await persist_operator_message(
+                self.db,
+                conversation=conversation,
+                agent_id=binding.agent_id,
+                channel=MessageChannel.TIKTOK,
+                external_user_id=customer_id,
+                text=str(text or ""),
+                external_message_id=platform_id,
+                binding_id=binding_id,
+                provider_message_ids=[platform_id],
+            )
+            return
+
         if not user_id:
             logger.info("TikTok inbound without user id — skipping")
             return
@@ -134,10 +211,10 @@ class TikTokService:
         message_text: str,
         media_url: Optional[str] = None,
         media_type: Optional[str] = None,
-    ) -> bool:
+    ) -> tuple[bool, list[str]]:
         if not self.messaging_enabled:
             logger.info("TikTok messaging disabled — send no-op")
-            return False
+            return False, []
 
         access_token = await self.channel_binding_service.get_access_token(binding_id)
         binding = await self.channel_binding_service.get_binding(binding_id)
@@ -157,7 +234,7 @@ class TikTokService:
             "Content-Type": "application/json",
         }
 
-        async def _post(body: dict[str, Any]) -> bool:
+        async def _post(body: dict[str, Any]) -> tuple[bool, list[str]]:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.post(url, json=body, headers=headers)
                 if resp.status_code != 200:
@@ -166,35 +243,37 @@ class TikTokService:
                         resp.status_code,
                         redact_secrets(resp.text or ""),
                     )
-                    return False
+                    return False, []
                 data = resp.json()
                 if data.get("code") not in (0, None, "0"):
                     logger.error(
                         "TikTok send API error: %s",
                         redact_secrets(str(data.get("message") or data)),
                     )
-                    return False
-                return True
+                    return False, []
+                return True, _tiktok_platform_message_ids(data)
 
         try:
             if media_url:
                 media_payload = dict(payload)
                 media_payload["message_type"] = "image" if media_type == "image" else "file"
                 media_payload["media_url"] = media_url
-                if await _post(media_payload):
+                ok, ids = await _post(media_payload)
+                if ok:
                     logger.info("Sent TikTok message to %s", recipient_id)
-                    return True
+                    return True, ids
                 logger.info(
                     "TikTok media send failed; falling back to text-only for recipient %s",
                     recipient_id,
                 )
-            if await _post(payload):
+            ok, ids = await _post(payload)
+            if ok:
                 logger.info("Sent TikTok message to %s", recipient_id)
-                return True
-            return False
+                return True, ids
+            return False, []
         except Exception as e:
             logger.error("TikTok send error: %s", e, exc_info=True)
-            return False
+            return False, []
 
     async def verify_access_token(self, access_token: str) -> bool:
         if not self.messaging_enabled:
