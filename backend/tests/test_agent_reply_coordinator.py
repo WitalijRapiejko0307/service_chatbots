@@ -453,16 +453,45 @@ async def test_execute_timer_trigger_discards_stale_workflow_hash():
 
 
 @pytest.mark.asyncio
-@pytest.mark.xfail(
-    reason=(
-        "Bug: execute_timer_trigger initializes collected={} and never calls "
-        "_load_collected_from_checkpoint (agent_reply_coordinator.py ~608-673); "
-        "placeholders in static timer messages are not substituted."
-    ),
-    strict=False,
-)
 async def test_execute_timer_trigger_substitutes_checkpoint_placeholders():
     """Timer static messages should substitute {collected} vars like auto-steps do."""
+    db = CoordinatorFakeDB()
+    redis = FakeRedis()
+    conv = _conversation(external_user_name="Мария Сидорова")
+    db.conversations[conv.conversation_id] = conv
+    agent_config = _seed_agent(db)
+
+    payload = _timer_payload(
+        agent_config,
+        message_template="Привет, {user_name}! Как {pet_name}? ({unknown_var})",
+    )
+    await redis.set(
+        f"agent_reply:timer_payload:{conv.conversation_id}",
+        json.dumps(payload),
+    )
+
+    sender = AsyncMock()
+    with _coordinator_patches(db=db, redis=redis):
+        with (
+            patch("app.services.channel_sender.get_channel_sender", return_value=sender),
+            patch(
+                "app.services.agent_reply_coordinator._load_conversation_history_from_db",
+                new=AsyncMock(return_value=[]),
+            ),
+            patch(
+                "app.services.agent_reply_coordinator._load_collected_from_checkpoint",
+                new=AsyncMock(return_value={"pet_name": "Барсик"}),
+            ),
+        ):
+            await execute_timer_trigger(conv.conversation_id)
+
+    sent_text = sender.send_message.await_args.kwargs["message_text"]
+    assert sent_text == "Привет, Мария! Как Барсик? ({unknown_var})"
+
+
+@pytest.mark.asyncio
+async def test_execute_timer_trigger_sends_when_checkpoint_unavailable():
+    """Timer static messages must still send if checkpoint load fails."""
     db = CoordinatorFakeDB()
     redis = FakeRedis()
     conv = _conversation()
@@ -485,13 +514,15 @@ async def test_execute_timer_trigger_substitutes_checkpoint_placeholders():
             ),
             patch(
                 "app.services.agent_reply_coordinator._load_collected_from_checkpoint",
-                new=AsyncMock(return_value={"pet_name": "Барсик"}),
+                new=AsyncMock(side_effect=RuntimeError("checkpoint unavailable")),
             ),
         ):
             await execute_timer_trigger(conv.conversation_id)
 
+    sender.send_message.assert_awaited_once()
     sent_text = sender.send_message.await_args.kwargs["message_text"]
-    assert sent_text == "Привет, Барсик!"
+    assert sent_text == "Привет, питомца!"
+    assert len(db.messages) == 1
 
 
 @pytest.mark.asyncio

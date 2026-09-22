@@ -13,11 +13,12 @@ from app.dependencies import CommonDependencies
 from app.models.agent_config import AgentConfig
 from app.models.conversation import ConversationStatus
 from app.models.message import Message, MessageChannel, MessageRole
-from app.config import get_settings
-from app.services.agent_reply_coordinator import notify_user_message_saved
 from app.services.agent_service import create_agent_service
-from app.services.conversation_service import ConversationService
-from app.storage.redis import get_redis_client
+from app.services.inbound_message_pipeline import (
+    InboundPipelineOptions,
+    PipelineOutcome,
+    run_agent_reply_pipeline,
+)
 from app.utils.datetime_utils import to_utc_iso_string, utc_now
 from app.utils.enum_helpers import get_enum_value
 
@@ -128,7 +129,6 @@ async def websocket_endpoint(websocket: WebSocket, conversation_id: str):
 
         settings = get_settings()
         db = get_db()
-        conversation_service = ConversationService(db)
 
         # Verify conversation exists
         conversation = await db.get_conversation(conversation_id)
@@ -190,7 +190,6 @@ async def websocket_endpoint(websocket: WebSocket, conversation_id: str):
                 await _handle_message(
                     conversation_id,
                     message_data,
-                    conversation_service,
                     db,
                 )
             elif message_type == "ping":
@@ -222,7 +221,6 @@ async def websocket_endpoint(websocket: WebSocket, conversation_id: str):
 async def _handle_message(
     conversation_id: str,
     message_data: dict,
-    conversation_service: ConversationService,
     db: Any,
 ) -> None:
     """Handle incoming message from client."""
@@ -304,68 +302,49 @@ async def _handle_message(
     # Process message through agent service
     # WebSocket is only for web_chat, so create WebChatSender
     from app.services.channel_sender import WebChatSender
-    
+
     web_chat_sender = WebChatSender(db)
     agent_service = create_agent_service(agent_config, db, web_chat_sender)
 
-    settings = get_settings()
-    if settings.agent_reply_debounce_seconds > 0:
-        redis_client = get_redis_client()
-        if await redis_client.ping():
-            mod_early = await agent_service.run_pre_moderation_guard(
-                content, conversation_id
-            )
-            if mod_early and mod_early.get("escalate"):
-                await connection_manager.send_message(
-                    conversation_id,
-                    {
-                        "type": "handoff",
-                        "conversation_id": conversation_id,
-                        "reason": mod_early.get(
-                            "escalation_reason", "Escalation required"
-                        ),
-                        "status": ConversationStatus.NEEDS_HUMAN.value,
-                        "timestamp": None,
-                    },
-                )
-                return
-            notify_result = await notify_user_message_saved(
-                conversation_id,
-                agent_user_message=content,
-                last_user_plain_content=content,
-            )
-            if notify_result == "scheduled":
-                return
-
     try:
-        result = await conversation_service.process_message(
-            conversation_id=conversation_id,
-            user_message=content,
+        pipeline_result = await run_agent_reply_pipeline(
+            db,
+            conversation,
+            agent_user_message=content,
+            last_user_plain_content=content,
             agent_service=agent_service,
+            options=InboundPipelineOptions(
+                cancel_inactivity_timer=False,
+                skip_debounce_for_media=False,
+            ),
         )
 
-        # Handle escalation
-        if result.get("escalate"):
+        if pipeline_result.outcome in (
+            PipelineOutcome.ESCALATED,
+            PipelineOutcome.PRE_MODERATION_ESCALATED,
+        ):
+            reason = pipeline_result.escalation_reason or "Escalation required"
             await connection_manager.send_message(
                 conversation_id,
                 {
                     "type": "handoff",
                     "conversation_id": conversation_id,
-                    "reason": result.get("escalation_reason", "Escalation required"),
+                    "reason": reason,
                     "status": ConversationStatus.NEEDS_HUMAN.value,
                     "timestamp": None,
                 },
             )
             return
 
-        # Send agent response
-        # Agent message is already created in agent_service.process_message
-        agent_response = result.get("response")
-        agent_message_id = result.get("agent_message_id")
+        if pipeline_result.outcome == PipelineOutcome.DEBOUNCE_SCHEDULED:
+            return
+
+        result = pipeline_result.agent_result or {}
+        agent_response = pipeline_result.agent_response or result.get("response")
+        agent_message_id = pipeline_result.agent_message_id or result.get("agent_message_id")
         agent_message_timestamp = result.get("agent_message_timestamp")
-        
+
         if agent_response and agent_message_id:
-            # Use timestamp from result to avoid extra DB query
             timestamp = agent_message_timestamp or to_utc_iso_string(utc_now())
             ws_payload: dict = {
                 "type": "message",
@@ -381,7 +360,6 @@ async def _handle_message(
                 ws_payload["quick_replies"] = result["quick_replies"]
             await connection_manager.send_message(conversation_id, ws_payload)
         elif agent_response:
-            # If message wasn't created in agent_service (shouldn't happen, but handle gracefully)
             await connection_manager.send_error(
                 conversation_id, "Failed to save agent response"
             )

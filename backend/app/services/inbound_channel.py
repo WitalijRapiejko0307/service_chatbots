@@ -16,7 +16,6 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
-from app.config import get_settings
 from app.models.conversation import Conversation, ConversationStatus, MarketingStatus
 from app.models.message import Message, MessageChannel, MessageRole
 from app.utils.datetime_utils import parse_utc_datetime, to_utc_iso_string, utc_now
@@ -262,13 +261,6 @@ async def persist_user_message_and_maybe_reply(
         return True
 
     try:
-        from app.services.agent_reply_coordinator import cancel_timer_trigger
-
-        await cancel_timer_trigger(conversation.conversation_id)
-    except Exception as exc:
-        logger.debug("cancel_timer_trigger failed for %s: %s", conversation.conversation_id, exc)
-
-    try:
         agent_data = await db.get_agent(agent_id)
         if not agent_data or "config" not in agent_data:
             logger.error("Agent %s not found or invalid configuration", agent_id)
@@ -277,46 +269,30 @@ async def persist_user_message_and_maybe_reply(
         from app.models.agent_config import AgentConfig
         from app.services.agent_service import create_agent_service
         from app.services.channel_sender import get_channel_sender
-        from app.services.conversation_service import build_conversation_history_for_agent
-
-        agent_config = AgentConfig.from_dict(agent_data["config"])
-        conversation_history = await build_conversation_history_for_agent(
-            db,
-            conversation.conversation_id,
-            message_text,
-            agent_context_reset_at=conversation.agent_context_reset_at,
+        from app.services.inbound_message_pipeline import (
+            InboundPipelineOptions,
+            PipelineOutcome,
+            run_agent_reply_pipeline,
         )
 
+        agent_config = AgentConfig.from_dict(agent_data["config"])
         channel_sender = get_channel_sender(channel_enum, db)
         agent_service = create_agent_service(agent_config, db, channel_sender)
 
-        settings = get_settings()
-        if settings.agent_reply_debounce_seconds > 0 and not vision_url:
-            from app.services.agent_reply_coordinator import notify_user_message_saved
-            from app.storage.redis import get_redis_client
-
-            redis_client = get_redis_client()
-            if await redis_client.ping():
-                mod_early = await agent_service.run_pre_moderation_guard(
-                    message_text, conversation.conversation_id
-                )
-                if mod_early and mod_early.get("escalate"):
-                    return True
-                notify_result = await notify_user_message_saved(
-                    conversation.conversation_id,
-                    agent_user_message=message_text,
-                    last_user_plain_content=message_text.strip(),
-                )
-                if notify_result == "scheduled":
-                    return True
-
-        result = await agent_service.process_message(
-            user_message=message_text,
-            conversation_id=conversation.conversation_id,
-            conversation_history=conversation_history,
+        pipeline_result = await run_agent_reply_pipeline(
+            db,
+            conversation,
+            agent_user_message=message_text,
+            last_user_plain_content=message_text.strip(),
+            agent_service=agent_service,
             user_media_url=vision_url,
+            options=InboundPipelineOptions(
+                cancel_inactivity_timer=True,
+                cancel_timer_swallow_errors=True,
+                skip_debounce_for_media=True,
+            ),
         )
-        if result.get("escalate"):
+        if pipeline_result.outcome == PipelineOutcome.ESCALATED:
             logger.info(
                 "Message escalated for conversation %s", conversation.conversation_id
             )

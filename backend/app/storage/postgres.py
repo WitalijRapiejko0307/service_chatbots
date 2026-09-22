@@ -119,6 +119,123 @@ def _row_to_notification_config(row: asyncpg.Record) -> dict:
     return d
 
 
+PERIOD_STATS_KEYS = (
+    "total_conversations",
+    "ai_active",
+    "needs_human",
+    "human_active",
+    "closed",
+    "marketing_new",
+    "marketing_booked",
+    "marketing_no_response",
+    "marketing_rejected",
+)
+
+
+def _empty_period_stats() -> dict[str, int]:
+    return {key: 0 for key in PERIOD_STATS_KEYS}
+
+
+def _period_stats_from_row(row: asyncpg.Record) -> dict[str, int]:
+    return {key: int(row[key]) if row and row[key] is not None else 0 for key in PERIOD_STATS_KEYS}
+
+
+def _conversation_created_in_range(
+    conversation: Conversation,
+    start_date: datetime,
+    end_date: datetime,
+    *,
+    end_exclusive: bool,
+) -> bool:
+    """Match admin stats date filtering (inclusive start; end inclusive or exclusive)."""
+    if not conversation.created_at:
+        return False
+    created_dt = conversation.created_at
+    if isinstance(created_dt, str):
+        try:
+            created_dt = parse_utc_datetime(created_dt)
+        except (ValueError, AttributeError):
+            return False
+    if created_dt.tzinfo is None:
+        from datetime import timezone
+
+        created_dt = created_dt.replace(tzinfo=timezone.utc)
+    start = start_date
+    end = end_date
+    if start.tzinfo is None:
+        from datetime import timezone
+
+        start = start.replace(tzinfo=timezone.utc)
+    if end.tzinfo is None:
+        from datetime import timezone
+
+        end = end.replace(tzinfo=timezone.utc)
+    if end_exclusive:
+        return start <= created_dt < end
+    return start <= created_dt <= end
+
+
+def _period_stats_from_conversations(
+    conversations: list[Conversation],
+    start_date: datetime,
+    end_date: datetime,
+    *,
+    end_exclusive: bool,
+) -> dict[str, int]:
+    """Python fallback for in-memory test doubles without SQL aggregation."""
+    stats = _empty_period_stats()
+    for conversation in conversations:
+        if not _conversation_created_in_range(
+            conversation, start_date, end_date, end_exclusive=end_exclusive
+        ):
+            continue
+        stats["total_conversations"] += 1
+        status = get_enum_value(conversation.status)
+        if status == ConversationStatus.AI_ACTIVE.value:
+            stats["ai_active"] += 1
+        elif status == ConversationStatus.NEEDS_HUMAN.value:
+            stats["needs_human"] += 1
+        elif status == ConversationStatus.HUMAN_ACTIVE.value:
+            stats["human_active"] += 1
+        elif status == ConversationStatus.CLOSED.value:
+            stats["closed"] += 1
+        marketing_status = get_enum_value(conversation.marketing_status)
+        if marketing_status == MarketingStatus.NEW.value:
+            stats["marketing_new"] += 1
+        elif marketing_status == MarketingStatus.BOOKED.value:
+            stats["marketing_booked"] += 1
+        elif marketing_status == MarketingStatus.NO_RESPONSE.value:
+            stats["marketing_no_response"] += 1
+        elif marketing_status == MarketingStatus.REJECTED.value:
+            stats["marketing_rejected"] += 1
+    return stats
+
+
+async def fetch_conversation_period_stats(
+    db: Any,
+    start_date: datetime,
+    end_date: datetime,
+    *,
+    end_exclusive: bool = False,
+) -> dict[str, int]:
+    """Aggregate conversation stats for a time window (SQL or in-memory fallback)."""
+    method = getattr(db, "get_conversation_period_stats", None)
+    if method is not None:
+        return await method(start_date, end_date, end_exclusive=end_exclusive)
+    conversations = await db.list_conversations(limit=1_000_000)
+    return _period_stats_from_conversations(
+        conversations,
+        start_date,
+        end_date,
+        end_exclusive=end_exclusive,
+    )
+
+
+def diff_period_stats(current: dict[str, int], previous: dict[str, int]) -> dict[str, int]:
+    """Subtract previous-period counts from current-period counts."""
+    return {key: current[key] - previous[key] for key in PERIOD_STATS_KEYS}
+
+
 class PostgreSQLClient:
     """PostgreSQL storage client."""
 
@@ -462,6 +579,41 @@ class PostgreSQLClient:
                 }
             )
         return out
+
+    async def get_conversation_period_stats(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        *,
+        end_exclusive: bool = False,
+    ) -> dict[str, int]:
+        """Aggregate conversation counts for admin stats over a created_at window."""
+        end_op = "<" if end_exclusive else "<="
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                SELECT
+                    COUNT(*)::bigint AS total_conversations,
+                    COUNT(*) FILTER (WHERE status = 'AI_ACTIVE')::bigint AS ai_active,
+                    COUNT(*) FILTER (WHERE status = 'NEEDS_HUMAN')::bigint AS needs_human,
+                    COUNT(*) FILTER (WHERE status = 'HUMAN_ACTIVE')::bigint AS human_active,
+                    COUNT(*) FILTER (WHERE status = 'CLOSED')::bigint AS closed,
+                    COUNT(*) FILTER (
+                        WHERE COALESCE(marketing_status, 'NEW') = 'NEW'
+                    )::bigint AS marketing_new,
+                    COUNT(*) FILTER (WHERE marketing_status = 'BOOKED')::bigint AS marketing_booked,
+                    COUNT(*) FILTER (WHERE marketing_status = 'NO_RESPONSE')::bigint AS marketing_no_response,
+                    COUNT(*) FILTER (WHERE marketing_status = 'REJECTED')::bigint AS marketing_rejected
+                FROM conversations
+                WHERE created_at IS NOT NULL
+                  AND created_at >= $1
+                  AND created_at {end_op} $2
+                """,
+                start_date,
+                end_date,
+            )
+        return _period_stats_from_row(row) if row else _empty_period_stats()
 
     # Message operations
     async def create_message(self, message: Message) -> Message:
@@ -1009,7 +1161,15 @@ class PostgreSQLClient:
             where.append(f"action = ${i}")
             params.append(action)
             i += 1
-        params.append(limit * 2)
+        if start_date is not None:
+            where.append(f"timestamp >= ${i}")
+            params.append(start_date)
+            i += 1
+        if end_date is not None:
+            where.append(f"timestamp <= ${i}")
+            params.append(end_date)
+            i += 1
+        params.append(limit)
         clause = " AND ".join(where) if where else "TRUE"
         order = "DESC" if sort_desc else "ASC"
         pool = await get_pool()
@@ -1026,21 +1186,7 @@ class PostgreSQLClient:
             if "timestamp" in d and isinstance(d["timestamp"], datetime):
                 d["timestamp"] = to_utc_iso_string(d["timestamp"])
             items.append(d)
-        if start_date or end_date:
-            from datetime import timezone
-            tz = timezone.utc
-            filtered = []
-            for it in items:
-                ts = parse_utc_datetime(it.get("timestamp", "")) if isinstance(it.get("timestamp"), str) else it.get("timestamp")
-                if ts and ts.tzinfo is None:
-                    ts = ts.replace(tzinfo=tz)
-                if start_date and ts and ts < (start_date.replace(tzinfo=tz) if start_date.tzinfo is None else start_date):
-                    continue
-                if end_date and ts and ts > (end_date.replace(tzinfo=tz) if end_date.tzinfo is None else end_date):
-                    continue
-                filtered.append(it)
-            items = filtered
-        return items[:limit]
+        return items
 
     # Instagram profile operations
     async def create_or_update_instagram_profile(

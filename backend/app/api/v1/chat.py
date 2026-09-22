@@ -16,12 +16,15 @@ from app.dependencies import CommonDependencies
 from app.models.agent_config import AgentConfig
 from app.models.conversation import Conversation, ConversationStatus, MarketingStatus
 from app.models.message import Message, MessageChannel, MessageRole
-from app.services.agent_reply_coordinator import cancel_timer_trigger, notify_user_message_saved
+from app.services.agent_reply_coordinator import cancel_timer_trigger
 from app.services.agent_service import create_agent_service
 from app.services.channel_sender import get_channel_sender
-from app.services.conversation_service import build_conversation_history_for_agent
 from app.config import get_settings
-from app.storage.redis import get_redis_client
+from app.services.inbound_message_pipeline import (
+    InboundPipelineOptions,
+    PipelineOutcome,
+    run_agent_reply_pipeline,
+)
 from app.utils.enum_helpers import get_enum_value
 from app.utils.datetime_utils import utc_now, to_utc_iso_string
 
@@ -323,13 +326,6 @@ async def send_message(
 
     agent_config = AgentConfig.from_dict(agent_data["config"])
 
-    conversation_history = await build_conversation_history_for_agent(
-        deps.db,
-        conversation_id,
-        content_stripped,
-        agent_context_reset_at=conversation.agent_context_reset_at,
-    )
-
     # Get channel sender for the conversation's channel
     # Handle both enum and string channel (from the database)
     conversation_channel = get_enum_value(conversation.channel)
@@ -345,54 +341,27 @@ async def send_message(
     # Cancel any pending inactivity timer — user is actively responding.
     await cancel_timer_trigger(conversation_id)
 
-    settings = get_settings()
-    # Debounce is skipped for image messages — the media URL cannot be stored
-    # in Redis, and image uploads are discrete single-turn actions that do not
-    # benefit from batching.
-    if settings.agent_reply_debounce_seconds > 0 and not user_media_url_for_agent:
-        redis_client = get_redis_client()
-        if await redis_client.ping():
-            mod_early = await agent_service.run_pre_moderation_guard(
-                agent_user_message, conversation_id
-            )
-            if mod_early and mod_early.get("escalate"):
-                role_value = get_enum_value(user_message.role)
-                return SendMessageResponse(
-                    message_id=message_id,
-                    role=role_value,
-                    content=user_message.content,
-                    timestamp=to_utc_iso_string(user_message.timestamp),
-                )
-            notify_result = await notify_user_message_saved(
-                conversation_id,
-                agent_user_message=agent_user_message,
-                last_user_plain_content=content_stripped,
-            )
-            if notify_result == "scheduled":
-                role_value = get_enum_value(user_message.role)
-                return SendMessageResponse(
-                    message_id=message_id,
-                    role=role_value,
-                    content=user_message.content,
-                    timestamp=to_utc_iso_string(user_message.timestamp),
-                )
-
-    # Process message through agent service.
-    # If the user attached an image, pass the URL natively — the LLM receives
-    # it as a multimodal image_url content block.
-    result = await agent_service.process_message(
-        user_message=agent_user_message,
-        conversation_id=conversation_id,
-        conversation_history=conversation_history,
+    pipeline_result = await run_agent_reply_pipeline(
+        deps.db,
+        conversation,
+        agent_user_message=agent_user_message,
+        last_user_plain_content=content_stripped,
+        agent_service=agent_service,
         user_media_url=user_media_url_for_agent,
+        options=InboundPipelineOptions(
+            cancel_inactivity_timer=False,
+            skip_debounce_for_media=True,
+            create_fallback_agent_message=True,
+            update_conversation_ai_active=True,
+        ),
     )
 
-    # Handle escalation
-    if result.get("escalate"):
-        # Status already updated in agent_service, just return user message
-        # Return user message with escalation notice
-        # Handle both enum and string role (from the database)
-        role_value = get_enum_value(user_message.role)
+    role_value = get_enum_value(user_message.role)
+    if pipeline_result.outcome in (
+        PipelineOutcome.ESCALATED,
+        PipelineOutcome.PRE_MODERATION_ESCALATED,
+        PipelineOutcome.DEBOUNCE_SCHEDULED,
+    ):
         return SendMessageResponse(
             message_id=message_id,
             role=role_value,
@@ -400,47 +369,17 @@ async def send_message(
             timestamp=to_utc_iso_string(user_message.timestamp),
         )
 
-    # Agent message is already created in agent_service.process_message
-    # Use the message_id from result if available, otherwise create new one
-    agent_response = result.get("response", "I apologize, but I couldn't generate a response.")
-    agent_message_id = result.get("agent_message_id")
-    agent_message_timestamp = utc_now()
-
-    # If message wasn't created in agent_service (shouldn't happen, but handle gracefully)
-    if not agent_message_id:
-        agent_message_id = str(uuid.uuid4())
-        fallback_meta: dict = {"rag_context_used": result.get("rag_context_used", False)}
-        if result.get("rag_media_url"):
-            fallback_meta["media_url"] = result["rag_media_url"]
-            fallback_meta["media_type"] = result.get("rag_media_type")
-        agent_message = Message(
-            message_id=agent_message_id,
-            conversation_id=conversation_id,
-            agent_id=conversation.agent_id,
-            role=MessageRole.AGENT,
-            content=agent_response,
-            channel=conversation.channel,
-            external_user_id=conversation.external_user_id,
-            timestamp=agent_message_timestamp,
-            metadata=fallback_meta,
-        )
-        await deps.db.create_message(agent_message)
-        agent_message_timestamp = agent_message.timestamp
-
-    # Update conversation status if needed
-    # Handle both enum and string status (from the database)
-    status_value = get_enum_value(conversation.status)
-    if status_value != ConversationStatus.AI_ACTIVE.value:
-        await deps.db.update_conversation(
-            conversation_id=conversation_id,
-            status=ConversationStatus.AI_ACTIVE,
-        )
+    result = pipeline_result.agent_result or {}
+    if result.get("agent_message_id"):
+        response_timestamp = utc_now()
+    else:
+        response_timestamp = pipeline_result.agent_message_timestamp or utc_now()
 
     return SendMessageResponse(
-        message_id=agent_message_id,
+        message_id=pipeline_result.agent_message_id,
         role=get_enum_value(MessageRole.AGENT),
-        content=agent_response,
-        timestamp=to_utc_iso_string(agent_message_timestamp),
+        content=pipeline_result.agent_response,
+        timestamp=to_utc_iso_string(response_timestamp),
     )
 
 

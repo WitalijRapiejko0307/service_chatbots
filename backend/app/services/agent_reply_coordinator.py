@@ -530,6 +530,35 @@ def _replace_template_placeholders(message_text: str, subst: dict[str, str]) -> 
     return out
 
 
+async def _build_substitution_map(
+    *,
+    conversation: Any,
+    conversation_id: str,
+) -> dict[str, str]:
+    """Load checkpoint collected fields and enrich for ``{placeholder}`` substitution."""
+    collected: dict[str, str] = {}
+    try:
+        collected = await _load_collected_from_checkpoint(conversation_id)
+    except Exception as exc:
+        logger.debug(
+            "Could not load collected for substitution map %s: %s",
+            conversation_id,
+            exc,
+        )
+    try:
+        return await _enrich_substitution_map_for_auto_step(
+            conversation=conversation,
+            collected=collected,
+        )
+    except Exception as exc:
+        logger.debug(
+            "Could not enrich substitution map for %s: %s",
+            conversation_id,
+            exc,
+        )
+        return dict(collected)
+
+
 async def _substitute_agent_auto_step_prompt(
     prompt_instruction: str,
     *,
@@ -537,10 +566,9 @@ async def _substitute_agent_auto_step_prompt(
     conversation_id: str,
 ) -> str:
     """Replace ``{user_name}`` / ``{pet_name}`` in agent auto-step prompts."""
-    collected = await _load_collected_from_checkpoint(conversation_id)
-    subst = await _enrich_substitution_map_for_auto_step(
+    subst = await _build_substitution_map(
         conversation=conversation,
-        collected=collected,
+        conversation_id=conversation_id,
     )
     return _replace_template_placeholders(prompt_instruction, subst)
 
@@ -605,7 +633,6 @@ async def execute_timer_trigger(conversation_id: str) -> None:
     # Load conversation history from the database (the canonical source of sent messages).
     # LangGraph checkpoints may contain intermediate states (mid-run snapshots) that
     # are missing the latest AI response, making them unreliable for history.
-    collected: dict = {}
     conversation_history = await _load_conversation_history_from_db(db, conversation_id)
 
     # Guard: discard timer if the conversation has already moved past the
@@ -668,9 +695,12 @@ async def execute_timer_trigger(conversation_id: str) -> None:
         )
     else:
         # Static: substitute {variable} placeholders from collected fields.
-        message_text = timer.get("message_template", "")
-        for k, v in collected.items():
-            message_text = message_text.replace(f"{{{k}}}", str(v))
+        message_text = timer.get("message_template", "") or ""
+        subst = await _build_substitution_map(
+            conversation=conversation,
+            conversation_id=conversation_id,
+        )
+        message_text = _replace_template_placeholders(message_text, subst)
 
     if not message_text:
         logger.info(
@@ -1083,10 +1113,9 @@ async def execute_auto_step_trigger(member: str) -> None:
     action_type = payload.get("action_type", "static")
 
     # Load conversation history from the database (reliable canonical source).
-    collected_raw = await _load_collected_from_checkpoint(conversation_id)
-    subst = await _enrich_substitution_map_for_auto_step(
+    subst = await _build_substitution_map(
         conversation=conversation,
-        collected=collected_raw,
+        conversation_id=conversation_id,
     )
     conversation_history = await _load_conversation_history_from_db(db, conversation_id)
 

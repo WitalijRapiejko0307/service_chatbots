@@ -22,6 +22,7 @@ from app.utils.datetime_utils import (
     to_utc_iso_string,
     utc_now,
 )
+from app.storage.postgres import diff_period_stats, fetch_conversation_period_stats
 from app.utils.enum_helpers import get_enum_value
 
 logger = logging.getLogger(__name__)
@@ -749,6 +750,7 @@ async def get_stats(
         )
 
     from datetime import timezone as tz
+
     now = utc_now()
     if period == "today":
         start_date = datetime(now.year, now.month, now.day, 0, 0, 0, tzinfo=tz.utc)
@@ -760,78 +762,19 @@ async def get_stats(
         start_date = now - timedelta(days=30)
         end_date = now
 
-    all_conversations = await deps.db.list_conversations(limit=1000)
-
-    period_conversations = []
-    for c in all_conversations:
-        if not c.created_at:
-            continue
-        created_dt = None
-        if isinstance(c.created_at, datetime):
-            created_dt = c.created_at
-        elif isinstance(c.created_at, str):
-            try:
-                created_dt = parse_utc_datetime(c.created_at)
-            except (ValueError, AttributeError):
-                continue
-        if created_dt is None:
-            continue
-        if created_dt.tzinfo is None:
-            created_dt = created_dt.replace(tzinfo=tz.utc)
-        _start = start_date.replace(tzinfo=tz.utc) if start_date.tzinfo is None else start_date
-        _end = end_date.replace(tzinfo=tz.utc) if end_date.tzinfo is None else end_date
-        if _start <= created_dt <= _end:
-            period_conversations.append(c)
-
+    period_stats = await fetch_conversation_period_stats(
+        deps.db, start_date, end_date, end_exclusive=False
+    )
     unique_end_users = await deps.db.count_distinct_end_users()
 
     stats = {
-        "total_conversations": len(period_conversations),
-        "ai_active": sum(
-            1
-            for c in period_conversations
-            if get_enum_value(c.status) == ConversationStatus.AI_ACTIVE.value
-        ),
-        "needs_human": sum(
-            1
-            for c in period_conversations
-            if get_enum_value(c.status) == ConversationStatus.NEEDS_HUMAN.value
-        ),
-        "human_active": sum(
-            1
-            for c in period_conversations
-            if get_enum_value(c.status) == ConversationStatus.HUMAN_ACTIVE.value
-        ),
-        "closed": sum(
-            1
-            for c in period_conversations
-            if get_enum_value(c.status) == ConversationStatus.CLOSED.value
-        ),
-        "marketing_new": sum(
-            1
-            for c in period_conversations
-            if get_enum_value(c.marketing_status) == MarketingStatus.NEW.value
-        ),
-        "marketing_booked": sum(
-            1
-            for c in period_conversations
-            if get_enum_value(c.marketing_status) == MarketingStatus.BOOKED.value
-        ),
-        "marketing_no_response": sum(
-            1
-            for c in period_conversations
-            if get_enum_value(c.marketing_status) == MarketingStatus.NO_RESPONSE.value
-        ),
-        "marketing_rejected": sum(
-            1
-            for c in period_conversations
-            if get_enum_value(c.marketing_status) == MarketingStatus.REJECTED.value
-        ),
+        **period_stats,
         "period": period,
         "unique_end_users": unique_end_users,
     }
 
     from app.storage.postgres_crm import PostgresCRMStorage
+
     crm_storage = PostgresCRMStorage()
     stats["crm_stage_stats"] = await crm_storage.get_stage_counts(
         start_date=start_date, end_date=end_date
@@ -848,82 +791,10 @@ async def get_stats(
             prev_start = start_date - timedelta(days=30)
             prev_end = start_date
 
-        prev_conversations = []
-        for c in all_conversations:
-            if not c.created_at:
-                continue
-            created_dt = None
-            if isinstance(c.created_at, datetime):
-                created_dt = c.created_at
-            elif isinstance(c.created_at, str):
-                try:
-                    created_dt = parse_utc_datetime(c.created_at)
-                except (ValueError, AttributeError):
-                    continue
-            if created_dt is None:
-                continue
-            if created_dt.tzinfo is None:
-                created_dt = created_dt.replace(tzinfo=tz.utc)
-            _ps = prev_start.replace(tzinfo=tz.utc) if prev_start.tzinfo is None else prev_start
-            _pe = prev_end.replace(tzinfo=tz.utc) if prev_end.tzinfo is None else prev_end
-            if _ps <= created_dt < _pe:
-                prev_conversations.append(c)
-
-        prev_stats = {
-            "total_conversations": len(prev_conversations),
-            "ai_active": sum(
-                1
-                for c in prev_conversations
-                if get_enum_value(c.status) == ConversationStatus.AI_ACTIVE.value
-            ),
-            "needs_human": sum(
-                1
-                for c in prev_conversations
-                if get_enum_value(c.status) == ConversationStatus.NEEDS_HUMAN.value
-            ),
-            "human_active": sum(
-                1
-                for c in prev_conversations
-                if get_enum_value(c.status) == ConversationStatus.HUMAN_ACTIVE.value
-            ),
-            "closed": sum(
-                1
-                for c in prev_conversations
-                if get_enum_value(c.status) == ConversationStatus.CLOSED.value
-            ),
-            "marketing_new": sum(
-                1
-                for c in prev_conversations
-                if get_enum_value(c.marketing_status) == MarketingStatus.NEW.value
-            ),
-            "marketing_booked": sum(
-                1
-                for c in prev_conversations
-                if get_enum_value(c.marketing_status) == MarketingStatus.BOOKED.value
-            ),
-            "marketing_no_response": sum(
-                1
-                for c in prev_conversations
-                if get_enum_value(c.marketing_status) == MarketingStatus.NO_RESPONSE.value
-            ),
-            "marketing_rejected": sum(
-                1
-                for c in prev_conversations
-                if get_enum_value(c.marketing_status) == MarketingStatus.REJECTED.value
-            ),
-        }
-
-        stats["comparison"] = {
-            "total_conversations": stats["total_conversations"] - prev_stats["total_conversations"],
-            "ai_active": stats["ai_active"] - prev_stats["ai_active"],
-            "needs_human": stats["needs_human"] - prev_stats["needs_human"],
-            "human_active": stats["human_active"] - prev_stats["human_active"],
-            "closed": stats["closed"] - prev_stats["closed"],
-            "marketing_new": stats["marketing_new"] - prev_stats["marketing_new"],
-            "marketing_booked": stats["marketing_booked"] - prev_stats["marketing_booked"],
-            "marketing_no_response": stats["marketing_no_response"] - prev_stats["marketing_no_response"],
-            "marketing_rejected": stats["marketing_rejected"] - prev_stats["marketing_rejected"],
-        }
+        prev_stats = await fetch_conversation_period_stats(
+            deps.db, prev_start, prev_end, end_exclusive=True
+        )
+        stats["comparison"] = diff_period_stats(period_stats, prev_stats)
 
     return stats
 
