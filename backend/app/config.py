@@ -250,6 +250,14 @@ class Settings(BaseSettings):
         description="S3 bucket region (defaults to AWS_REGION if not set)",
         alias="S3_REGION",
     )
+    s3_endpoint_url: Optional[str] = Field(
+        default=None,
+        description=(
+            "Custom S3-compatible endpoint URL (e.g. Railway Bucket, Cloudflare R2, MinIO). "
+            "Leave empty for standard AWS S3."
+        ),
+        alias="AWS_ENDPOINT_URL",
+    )
     s3_public_url_prefix: Optional[str] = Field(
         default=None,
         description=(

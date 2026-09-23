@@ -1,16 +1,18 @@
 """Amazon S3 storage backend.
 
-Used when STORAGE_BACKEND=s3 (AWS deployments).
-boto3 is already a project dependency (used for Secrets Manager).
+Used when STORAGE_BACKEND=s3 (AWS deployments, Railway Bucket, or other S3-compatible providers).
+boto3 is a project dependency (S3 storage and Secrets Manager).
 
 Required config:
     STORAGE_BACKEND=s3
     S3_BUCKET_NAME=your-media-bucket
     S3_REGION=us-east-1          (defaults to AWS_REGION)
-    S3_PUBLIC_URL_PREFIX=...     (optional: CloudFront or custom domain)
+    AWS_ENDPOINT_URL=...         (optional: custom S3-compatible endpoint, e.g. Railway Bucket)
+    S3_PUBLIC_URL_PREFIX=...     (optional: CloudFront, custom domain, or Railway public URL)
 
 If S3_PUBLIC_URL_PREFIX is not set, files are served directly from S3:
     https://{bucket}.s3.{region}.amazonaws.com/{key}
+For custom endpoints, set S3_PUBLIC_URL_PREFIX to the provider's public object URL base.
 
 On ECS, the task role must have:
     s3:PutObject, s3:DeleteObject on the bucket ARN.
@@ -64,7 +66,11 @@ class S3StorageService(StorageService):
             raise StorageServiceError("boto3 is required for S3 storage.")
 
         region = getattr(self.settings, "s3_region", None) or getattr(self.settings, "aws_region", "us-east-1")
-        return boto3.client("s3", region_name=region)
+        endpoint_url = getattr(self.settings, "s3_endpoint_url", None)
+        kwargs: dict = {"region_name": region}
+        if endpoint_url:
+            kwargs["endpoint_url"] = endpoint_url
+        return boto3.client("s3", **kwargs)
 
     def _get_bucket(self) -> str:
         bucket = getattr(self.settings, "s3_bucket_name", None)
@@ -91,6 +97,17 @@ class S3StorageService(StorageService):
         parsed = urlparse(url)
         if "amazonaws.com" in parsed.netloc:
             return parsed.path.lstrip("/")
+        # Custom S3-compatible endpoint (e.g. Railway Bucket) when prefix is not configured
+        endpoint_url = getattr(self.settings, "s3_endpoint_url", None)
+        if endpoint_url:
+            endpoint_parsed = urlparse(endpoint_url.rstrip("/"))
+            endpoint_host = endpoint_parsed.netloc or endpoint_parsed.path.lstrip("/")
+            if endpoint_host and parsed.netloc == endpoint_host:
+                path = parsed.path.lstrip("/")
+                bucket = self._get_bucket()
+                if path.startswith(f"{bucket}/"):
+                    return path[len(bucket) + 1 :]
+                return path or None
         return None
 
     def _upload(self, file_bytes: bytes, key: str, mimetype: str) -> str:
