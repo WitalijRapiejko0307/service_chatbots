@@ -53,12 +53,12 @@ export function ChannelSettingsForm({
   };
 
   return (
-    <form onSubmit={handleSave} className="p-4 bg-[#FAF9F8] border border-[#BEBAB7] rounded-sm space-y-3">
-      <div className="text-xs font-semibold text-[#443C3C] flex items-center gap-1.5">
+    <form onSubmit={handleSave} className="p-4 bg-surface-hover border border-border rounded-sm space-y-3">
+      <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
         <Settings size={12} /> {t("appSettingsTitle", { title })}
       </div>
       {err && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-sm px-3 py-2">
+        <div className="text-xs text-danger bg-danger/10 border border-danger/30 rounded-sm px-3 py-2">
           {err}
         </div>
       )}
@@ -70,12 +70,12 @@ export function ChannelSettingsForm({
           onChange={(e) => setVerifyToken(e.target.value)}
           placeholder={verifyTokenHint ?? t("verifyTokenHint")}
         />
-        <p className="text-xs text-[#9A9590] mt-1">{t("verifyTokenHelp")}</p>
+        <p className="text-xs text-muted mt-1">{t("verifyTokenHelp")}</p>
       </div>
       <div>
         <label className={LABEL_CLASS}>
           {t("appSecret")}{" "}
-          <span className="font-normal text-[#9A9590]">{t("appSecretOptional")}</span>
+          <span className="font-normal text-muted">{t("appSecretOptional")}</span>
         </label>
         <input
           className={INPUT_CLASS}
@@ -87,7 +87,7 @@ export function ChannelSettingsForm({
           }
           autoComplete="new-password"
         />
-        <p className="text-xs text-[#9A9590] mt-1">{t("appSecretHelp")}</p>
+        <p className="text-xs text-muted mt-1">{t("appSecretHelp")}</p>
       </div>
       <Button type="submit" size="sm" disabled={saving}>
         {saving ? t("saving") : saved ? t("saved") : t("saveSettings")}

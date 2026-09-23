@@ -61,10 +61,10 @@ export const StyleStep: React.FC<StyleStepProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
           {t("styleTitle")}
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-muted mb-6">
           {t("styleDesc")}
         </p>
       </div>
@@ -101,7 +101,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({
             }
             error={getFieldError(errors, "empathy_level")}
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted">
             {t("empathyHint")}
           </p>
         </div>
@@ -117,7 +117,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({
             }
             error={getFieldError(errors, "depth_level")}
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted">
             {t("depthHint")}
           </p>
         </div>
@@ -144,22 +144,22 @@ export const StyleStep: React.FC<StyleStepProps> = ({
       </div>
 
       {/* Preview */}
-      <div className="mt-8 p-6 bg-[#EEEAE7]/10 border border-[#251D1C]/20 rounded-sm">
-        <h4 className="text-sm font-medium text-gray-700 mb-4">{t("stylePreview")}</h4>
-        <div className="bg-white p-4 rounded-sm border border-[#251D1C]/20">
-          <p className="text-sm text-gray-600 mb-2">
+      <div className="mt-8 p-6 bg-surface-hover/50 border border-border rounded-sm">
+        <h4 className="text-sm font-medium text-foreground mb-4">{t("stylePreview")}</h4>
+        <div className="bg-surface p-4 rounded-sm border border-border">
+          <p className="text-sm text-muted mb-2">
             <strong>{t("tone")}:</strong> {TONE_OPTIONS.find((o) => o.value === config.tone)?.label || t("toneFriendly")}
           </p>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-muted mb-2">
             <strong>{t("formality")}:</strong> {FORMALITY_OPTIONS.find((o) => o.value === config.formality)?.label || t("formalitySemiFormal")}
           </p>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-muted mb-2">
             <strong>{t("empathy")}:</strong> {config.empathy_level ?? 7}/10
           </p>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-muted mb-2">
             <strong>{t("depth")}:</strong> {config.depth_level ?? 5}/10
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted">
             <strong>{t("messageLength")}:</strong> {MESSAGE_LENGTH_OPTIONS.find((o) => o.value === config.message_length)?.label || t("lengthShortMedium")}
           </p>
         </div>

@@ -101,27 +101,27 @@ export function TelegramBotCommandsPanel({ binding, embedded }: Props) {
   };
 
   const shell = embedded
-    ? "px-4 py-3 bg-[#FAF9F8] border-t border-[#BEBAB7] rounded-b-sm"
-    : "px-6 py-4 bg-gray-50 border-t border-gray-100";
+    ? "px-4 py-3 bg-background border-t border-border rounded-b-sm"
+    : "px-6 py-4 bg-surface-hover border-t border-border";
 
   if (loading) {
-    return <div className={`${shell} text-sm text-[#9A9590]`}>{t("commandsLoading")}</div>;
+    return <div className={`${shell} text-sm text-muted`}>{t("commandsLoading")}</div>;
   }
 
   return (
     <div className={shell}>
       <p
         className={`text-xs font-semibold uppercase tracking-wider mb-3 ${
-          embedded ? "text-[#9A9590]" : "text-gray-500"
+          embedded ? "text-muted" : "text-muted"
         }`}
       >
         {t("commandsPanelTitle")}
-        <span className="ml-2 normal-case tracking-normal font-medium text-[#9A9590]">
+        <span className="ml-2 normal-case tracking-normal font-medium text-muted">
           · {t("commandsTelegramOnly")}
         </span>
       </p>
       {commands.length === 0 ? (
-        <p className={`text-sm ${embedded ? "text-[#9A9590]" : "text-gray-400"}`}>
+        <p className={`text-sm ${embedded ? "text-muted" : "text-muted-foreground"}`}>
           {t("commandsEmpty")}
         </p>
       ) : (
@@ -135,22 +135,22 @@ export function TelegramBotCommandsPanel({ binding, embedded }: Props) {
               <div
                 key={cmd.key}
                 className={`rounded-sm border p-3 ${
-                  embedded ? "border-[#BEBAB7] bg-white" : "border-gray-200 bg-white"
+                  embedded ? "border-border bg-surface" : "border-border bg-surface"
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-mono font-semibold text-[#251D1C]">
+                      <span className="text-sm font-mono font-semibold text-foreground">
                         {cmd.command}
                       </span>
                       {cmd.enabled && (
-                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-sm font-medium">
+                        <span className="text-xs bg-success/15 text-success px-1.5 py-0.5 rounded-sm font-medium">
                           {t("commandsEnabled")}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-[#9A9590] mt-0.5">{cmd.description}</p>
+                    <p className="text-xs text-muted mt-0.5">{cmd.description}</p>
                   </div>
                   <button
                     type="button"
@@ -163,12 +163,12 @@ export function TelegramBotCommandsPanel({ binding, embedded }: Props) {
                     }
                     disabled={isSavingToggle}
                     onClick={() => void toggleCommand(cmd.key, cmd.enabled)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:ring-offset-2 disabled:opacity-60 ${
-                      cmd.enabled ? "bg-[#251D1C]" : "bg-gray-200"
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-60 ${
+                      cmd.enabled ? "bg-accent" : "bg-surface-hover"
                     }`}
                   >
                     <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-surface shadow ring-0 transition duration-200 ${
                         cmd.enabled ? "translate-x-5" : "translate-x-0"
                       }`}
                     />
@@ -176,12 +176,12 @@ export function TelegramBotCommandsPanel({ binding, embedded }: Props) {
                 </div>
 
                 {cmd.supports_custom_content && draft && (
-                  <div className="mt-3 pt-3 border-t border-[#EBE8E5] space-y-2">
+                  <div className="mt-3 pt-3 border-t border-border space-y-2">
                     <label className="block">
-                      <span className="text-xs font-medium text-[#251D1C]">
+                      <span className="text-xs font-medium text-foreground">
                         {t("commandsMenuLabel")}
                       </span>
-                      <span className="block text-[11px] text-[#9A9590] mt-0.5 mb-1">
+                      <span className="block text-[11px] text-muted mt-0.5 mb-1">
                         {t("commandsMenuHint", { fallback: catalogDefault })}
                       </span>
                       <input
@@ -195,11 +195,11 @@ export function TelegramBotCommandsPanel({ binding, embedded }: Props) {
                             [cmd.key]: { ...prev[cmd.key]!, menu: e.target.value },
                           }))
                         }
-                        className="mt-1 w-full rounded-sm border border-[#BEBAB7] px-2 py-1.5 text-sm text-[#251D1C] bg-white"
+                        className="mt-1 w-full rounded-sm border border-border px-2 py-1.5 text-sm text-foreground bg-surface"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-xs font-medium text-[#251D1C]">
+                      <span className="text-xs font-medium text-foreground">
                         {t("commandsMessageLabel")}
                       </span>
                       <textarea
@@ -213,14 +213,14 @@ export function TelegramBotCommandsPanel({ binding, embedded }: Props) {
                             [cmd.key]: { ...prev[cmd.key]!, body: e.target.value },
                           }))
                         }
-                        className="mt-1 w-full rounded-sm border border-[#BEBAB7] px-2 py-1.5 text-sm text-[#251D1C] bg-white resize-y min-h-[80px]"
+                        className="mt-1 w-full rounded-sm border border-border px-2 py-1.5 text-sm text-foreground bg-surface resize-y min-h-[80px]"
                       />
                     </label>
                     <button
                       type="button"
                       disabled={isSavingForm}
                       onClick={() => void saveCommandSettings(cmd.key)}
-                      className="text-xs font-medium px-3 py-1.5 rounded-sm bg-[#251D1C] text-white hover:opacity-90 disabled:opacity-60"
+                      className="text-xs font-medium px-3 py-1.5 rounded-sm bg-accent text-accent-foreground hover:opacity-90 disabled:opacity-60"
                     >
                       {isSavingForm ? t("commandsSavingText") : t("commandsSaveText")}
                     </button>
@@ -231,8 +231,8 @@ export function TelegramBotCommandsPanel({ binding, embedded }: Props) {
           })}
         </div>
       )}
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
-      <p className={`mt-3 text-xs ${embedded ? "text-[#9A9590]" : "text-gray-400"}`}>
+      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+      <p className={`mt-3 text-xs ${embedded ? "text-muted" : "text-muted-foreground"}`}>
         {t("commandsFooter")}
       </p>
     </div>

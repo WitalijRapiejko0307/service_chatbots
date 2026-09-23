@@ -52,7 +52,7 @@ export function TikTokChannelSection({
       }
       banner={
         tiktokPendingAccess ? (
-          <div className="px-5 py-3 text-xs text-[#443C3C] bg-[#FAF9F8] border-b border-[#BEBAB7]">
+          <div className="px-5 py-3 text-xs text-foreground bg-surface-hover border-b border-border">
             {t("tiktok.pendingBanner")}
           </div>
         ) : undefined

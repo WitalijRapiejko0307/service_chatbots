@@ -30,11 +30,11 @@ export function InlineTokenSetup({
   };
 
   return (
-    <div className="mt-2 p-3 bg-[#EEEAE7]/50 border border-[#BEBAB7] rounded-sm space-y-2">
-      <p className="text-xs text-[#443C3C]">{t("inlineTokenIntro")}</p>
+    <div className="mt-2 p-3 bg-surface-hover/50 border border-border rounded-sm space-y-2">
+      <p className="text-xs text-foreground">{t("inlineTokenIntro")}</p>
       <div className="flex gap-2">
         <input
-          className="flex-1 text-sm px-2.5 py-1.5 border border-[#BEBAB7] rounded-sm outline-none focus:border-[#251D1C] bg-white"
+          className="flex-1 text-sm px-2.5 py-1.5 border border-border rounded-sm outline-none focus:border-border-strong bg-surface"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={t("inlineTokenPlaceholder", { channel })}

@@ -231,7 +231,7 @@ function CanvasInner({ config, onUpdate }: WorkflowCanvasProps) {
             id: `${connection.source}→${connection.target}__${Date.now()}`,
             type: "smoothstep",
             label: "",
-            style: { stroke: "#251D1C", strokeWidth: 1.5 },
+            style: { stroke: "var(--foreground)", strokeWidth: 1.5 },
             data: {
               condition: "",
               is_forced: false,
@@ -341,14 +341,14 @@ function CanvasInner({ config, onUpdate }: WorkflowCanvasProps) {
         if (e.id !== edgeId) return e;
         const { is_fallback, is_forced, condition } = data;
         const edgeStyle = is_fallback
-          ? { stroke: "#9A9590", strokeWidth: 1.5, strokeDasharray: "5 4" }
+          ? { stroke: "var(--muted-foreground)", strokeWidth: 1.5, strokeDasharray: "5 4" }
           : is_forced
-          ? { stroke: "#ef4444", strokeWidth: 2 }
-          : { stroke: "#251D1C", strokeWidth: 1.5 };
+          ? { stroke: "var(--danger)", strokeWidth: 2 }
+          : { stroke: "var(--foreground)", strokeWidth: 1.5 };
         const edgeLabelBg = {
-          fill: "#fff",
+          fill: "var(--surface)",
           fillOpacity: 0.85,
-          stroke: is_fallback ? "#9A9590" : is_forced ? "#ef4444" : "#BEBAB7",
+          stroke: is_fallback ? "var(--muted-foreground)" : is_forced ? "var(--danger)" : "var(--border)",
         };
         const edgeLabel = is_fallback
           ? "Иначе"
@@ -360,7 +360,7 @@ function CanvasInner({ config, onUpdate }: WorkflowCanvasProps) {
         return {
           ...e,
           label: edgeLabel,
-          labelStyle: { fontSize: 11, fill: is_fallback ? "#9A9590" : "#251D1C" },
+          labelStyle: { fontSize: 11, fill: is_fallback ? "var(--muted-foreground)" : "var(--foreground)" },
           data: { ...e.data, ...data, next_step_id: e.target },
           style: edgeStyle,
           labelBgStyle: edgeLabelBg,
@@ -460,7 +460,7 @@ function CanvasInner({ config, onUpdate }: WorkflowCanvasProps) {
   const panelOpen = !!(selectedStep || selectedEdge || selectedAutoStep);
 
   return (
-    <div className="flex h-full w-full overflow-hidden rounded-lg border border-[#BEBAB7]">
+    <div className="flex h-full w-full overflow-hidden rounded-lg border border-border">
       {/* Canvas */}
       <div className="relative flex-1 min-w-0">
         {/* Toolbar */}
@@ -468,7 +468,7 @@ function CanvasInner({ config, onUpdate }: WorkflowCanvasProps) {
           <button
             type="button"
             onClick={handleAddStep}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#251D1C] text-white rounded-md hover:bg-[#443C3C] transition-colors shadow"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-accent text-accent-foreground rounded-md hover:opacity-90 transition-colors shadow"
           >
             <Plus size={13} />
             Добавить шаг
@@ -484,7 +484,7 @@ function CanvasInner({ config, onUpdate }: WorkflowCanvasProps) {
           </button>
 
           {(steps.length > 0 || autoSteps.length > 0) && (
-            <span className="text-xs text-[#9A9590] bg-white/80 backdrop-blur-sm px-2 py-1 rounded border border-[#EEEAE7]">
+            <span className="text-xs text-muted bg-surface/80 backdrop-blur-sm px-2 py-1 rounded border border-border">
               Перетаскивайте узлы · Соединяйте хэндлы · Кликайте для настройки
             </span>
           )}
@@ -506,37 +506,37 @@ function CanvasInner({ config, onUpdate }: WorkflowCanvasProps) {
           deleteKeyCode="Delete"
           minZoom={0.3}
           maxZoom={2}
-          style={{ background: "#FAFAFA" }}
+          style={{ background: "var(--background)" }}
         >
           <Background
             variant={BackgroundVariant.Dots}
             gap={20}
             size={1}
-            color="#BEBAB7"
+            color="var(--border)"
           />
-          <Controls showInteractive={false} className="[&>button]:border-[#BEBAB7]" />
+          <Controls showInteractive={false} className="[&>button]:border-border" />
           <MiniMap
             nodeColor={(n) => {
-              if (n.type === "startNode") return "#16a34a";
+              if (n.type === "startNode") return "var(--success)";
               if (n.type === "autoStepNode") return "#7C3AED";
-              return "#251D1C";
+              return "var(--foreground)";
             }}
             maskColor="rgba(238,234,231,0.6)"
-            className="border border-[#BEBAB7] rounded"
+            className="border border-border rounded"
           />
         </ReactFlow>
 
         {/* Empty state */}
         {steps.length === 0 && autoSteps.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p className="text-[#9A9590] text-sm">Нажмите «Добавить шаг», чтобы начать</p>
+            <p className="text-muted text-sm">Нажмите «Добавить шаг», чтобы начать</p>
           </div>
         )}
       </div>
 
       {/* Right panel */}
       {panelOpen && (
-        <div className="w-80 flex-shrink-0 overflow-hidden border-l border-[#EEEAE7]">
+        <div className="w-80 flex-shrink-0 overflow-hidden border-l border-border">
           {selectedAutoStep ? (
             <AutoStepPanel
               autoStep={selectedAutoStep}

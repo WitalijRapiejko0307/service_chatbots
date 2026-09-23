@@ -21,10 +21,10 @@ export function SupportMatrixTable({ matrix }: { matrix: ChannelSupportMatrix })
   };
 
   const cellClass = (value: string) => {
-    if (value === "yes") return "text-green-700";
-    if (value === "limited") return "text-amber-700";
-    if (value === "no") return "text-[#9A9590]";
-    return "text-[#443C3C]";
+    if (value === "yes") return "text-success";
+    if (value === "limited") return "text-warning";
+    if (value === "no") return "text-muted";
+    return "text-foreground";
   };
 
   const capLabel = (key: string) => {
@@ -52,25 +52,25 @@ export function SupportMatrixTable({ matrix }: { matrix: ChannelSupportMatrix })
   };
 
   return (
-    <div className="bg-white border border-[#BEBAB7] rounded-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#BEBAB7]">
-        <h2 className="font-semibold text-[#251D1C] text-base">{t("matrixTitle")}</h2>
-        <p className="text-xs text-[#9A9590] mt-1">{t("matrixSubtitle")}</p>
-        <p className="text-xs text-[#9A9590] mt-2">
-          <span className="text-green-700 font-medium">{t("matrixLegendYes")}</span>
+    <div className="bg-surface border border-border rounded-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-border">
+        <h2 className="font-semibold text-foreground text-base">{t("matrixTitle")}</h2>
+        <p className="text-xs text-muted mt-1">{t("matrixSubtitle")}</p>
+        <p className="text-xs text-muted mt-2">
+          <span className="text-success font-medium">{t("matrixLegendYes")}</span>
           {" · "}
-          <span className="text-amber-700 font-medium">{t("matrixLegendLimited")}</span>
+          <span className="text-warning font-medium">{t("matrixLegendLimited")}</span>
           {" · "}
-          <span className="text-[#9A9590] font-medium">{t("matrixLegendNo")}</span>
+          <span className="text-muted font-medium">{t("matrixLegendNo")}</span>
         </p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs text-left min-w-[640px]">
           <thead>
-            <tr className="bg-[#FAF9F8] border-b border-[#BEBAB7]">
-              <th className="px-3 py-2 font-medium text-[#443C3C]" />
+            <tr className="bg-surface-hover border-b border-border">
+              <th className="px-3 py-2 font-medium text-foreground" />
               {channels.map((ch) => (
-                <th key={ch} className="px-3 py-2 font-semibold text-[#251D1C] whitespace-nowrap">
+                <th key={ch} className="px-3 py-2 font-semibold text-foreground whitespace-nowrap">
                   {channelLabel(ch)}
                 </th>
               ))}
@@ -78,11 +78,11 @@ export function SupportMatrixTable({ matrix }: { matrix: ChannelSupportMatrix })
           </thead>
           <tbody>
             {capabilities.map((cap) => (
-              <tr key={cap} className="border-b border-[#EEEAE7]">
-                <th className="px-3 py-2 font-medium text-[#443C3C] whitespace-nowrap">
+              <tr key={cap} className="border-b border-border">
+                <th className="px-3 py-2 font-medium text-foreground whitespace-nowrap">
                   {capLabel(cap)}
                   {cap === "restart_command" ? (
-                    <span className="block font-normal text-[10px] text-[#9A9590]">
+                    <span className="block font-normal text-[10px] text-muted">
                       {t("commandsTelegramOnly")}
                     </span>
                   ) : null}
@@ -100,7 +100,7 @@ export function SupportMatrixTable({ matrix }: { matrix: ChannelSupportMatrix })
           </tbody>
         </table>
       </div>
-      <ul className="px-5 py-3 space-y-1.5 text-xs text-[#443C3C] bg-[#FAF9F8]">
+      <ul className="px-5 py-3 space-y-1.5 text-xs text-foreground bg-surface-hover">
         {channels.map((ch) => {
           const noteKey = matrix.matrix[ch]?.notes;
           if (!noteKey) return null;

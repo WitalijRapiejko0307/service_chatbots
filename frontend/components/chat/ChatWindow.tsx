@@ -42,21 +42,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Connection status */}
-      <div className="border-b border-[#251D1C]/20 px-4 py-2.5 bg-white">
+      <div className="border-b border-border px-4 py-2.5 bg-surface">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div
               className={`w-2 h-2 rounded-full transition-colors duration-200 ${
-                isConnected ? "bg-green-500" : "bg-red-500"
+                isConnected ? "bg-success" : "bg-danger"
               }`}
               aria-label={isConnected ? "Connected" : "Disconnected"}
             />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted">
               {isConnected ? "Connected" : "Disconnected"}
             </span>
           </div>
           {agentName && (
-            <span className="text-xs text-gray-500">Chatting with {agentName}</span>
+            <span className="text-xs text-muted-foreground">Chatting with {agentName}</span>
           )}
         </div>
       </div>
@@ -64,16 +64,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Handoff / human takeover — not a transport failure */}
       {handoffNotice && (
         <div
-          className="bg-amber-50 border-l-4 border-amber-500 p-4 m-4 rounded-sm"
+          className="bg-warning/10 border-l-4 border-warning p-4 m-4 rounded-sm"
           role="status"
         >
           <div className="flex items-start gap-2">
-            <span className="text-amber-600" aria-hidden="true">
+            <span className="text-warning" aria-hidden="true">
               👤
             </span>
             <div>
-              <p className="text-sm font-medium text-amber-900">Transferred to a human</p>
-              <p className="text-sm text-amber-800 mt-1">{handoffNotice}</p>
+              <p className="text-sm font-medium text-foreground">Transferred to a human</p>
+              <p className="text-sm text-muted mt-1">{handoffNotice}</p>
             </div>
           </div>
         </div>
@@ -82,16 +82,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Connection / send errors */}
       {error && (
         <div
-          className="bg-red-50 border-l-4 border-red-500 p-4 m-4 rounded-sm"
+          className="bg-danger/10 border-l-4 border-danger p-4 m-4 rounded-sm"
           role="alert"
         >
           <div className="flex items-start gap-2">
-            <span className="text-red-500" aria-hidden="true">
+            <span className="text-danger" aria-hidden="true">
               ⚠️
             </span>
             <div>
-              <p className="text-sm font-medium text-red-800">Connection Error</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
+              <p className="text-sm font-medium text-foreground">Connection Error</p>
+              <p className="text-sm text-muted mt-1">{error}</p>
             </div>
           </div>
         </div>
@@ -122,7 +122,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <button
               key={label}
               onClick={() => void sendMessage({ content: label })}
-              className="px-3 py-1.5 text-sm rounded-full border border-[#251D1C]/40 bg-white hover:bg-gray-50 text-gray-800 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-full border border-border bg-surface hover:bg-surface-hover text-foreground transition-colors"
             >
               {label}
             </button>

@@ -14,32 +14,38 @@ export function getActionDisplay(action: string): ActionDisplayConfig {
     handoff: {
       label: "Handoff to Human",
       icon: "👤",
-      colorClasses: "bg-blue-100 text-blue-800 border border-blue-200",
+      colorClasses:
+        "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50",
     },
     return_to_ai: {
       label: "Return to AI",
       icon: "🤖",
-      colorClasses: "bg-green-100 text-green-800 border border-green-200",
+      colorClasses:
+        "bg-green-100 text-green-800 border border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800/50",
     },
     send_message: {
       label: "Send Message",
       icon: "💬",
-      colorClasses: "bg-purple-100 text-purple-800 border border-purple-200",
+      colorClasses:
+        "bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50",
     },
     update_marketing_status: {
       label: "Update Marketing Status",
       icon: "📊",
-      colorClasses: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      colorClasses:
+        "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-950/40 dark:text-yellow-300 dark:border-yellow-800/50",
     },
     create_conversation: {
       label: "Create Conversation",
       icon: "➕",
-      colorClasses: "bg-gray-100 text-gray-800 border border-gray-200",
+      colorClasses:
+        "bg-gray-100 text-gray-800 border border-gray-200 dark:bg-gray-800/60 dark:text-gray-300 dark:border-gray-700",
     },
     update_conversation: {
       label: "Update Conversation",
       icon: "✏️",
-      colorClasses: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+      colorClasses:
+        "bg-indigo-100 text-indigo-800 border border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/50",
     },
   };
 
@@ -47,7 +53,8 @@ export function getActionDisplay(action: string): ActionDisplayConfig {
     actionMap[action] || {
       label: action.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
       icon: "📝",
-      colorClasses: "bg-gray-100 text-gray-800 border border-gray-200",
+      colorClasses:
+        "bg-gray-100 text-gray-800 border border-gray-200 dark:bg-gray-800/60 dark:text-gray-300 dark:border-gray-700",
     }
   );
 }

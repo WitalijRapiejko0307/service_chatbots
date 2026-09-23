@@ -76,7 +76,7 @@ export function stepsToFlow(
       target: startStepId,
       type: "smoothstep",
       animated: false,
-      style: { stroke: "#251D1C", strokeWidth: 2 },
+      style: { stroke: "var(--foreground)", strokeWidth: 2 },
     });
   }
 
@@ -97,16 +97,16 @@ export function stepsToFlow(
       const isForced = tr.is_forced === true;
 
       const edgeStyle = isFallback
-        ? { stroke: "#9A9590", strokeWidth: 1.5, strokeDasharray: "5 4" }
+        ? { stroke: "var(--muted-foreground)", strokeWidth: 1.5, strokeDasharray: "5 4" }
         : isForced
-        ? { stroke: "#ef4444", strokeWidth: 2 }
-        : { stroke: "#251D1C", strokeWidth: 1.5 };
+        ? { stroke: "var(--danger)", strokeWidth: 2 }
+        : { stroke: "var(--foreground)", strokeWidth: 1.5 };
 
       const edgeLabelBgStyle = isFallback
-        ? { fill: "#fff", fillOpacity: 0.85, stroke: "#9A9590" }
+        ? { fill: "var(--surface)", fillOpacity: 0.85, stroke: "var(--muted-foreground)" }
         : isForced
-        ? { fill: "#fff", fillOpacity: 0.85, stroke: "#ef4444" }
-        : { fill: "#fff", fillOpacity: 0.85, stroke: "#BEBAB7" };
+        ? { fill: "var(--surface)", fillOpacity: 0.85, stroke: "var(--danger)" }
+        : { fill: "var(--surface)", fillOpacity: 0.85, stroke: "var(--border)" };
 
       const edgeLabel = isFallback
         ? "Иначе"
@@ -122,7 +122,7 @@ export function stepsToFlow(
         target: tr.next_step_id,
         type: "smoothstep",
         label: edgeLabel,
-        labelStyle: { fontSize: 11, fill: isFallback ? "#9A9590" : "#251D1C" },
+        labelStyle: { fontSize: 11, fill: isFallback ? "var(--muted-foreground)" : "var(--foreground)" },
         labelBgStyle: edgeLabelBgStyle,
         style: edgeStyle,
         data: {

@@ -84,25 +84,25 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       {preset === "custom" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Start Date
             </label>
             <input
               type="date"
               value={formatDateForInput(value.start)}
               onChange={handleStartDateChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:border-[#251D1C]"
+              className="w-full px-3 py-2 border border-border rounded-sm bg-surface focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               End Date
             </label>
             <input
               type="date"
               value={formatDateForInput(value.end)}
               onChange={handleEndDateChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:border-[#251D1C]"
+              className="w-full px-3 py-2 border border-border rounded-sm bg-surface focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
             />
           </div>
         </div>

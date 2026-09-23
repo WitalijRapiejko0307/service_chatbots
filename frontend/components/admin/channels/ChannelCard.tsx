@@ -121,11 +121,11 @@ export function ChannelCard({
   };
 
   return (
-    <div className="bg-white border border-[#BEBAB7] rounded-sm overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[#BEBAB7]">
+    <div className="bg-surface border border-border rounded-sm overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div className="flex items-center gap-3">
           <span className="text-xl">{icon}</span>
-          <span className="font-semibold text-[#251D1C] text-base">{title}</span>
+          <span className="font-semibold text-foreground text-base">{title}</span>
           {busyId && <LoadingSpinner size="sm" />}
         </div>
         <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export function ChannelCard({
             <button
               type="button"
               onClick={() => setSettingsOpen((o) => !o)}
-              className={`p-1 transition-colors ${settingsOpen ? "text-[#251D1C]" : "text-[#9A9590] hover:text-[#443C3C]"}`}
+              className={`p-1 transition-colors ${settingsOpen ? "text-foreground" : "text-muted hover:text-foreground"}`}
               title={t("appSettings")}
             >
               <Settings size={16} />
@@ -150,17 +150,17 @@ export function ChannelCard({
       {banner}
 
       {actionError && (
-        <div className="mx-5 mt-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-sm px-3 py-2">
+        <div className="mx-5 mt-3 text-xs text-danger bg-danger/10 border border-danger/30 rounded-sm px-3 py-2">
           {actionError}
         </div>
       )}
 
       {settingsForm && settingsOpen && (
-        <div className="px-5 py-4 border-b border-[#BEBAB7] bg-[#FAF9F8]">{settingsForm}</div>
+        <div className="px-5 py-4 border-b border-border bg-surface-hover">{settingsForm}</div>
       )}
 
       {bindings.length > 0 && (
-        <div className="px-5 py-3 space-y-2 border-b border-[#BEBAB7]">
+        <div className="px-5 py-3 space-y-2 border-b border-border">
           {bindings.map((b) => {
             const isTg = channelType === "telegram";
             const commandsOpen = telegramCommandsOpenId === b.binding_id;
@@ -184,7 +184,7 @@ export function ChannelCard({
                             id === b.binding_id ? null : b.binding_id
                           )
                         }
-                        className={`w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#443C3C] bg-[#FAF9F8] border-t border-[#BEBAB7] hover:bg-[#EEEAE7]/60 transition-colors ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-foreground bg-surface-hover border-t border-border hover:bg-surface-hover transition-colors ${
                           !commandsOpen ? "rounded-b-sm" : ""
                         }`}
                       >
@@ -202,7 +202,7 @@ export function ChannelCard({
       )}
 
       {bindings.length === 0 && (
-        <p className="px-5 py-3 text-xs text-[#9A9590] border-b border-[#BEBAB7]">
+        <p className="px-5 py-3 text-xs text-muted border-b border-border">
           {t("emptyBindingHint")}
         </p>
       )}
@@ -210,7 +210,7 @@ export function ChannelCard({
       <button
         type="button"
         onClick={() => setGuideOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-5 py-3 text-sm text-[#443C3C] hover:bg-[#FAF9F8] transition-colors"
+        className="w-full flex items-center justify-between px-5 py-3 text-sm text-foreground hover:bg-surface-hover transition-colors"
       >
         <span className="font-medium">{t("setupGuide")}</span>
         {guideOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -223,7 +223,7 @@ export function ChannelCard({
           {!formOpen ? (
             <div className="space-y-2">
               {channelType === "instagram" && (
-                <p className="text-xs text-[#9A9590]">{t("instagram.pathsHelp")}</p>
+                <p className="text-xs text-muted">{t("instagram.pathsHelp")}</p>
               )}
               <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" onClick={() => setFormOpen(true)}>

@@ -62,25 +62,25 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay backdrop-blur-sm transition-opacity duration-200"
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-sm shadow-lg border border-[#BEBAB7] max-w-md w-full mx-4 transform transition-all duration-200"
+        className="bg-surface rounded-sm shadow-lg border border-border max-w-md w-full mx-4 transform transition-all duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
 
         {/* Body */}
         <div className="px-6 py-4">
-          <p className="text-sm text-gray-600 whitespace-pre-line">{message}</p>
+          <p className="text-sm text-muted whitespace-pre-line">{message}</p>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
+        <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
           <Button
             variant="secondary"
             size="md"

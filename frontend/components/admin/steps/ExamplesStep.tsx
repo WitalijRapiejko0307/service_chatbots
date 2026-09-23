@@ -75,10 +75,10 @@ export const ExamplesStep: React.FC<ExamplesStepProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
           {t("examplesTitle")}
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-muted mb-6">
           {t("examplesDesc")}
         </p>
       </div>
@@ -86,10 +86,10 @@ export const ExamplesStep: React.FC<ExamplesStepProps> = ({
       {/* Standard Examples */}
       <div className="space-y-6">
         <div>
-          <h4 className="text-md font-medium text-gray-900 mb-2">
+          <h4 className="text-md font-medium text-foreground mb-2">
             {t("standardExamples")}
           </h4>
-          <p className="text-xs text-gray-500 mb-4">
+          <p className="text-xs text-muted mb-4">
             {t("standardExamplesHint")}
           </p>
         </div>
@@ -97,10 +97,10 @@ export const ExamplesStep: React.FC<ExamplesStepProps> = ({
         {standardExamples.map((example, index) => (
           <div
             key={example.id}
-            className="p-4 bg-gray-50 rounded-sm border border-gray-200 space-y-4"
+            className="p-4 bg-surface-hover rounded-sm border border-border space-y-4"
           >
             <div className="flex items-center justify-between mb-2">
-              <h5 className="text-sm font-medium text-gray-900">
+              <h5 className="text-sm font-medium text-foreground">
                 {t("exampleN", { n: index + 1 })}: {example.category === "booking" && t("exampleBooking")}
                 {example.category === "info" && t("exampleInfo")}
                 {example.category === "hours" && t("exampleHours")}
@@ -138,10 +138,10 @@ export const ExamplesStep: React.FC<ExamplesStepProps> = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-md font-medium text-gray-900">
+            <h4 className="text-md font-medium text-foreground">
               {t("customExamples")}
             </h4>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted mt-1">
               {t("customExamplesHint")}
             </p>
           </div>
@@ -156,11 +156,11 @@ export const ExamplesStep: React.FC<ExamplesStepProps> = ({
         </div>
 
         {customExamples.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-sm border border-gray-200">
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="text-center py-8 bg-surface-hover rounded-sm border border-border">
+            <p className="text-sm text-muted mb-4">
               {t("noCustomExamples")}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted">
               {t("addCustomExampleHint")}
             </p>
           </div>
@@ -171,10 +171,10 @@ export const ExamplesStep: React.FC<ExamplesStepProps> = ({
               return (
                 <div
                   key={example.id}
-                  className="p-4 bg-white rounded-sm border border-[#251D1C]/20 space-y-4"
+                  className="p-4 bg-surface rounded-sm border border-border space-y-4"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h5 className="text-sm font-medium text-gray-900">
+                    <h5 className="text-sm font-medium text-foreground">
                       {t("customExample", { n: index + 1 })}
                     </h5>
                     <Button
@@ -227,16 +227,16 @@ export const ExamplesStep: React.FC<ExamplesStepProps> = ({
       </div>
 
       {/* Info Box */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-sm">
-        <p className="text-sm text-blue-800">
+      <div className="mt-6 p-4 bg-surface-hover border border-border rounded-sm">
+        <p className="text-sm text-foreground">
           <strong>Tip:</strong> {t("examplesTip")}
         </p>
       </div>
 
       {/* Error Display */}
       {getFieldError(errors, "examples") && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-sm">
-          <p className="text-sm text-red-600">
+        <div className="p-3 bg-danger/10 border border-danger/30 rounded-sm">
+          <p className="text-sm text-danger">
             {getFieldError(errors, "examples")}
           </p>
         </div>

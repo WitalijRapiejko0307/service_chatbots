@@ -285,95 +285,95 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
           {isEditMode ? t("reviewUpdateTitle") : t("reviewTitle")}
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-muted mb-6">
           {isEditMode ? t("reviewUpdateDesc") : t("reviewDesc")}
         </p>
       </div>
 
       {/* Summary */}
-      <div className="bg-gray-50 rounded-sm border border-gray-200 p-6">
-        <h4 className="text-md font-medium text-gray-900 mb-4">{t("summary")}</h4>
+      <div className="bg-surface-hover rounded-sm border border-border p-6">
+        <h4 className="text-md font-medium text-foreground mb-4">{t("summary")}</h4>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("agentId")}:</span>
-            <span className="font-medium text-gray-900 text-right break-all">
+            <span className="text-muted shrink-0">{t("agentId")}:</span>
+            <span className="font-medium text-foreground text-right break-all">
               {config.agent_id || t("notSet")}
             </span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("company")}:</span>
-            <span className="font-medium text-gray-900 text-right">
+            <span className="text-muted shrink-0">{t("company")}:</span>
+            <span className="font-medium text-foreground text-right">
               {config.company_display_name || t("notSet")}
             </span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("agent")}:</span>
-            <span className="font-medium text-gray-900 text-right">
+            <span className="text-muted shrink-0">{t("agent")}:</span>
+            <span className="font-medium text-foreground text-right">
               {config.agent_display_name || t("notSet")}
             </span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("ragEnabled")}:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-muted shrink-0">{t("ragEnabled")}:</span>
+            <span className="font-medium text-foreground">
               {config.rag_enabled ? t("yes") : t("no")}
             </span>
           </div>
           {config.rag_enabled && (
             <>
               <div className="flex justify-between gap-4">
-                <span className="text-gray-600 shrink-0">{t("ragReviewTopK")}:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-muted shrink-0">{t("ragReviewTopK")}:</span>
+                <span className="font-medium text-foreground">
                   {config.rag_top_k ?? 6}
                 </span>
               </div>
               <div className="flex justify-between gap-4">
-                <span className="text-gray-600 shrink-0">{t("ragReviewScoreThreshold")}:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-muted shrink-0">{t("ragReviewScoreThreshold")}:</span>
+                <span className="font-medium text-foreground">
                   {config.rag_score_threshold ?? 0.2}
                 </span>
               </div>
             </>
           )}
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("examples")}:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-muted shrink-0">{t("examples")}:</span>
+            <span className="font-medium text-foreground">
               {config.examples?.length || 0}
             </span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("escalationRules")}:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-muted shrink-0">{t("escalationRules")}:</span>
+            <span className="font-medium text-foreground">
               {config.escalation_rules?.length || 0} {t("custom")}
             </span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("reviewEscalationLlm")}:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-muted shrink-0">{t("reviewEscalationLlm")}:</span>
+            <span className="font-medium text-foreground">
               {config.escalation_enabled !== false ? t("yes") : t("no")}
             </span>
           </div>
-          <p className="text-xs text-gray-500 -mt-2 pl-0">
+          <p className="text-xs text-muted -mt-2 pl-0">
             {t("reviewEscalationLlmHint")}
           </p>
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("model")}:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-muted shrink-0">{t("model")}:</span>
+            <span className="font-medium text-foreground">
               {config.llm_model || "gpt-4o-mini"}
             </span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-gray-600 shrink-0">{t("reviewModerationEnabled")}:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-muted shrink-0">{t("reviewModerationEnabled")}:</span>
+            <span className="font-medium text-foreground">
               {modEnabled ? t("yes") : t("no")}
             </span>
           </div>
           {modEnabled && (
             <div className="flex justify-between gap-4">
-              <span className="text-gray-600 shrink-0">{t("moderationProviderSummary")}:</span>
-              <span className="font-medium text-gray-900 text-right break-all">
+              <span className="text-muted shrink-0">{t("moderationProviderSummary")}:</span>
+              <span className="font-medium text-foreground text-right break-all">
                 {modProvider === "google_ai_studio" ? "Google AI Studio" : "OpenAI"} / {modModel}
               </span>
             </div>
@@ -382,13 +382,13 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
       </div>
 
       {/* Moderation (provider + model) */}
-      <div className="bg-white rounded-sm border border-gray-200 p-6 space-y-4">
-        <h4 className="text-md font-medium text-gray-900">{t("moderationSectionTitle")}</h4>
-        <p className="text-sm text-gray-600">{t("moderationSectionDesc")}</p>
-        <div className="p-3 border border-[#BEBAB7] rounded-sm bg-[#F9F8F7] flex items-start justify-between gap-4">
+      <div className="bg-surface rounded-sm border border-border p-6 space-y-4">
+        <h4 className="text-md font-medium text-foreground">{t("moderationSectionTitle")}</h4>
+        <p className="text-sm text-muted">{t("moderationSectionDesc")}</p>
+        <div className="p-3 border border-border rounded-sm bg-surface-hover flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-gray-900">{t("moderationEnabledLabel")}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{t("moderationEnabledHint")}</p>
+            <p className="text-sm font-medium text-foreground">{t("moderationEnabledLabel")}</p>
+            <p className="text-xs text-muted mt-0.5">{t("moderationEnabledHint")}</p>
           </div>
           <div className="flex-shrink-0">
             <Toggle
@@ -414,17 +414,17 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
           />
         </div>
         {modProvider === "google_ai_studio" && modEnabled && (
-          <p className="text-xs text-gray-500">{t("moderationGeminiHint")}</p>
+          <p className="text-xs text-muted">{t("moderationGeminiHint")}</p>
         )}
         {modEnabled && (
-          <p className="text-xs text-gray-500">{t("reviewModerationSeparateNote")}</p>
+          <p className="text-xs text-muted">{t("reviewModerationSeparateNote")}</p>
         )}
       </div>
 
       {/* Configuration views */}
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h4 className="text-md font-medium text-gray-900">
+          <h4 className="text-md font-medium text-foreground">
             {t("configuration")}
           </h4>
           <div className="flex flex-wrap gap-2">
@@ -444,14 +444,14 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
               language="json"
               error={jsonError || undefined}
             />
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-muted">
               {t("jsonEditorHint")}
             </p>
           </>
         ) : editMode === "prompt" ? (
           <div className="space-y-5">
-            <div className="p-3 bg-[#EEEAE7] border border-[#D0CBC8] rounded-sm">
-              <p className="text-xs text-[#443C3C]">
+            <div className="p-3 bg-surface-hover border border-border-strong rounded-sm">
+              <p className="text-xs text-foreground">
                 {t("promptsHint")}
               </p>
             </div>
@@ -484,8 +484,8 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
             />
           </div>
         ) : (
-          <div className="border border-gray-300 rounded-sm p-4 bg-gray-50 max-h-[500px] overflow-auto">
-            <pre className="text-xs font-mono text-gray-700 whitespace-pre-wrap">
+          <div className="border border-border rounded-sm p-4 bg-surface-hover max-h-[500px] overflow-auto">
+            <pre className="text-xs font-mono text-foreground whitespace-pre-wrap">
               {yamlPreview}
             </pre>
           </div>
@@ -494,8 +494,8 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 
       {/* Error */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-sm">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="p-4 bg-danger/10 border border-danger/30 rounded-sm">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
@@ -503,7 +503,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
       {submitting && (
         <div className="flex items-center justify-center py-8">
           <LoadingSpinner size="lg" />
-          <span className="ml-3 text-gray-600">
+          <span className="ml-3 text-muted">
             {isEditMode ? t("updatingAgent") : t("creatingAgent")}
           </span>
         </div>
@@ -511,7 +511,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 
       {/* Actions */}
       {!submitting && (
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-gray-200">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-border">
           <div className="flex items-center gap-2">
             {onBack && (
               <Button variant="secondary" onClick={onBack} disabled={submitting}>
@@ -523,7 +523,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                 variant="ghost"
                 onClick={onStartOver}
                 disabled={submitting}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-muted hover:text-foreground"
               >
                 {t("startOver")}
               </Button>

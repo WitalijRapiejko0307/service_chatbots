@@ -39,12 +39,12 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {label ? (
-        <span className="block text-sm font-medium text-gray-700 mb-1.5">{label}</span>
+        <span className="block text-sm font-medium text-foreground mb-1.5">{label}</span>
       ) : null}
       <div
         role="group"
         aria-label={ariaLabel ?? label}
-        className="inline-flex w-full max-w-md rounded-sm border border-[#BEBAB7] bg-[#EEEAE7]/40 p-0.5 gap-0.5"
+        className="inline-flex w-full max-w-md rounded-sm border border-border bg-surface-hover/40 p-0.5 gap-0.5"
       >
         {options.map((opt) => {
           const active = opt.value === value;
@@ -56,8 +56,8 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
               onClick={() => onChange(opt.value)}
               className={`flex-1 min-w-0 rounded-sm font-medium transition-colors ${pad} ${
                 active
-                  ? "bg-[#251D1C] text-white shadow-sm"
-                  : "bg-white/90 text-gray-700 hover:bg-white border border-transparent"
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "bg-surface/90 text-foreground hover:bg-surface border border-transparent"
               }`}
             >
               <span className="block truncate">{opt.label}</span>

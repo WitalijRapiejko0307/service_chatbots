@@ -28,26 +28,26 @@ export const Toggle: React.FC<ToggleProps> = ({
           aria-checked={checked}
           disabled={disabled}
           onClick={() => !disabled && onChange(!checked)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:ring-offset-2 ${
-            checked ? "bg-[#251D1C]" : "bg-gray-300"
+          className={`relative inline-flex h-6 w-11 items-center rounded-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 ${
+            checked ? "bg-accent" : "bg-border"
           } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-sm bg-white transition-transform duration-200 ${
+            className={`inline-block h-4 w-4 transform rounded-sm bg-surface transition-transform duration-200 ${
               checked ? "translate-x-6" : "translate-x-1"
             }`}
           />
         </button>
         <div className="flex-1">
           {label && (
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               {label}
             </label>
           )}
           {description && (
-            <p className="mt-1 text-sm text-gray-500">{description}</p>
+            <p className="mt-1 text-sm text-muted">{description}</p>
           )}
-          {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-1 text-sm text-danger">{error}</p>}
         </div>
       </div>
     </div>

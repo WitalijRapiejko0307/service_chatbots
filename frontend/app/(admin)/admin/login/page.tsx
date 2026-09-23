@@ -171,18 +171,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#EEEAE7] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <h1 className="text-2xl font-semibold text-[#251D1C]">Service ChatBot</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Service ChatBot</h1>
         </div>
 
-        <div className="bg-white rounded-sm shadow-sm border border-[#BEBAB7] p-8">
+        <div className="bg-surface rounded-sm shadow-sm border border-border p-8">
           {step === "email" ? (
             <>
-              <h1 className="text-xl font-semibold text-gray-900 mb-1">{t("title")}</h1>
-              <p className="text-sm text-gray-500 mb-6">
+              <h1 className="text-xl font-semibold text-foreground mb-1">{t("title")}</h1>
+              <p className="text-sm text-muted mb-6">
                 {loginMode === "otp" ? t("subtitle") : t("subtitlePassword")}
               </p>
 
@@ -193,7 +193,7 @@ export default function LoginPage() {
                 <div className="mb-4">
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-foreground mb-1"
                   >
                     {t("emailLabel")}
                   </label>
@@ -205,7 +205,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t("emailPlaceholder")}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-sm bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:border-[#251D1C] transition-colors"
+                    className="w-full px-3 py-2 border border-border rounded-sm bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors"
                     disabled={isLoading}
                   />
                 </div>
@@ -214,7 +214,7 @@ export default function LoginPage() {
                   <div className="mb-4">
                     <label
                       htmlFor="password"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-foreground mb-1"
                     >
                       {t("passwordLabel")}
                     </label>
@@ -226,14 +226,14 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder={t("passwordPlaceholder")}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-sm bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:border-[#251D1C] transition-colors"
+                      className="w-full px-3 py-2 border border-border rounded-sm bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors"
                       disabled={isLoading}
                     />
                   </div>
                 )}
 
                 {error && (
-                  <p className="text-sm text-red-600 mb-4">{error}</p>
+                  <p className="text-sm text-danger mb-4">{error}</p>
                 )}
 
                 <button
@@ -243,13 +243,13 @@ export default function LoginPage() {
                     !email.trim() ||
                     (loginMode === "password" && !password.trim())
                   }
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#251D1C] text-white text-sm font-medium rounded-sm hover:bg-[#443C3C] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-accent-foreground text-sm font-medium rounded-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   {isLoading ? <LoadingSpinner size="sm" /> : null}
                   {loginMode === "password" ? t("signIn") : t("sendCode")}
                 </button>
 
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-border">
                   <button
                     type="button"
                     onClick={() => {
@@ -257,7 +257,7 @@ export default function LoginPage() {
                       setError(null);
                       setPassword("");
                     }}
-                    className="text-sm text-[#251D1C] hover:text-[#443C3C] transition-colors"
+                    className="text-sm text-foreground hover:opacity-80 transition-colors"
                   >
                     {loginMode === "otp" ? t("loginWithPassword") : t("loginWithCode")}
                   </button>
@@ -266,17 +266,17 @@ export default function LoginPage() {
             </>
           ) : (
             <>
-              <h1 className="text-xl font-semibold text-gray-900 mb-1">{t("checkEmail")}</h1>
-              <p className="text-sm text-gray-500 mb-1">
+              <h1 className="text-xl font-semibold text-foreground mb-1">{t("checkEmail")}</h1>
+              <p className="text-sm text-muted mb-1">
                 {t("codeSentTo")}
               </p>
-              <p className="text-sm font-medium text-gray-900 mb-6 truncate">{email}</p>
+              <p className="text-sm font-medium text-foreground mb-6 truncate">{email}</p>
 
               <form onSubmit={handleVerifyOTP} noValidate>
                 <div className="mb-4">
                   <label
                     htmlFor="code"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-foreground mb-1"
                   >
                     {t("loginCodeLabel")}
                   </label>
@@ -292,19 +292,19 @@ export default function LoginPage() {
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                     placeholder={t("codePlaceholder")}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-sm bg-white text-sm text-center tracking-[0.4em] font-mono focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:border-[#251D1C] transition-colors"
+                    className="w-full px-3 py-2 border border-border rounded-sm bg-surface text-sm text-center tracking-[0.4em] font-mono focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors"
                     disabled={isLoading}
                   />
                 </div>
 
                 {error && (
-                  <p className="text-sm text-red-600 mb-4">{error}</p>
+                  <p className="text-sm text-danger mb-4">{error}</p>
                 )}
 
                 <button
                   type="submit"
                   disabled={isLoading || code.length !== 6}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#251D1C] text-white text-sm font-medium rounded-sm hover:bg-[#443C3C] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-accent-foreground text-sm font-medium rounded-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   {isLoading ? <LoadingSpinner size="sm" /> : null}
                   {t("verify")}
@@ -315,7 +315,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setStep("email"); setError(null); setCode(""); }}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  className="text-muted hover:text-foreground transition-colors"
                 >
                   {t("changeEmail")}
                 </button>
@@ -323,7 +323,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={handleResend}
                   disabled={resendCooldown > 0 || isLoading}
-                  className="text-[#251D1C] hover:text-[#443C3C] disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="text-foreground hover:opacity-80 disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
                 >
                   {resendCooldown > 0 ? t("resendIn", { seconds: resendCooldown }) : t("resendCode")}
                 </button>

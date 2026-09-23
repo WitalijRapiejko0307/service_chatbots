@@ -32,13 +32,13 @@ export function LanguageSwitcher() {
     <button
       type="button"
       onClick={handleSwitch}
-      className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#443C3C] px-2 sm:px-3 py-1.5 rounded-sm border border-[#BEBAB7] hover:bg-[#EEEAE7] hover:border-[#251D1C] transition-colors"
+      className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-foreground px-2 sm:px-3 py-1.5 rounded-sm border border-border hover:bg-surface-hover hover:border-border-strong transition-colors"
       aria-label={t("switchTo", { lang: nextLabel })}
       title={t("switchTo", { lang: nextLabel })}
     >
       <Globe size={14} className="sm:w-4 sm:h-4 shrink-0" aria-hidden />
       <span className="font-medium">{locale.toUpperCase()}</span>
-      <span className="text-[#9A9590] text-xs hidden sm:inline">→</span>
+      <span className="text-muted text-xs hidden sm:inline">→</span>
       <span className="text-xs">{nextLabel}</span>
     </button>
   );

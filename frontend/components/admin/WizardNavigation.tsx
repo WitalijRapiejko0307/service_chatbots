@@ -57,7 +57,7 @@ export const WizardNavigation: React.FC<WizardNavigationProps> = ({
   );
 
   return (
-    <div className="sticky bottom-0 bg-white pt-4 sm:pt-6 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0 border-t border-gray-200">
+    <div className="sticky bottom-0 bg-surface pt-4 sm:pt-6 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0 border-t border-border">
       {/* Mobile: primary button on top (flex-col-reverse), secondary row below.
           Desktop: secondary actions left, primary right (justify-between). */}
       <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -72,7 +72,7 @@ export const WizardNavigation: React.FC<WizardNavigationProps> = ({
               variant="ghost"
               onClick={onStartOver}
               disabled={isSubmitting}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-muted hover:text-foreground"
             >
               {t("startOver")}
             </Button>

@@ -20,28 +20,28 @@ export function getMarketingStatusDisplay(
       label: "New",
       icon: "🆕",
       colorClasses:
-        "bg-blue-100 text-blue-800 border border-blue-300",
+        "bg-accent/15 text-accent border border-accent/30",
       ariaLabel: "New conversation",
     },
     BOOKED: {
       label: "Booked",
       icon: "✅",
       colorClasses:
-        "bg-green-100 text-green-800 border border-green-300",
+        "bg-success/15 text-success border border-success/30",
       ariaLabel: "Appointment booked",
     },
     NO_RESPONSE: {
       label: "No Response",
       icon: "⏸️",
       colorClasses:
-        "bg-gray-100 text-gray-800 border border-gray-300",
+        "bg-surface-hover text-muted border border-border",
       ariaLabel: "No response from patient",
     },
     REJECTED: {
       label: "Rejected",
       icon: "❌",
       colorClasses:
-        "bg-red-100 text-red-800 border border-red-300",
+        "bg-danger/15 text-danger border border-danger/30",
       ariaLabel: "Lead rejected",
     },
   };

@@ -44,8 +44,8 @@ function detectUnit(seconds: number): DelayUnit {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-b border-[#EEEAE7] pb-4 mb-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9A9590] mb-3">
+    <div className="border-b border-border pb-4 mb-4">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-3">
         {title}
       </p>
       {children}
@@ -74,12 +74,12 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#EEEAE7] bg-[#F5F3FF]">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-[#F5F3FF]">
         <Zap size={14} className="text-[#7C3AED] flex-shrink-0" />
         <span className="text-sm font-semibold text-[#5B21B6] flex-1">Авто-шаг</span>
         <button
           onClick={onClose}
-          className="p-1 rounded hover:bg-[#EDE9FE] text-[#9A9590] hover:text-[#5B21B6] transition-colors"
+          className="p-1 rounded hover:bg-[#EDE9FE] text-muted hover:text-[#5B21B6] transition-colors"
           aria-label="Закрыть"
         >
           <X size={14} />
@@ -112,8 +112,8 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
               value={unit}
               onChange={(e) => handleDelayChange(delayValue, e.target.value as DelayUnit)}
               className="
-                rounded-lg border border-[#BEBAB7] bg-white px-3 py-2
-                text-sm text-[#251D1C] focus:outline-none focus:ring-2
+                rounded-lg border border-border bg-surface px-3 py-2
+                text-sm text-foreground focus:outline-none focus:ring-2
                 focus:ring-[#7C3AED] focus:border-[#7C3AED]
               "
             >
@@ -122,7 +122,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
               ))}
             </select>
           </div>
-          <p className="mt-1 text-[11px] text-[#9A9590]">
+          <p className="mt-1 text-[11px] text-muted">
             Итого: {autoStep.delay_seconds} сек
           </p>
         </Section>
@@ -139,7 +139,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
                   flex-1 py-2 text-xs rounded-lg border font-medium transition-all leading-tight
                   ${(autoStep.schedule_anchor ?? "on_step_enter") === anchor
                     ? "bg-[#7C3AED] text-white border-[#7C3AED]"
-                    : "bg-white text-[#443C3C] border-[#BEBAB7] hover:border-[#7C3AED]"}
+                    : "bg-surface text-foreground border-border hover:border-[#7C3AED]"}
                 `}
               >
                 {anchor === "on_step_enter"
@@ -148,7 +148,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
               </button>
             ))}
           </div>
-          <p className="mt-1 text-[11px] text-[#9A9590]">
+          <p className="mt-1 text-[11px] text-muted">
             «При входе» — задержка от события источника. Источник — шаг на канвасе, от которого
             ведётся стрелка к этому авто: для обычного шага это переход на него; для цепочки
             auto→auto укажите в связи id предыдущего авто-шага (поле source_id).
@@ -159,7 +159,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
 
         {/* Cancel policy on workflow step change */}
         <Section title="Отмена при смене шага">
-          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-[#BEBAB7] bg-white p-3 text-sm text-[#443C3C] hover:border-[#7C3AED]">
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm text-foreground hover:border-[#7C3AED]">
             <input
               type="checkbox"
               className="mt-0.5 h-4 w-4 shrink-0 accent-[#7C3AED]"
@@ -170,7 +170,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
             />
             <span>
               <span className="font-medium">Отменять, если пользователь перешёл на другой шаг workflow</span>
-              <span className="mt-1 block text-[11px] text-[#9A9590]">
+              <span className="mt-1 block text-[11px] text-muted">
                 Снимите галочку, чтобы таймер дождался срабатывания даже после смены шага (сброс при /restart и закрытии чата по-прежнему полный).
               </span>
             </span>
@@ -179,7 +179,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
 
         {/* Once per conversation */}
         <Section title="Частота">
-          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-[#BEBAB7] bg-white p-3 text-sm text-[#443C3C] hover:border-[#7C3AED]">
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm text-foreground hover:border-[#7C3AED]">
             <input
               type="checkbox"
               className="mt-0.5 h-4 w-4 shrink-0 accent-[#7C3AED]"
@@ -190,7 +190,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
             />
             <span>
               <span className="font-medium">Один раз за диалог (до рестарта чата)</span>
-              <span className="mt-1 block text-[11px] text-[#9A9590]">
+              <span className="mt-1 block text-[11px] text-muted">
                 После успешной отправки сообщения этот авто-шаг не будет ставиться в очередь снова в том же
                 диалоге. Новый диалог после /restart — снова можно один раз.
               </span>
@@ -200,10 +200,10 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
 
         {/* Telegram media (auto-step) */}
         <Section title="Медиа в Telegram (необязательно)">
-          <p className="mb-3 text-[11px] leading-relaxed text-[#9A9590]">
+          <p className="mb-3 text-[11px] leading-relaxed text-muted">
             Работает только для диалогов в Telegram. В других каналах вложение не отправляется; если нужен
             только текст — оставьте тип «Только текст». Текст из блока ниже («Фиксированный текст» или «Ответ
-            агента») <strong className="text-[#443C3C]">не заменяется</strong> медиа: к видео он идёт как
+            агента») <strong className="text-foreground">не заменяется</strong> медиа: к видео он идёт как
             подпись к одному сообщению; к кружочку — отдельным сообщением сразу после кружка (у кружков в
             Telegram нет подписи). Текст можно оставить пустым, если нужны только ролик или кружок.
           </p>
@@ -217,7 +217,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
             ).map(([val, label]) => (
               <label
                 key={val}
-                className="flex cursor-pointer items-start gap-2 rounded-lg border border-[#BEBAB7] bg-white p-2.5 text-sm text-[#443C3C] hover:border-[#7C3AED]"
+                className="flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-surface p-2.5 text-sm text-foreground hover:border-[#7C3AED]"
               >
                 <input
                   type="radio"
@@ -245,7 +245,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
                 onChange={(e) => onUpdate({ telegram_video_url: e.target.value })}
                 placeholder="https://… (прямая ссылка на mp4, доступная для серверов Telegram)"
               />
-              <p className="mt-2 text-[11px] leading-relaxed text-[#9A9590]">
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
                 Используется sendVideo: текст авто-шага уходит как подпись (caption) к этому же сообщению.
                 Нужен публичный HTTPS URL; размер и формат — в рамках лимитов Telegram.
               </p>
@@ -253,7 +253,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
           )}
 
           {(autoStep.telegram_attachment_type ?? "none") === "video_note" && (
-            <div className="mt-3 space-y-2 rounded-lg border border-[#EDE9FE] bg-[#FAF5FF] p-3 text-[11px] leading-relaxed text-[#443C3C]">
+            <div className="mt-3 space-y-2 rounded-lg border border-[#EDE9FE] bg-[#FAF5FF] p-3 text-[11px] leading-relaxed text-foreground">
               <p className="font-medium text-[#5B21B6]">Как получить file_id для кружочка</p>
               <ol className="list-decimal space-y-1.5 pl-4">
                 <li>
@@ -266,18 +266,18 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
                 </li>
                 <li>
                   Получите обновление с этим сообщением: через @RawDataBot / @getidsbot, свой webhook с
-                  логированием, или временный эндпоинт <code className="rounded bg-white px-1">getUpdates</code>.
+                  логированием, или временный эндпоинт <code className="rounded bg-surface px-1">getUpdates</code>.
                 </li>
                 <li>
-                  Скопируйте значение <code className="rounded bg-white px-1">message.video_note.file_id</code>{" "}
+                  Скопируйте значение <code className="rounded bg-surface px-1">message.video_note.file_id</code>{" "}
                   (длинная строка вроде{" "}
-                  <span className="text-[#9A9590]">AwACAgIAAxkB…</span>) и вставьте ниже.
+                  <span className="text-muted">AwACAgIAAxkB…</span>) и вставьте ниже.
                 </li>
               </ol>
-              <p className="text-[#9A9590]">
+              <p className="text-muted">
                 У обычного видео в чате другой file_id — для кружка нужен именно video_note. При смене токена
                 бота старые file_id могут перестать работать — загрузите кружок снова. Если задан текст
-                авто-шага, он отправится <strong className="text-[#443C3C]">вторым сообщением</strong> сразу
+                авто-шага, он отправится <strong className="text-foreground">вторым сообщением</strong> сразу
                 после кружка (подпись к video note в API нет).
               </p>
               <Input
@@ -301,7 +301,7 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
                   flex-1 py-2 text-sm rounded-lg border font-medium transition-all
                   ${autoStep.action_type === t
                     ? "bg-[#7C3AED] text-white border-[#7C3AED]"
-                    : "bg-white text-[#443C3C] border-[#BEBAB7] hover:border-[#7C3AED]"}
+                    : "bg-surface text-foreground border-border hover:border-[#7C3AED]"}
                 `}
               >
                 {t === "static" ? "Фиксированный текст" : "Ответ агента"}
@@ -341,20 +341,20 @@ export function AutoStepPanel({ autoStep, onUpdate, onDelete, onClose }: AutoSte
             placeholder="Отправить только если… (например: «пользователь не ответил на последний вопрос»)"
             rows={3}
           />
-          <p className="mt-1 text-[11px] text-[#9A9590]">
+          <p className="mt-1 text-[11px] text-muted">
             Условие оценивается LLM. Оставьте пустым — авто-шаг сработает всегда.
           </p>
         </Section>
       </div>
 
       {/* Footer — delete button */}
-      <div className="px-4 py-3 border-t border-[#EEEAE7]">
+      <div className="px-4 py-3 border-t border-border">
         <button
           onClick={onDelete}
           className="
             w-full flex items-center justify-center gap-2 py-2 rounded-lg
-            text-sm font-medium text-red-600 border border-red-200
-            hover:bg-red-50 transition-colors
+            text-sm font-medium text-danger border border-danger/30
+            hover:bg-danger/10 transition-colors
           "
         >
           <Trash2 size={14} />

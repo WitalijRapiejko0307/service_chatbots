@@ -25,48 +25,48 @@ export function StatusBadge({
   if (!binding) {
     if (pending) {
       return (
-        <span className="flex items-center gap-1.5 text-xs text-[#443C3C]">
-          <Circle size={10} className="fill-[#BEBAB7]" /> {t("statusPendingAccess")}
+        <span className="flex items-center gap-1.5 text-xs text-foreground">
+          <Circle size={10} className="fill-border" /> {t("statusPendingAccess")}
         </span>
       );
     }
     return (
-      <span className="flex items-center gap-1.5 text-xs text-[#9A9590]">
+      <span className="flex items-center gap-1.5 text-xs text-muted">
         <Circle size={10} /> {t("statusNotConnected")}
       </span>
     );
   }
   if (!binding.is_active) {
     return (
-      <span className="flex items-center gap-1.5 text-xs text-amber-600">
-        <Circle size={10} className="fill-amber-400" /> {t("statusInactive")}
+      <span className="flex items-center gap-1.5 text-xs text-warning">
+        <Circle size={10} className="fill-warning/60" /> {t("statusInactive")}
       </span>
     );
   }
   if (pending) {
     return (
-      <span className="flex items-center gap-1.5 text-xs text-[#443C3C]">
-        <Circle size={10} className="fill-[#BEBAB7]" /> {t("statusPendingAccess")}
+      <span className="flex items-center gap-1.5 text-xs text-foreground">
+        <Circle size={10} className="fill-border" /> {t("statusPendingAccess")}
       </span>
     );
   }
   if (pendingReview) {
     return (
-      <span className="flex items-center gap-1.5 text-xs text-amber-700">
-        <Circle size={10} className="fill-amber-400" /> {t("statusPendingReview")}
+      <span className="flex items-center gap-1.5 text-xs text-warning">
+        <Circle size={10} className="fill-warning/60" /> {t("statusPendingReview")}
       </span>
     );
   }
   if (!binding.is_verified) {
     return (
-      <span className="flex items-center gap-1.5 text-xs text-amber-600">
-        <Circle size={10} className="fill-amber-400" /> {t("statusUnverified")}
+      <span className="flex items-center gap-1.5 text-xs text-warning">
+        <Circle size={10} className="fill-warning/60" /> {t("statusUnverified")}
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
-      <CheckCircle2 size={12} className="fill-green-100" /> {t("statusConnected")}
+    <span className="flex items-center gap-1.5 text-xs text-success font-medium">
+      <CheckCircle2 size={12} className="fill-success/20" /> {t("statusConnected")}
     </span>
   );
 }

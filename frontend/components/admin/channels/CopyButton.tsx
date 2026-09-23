@@ -19,11 +19,11 @@ export function CopyButton({ value, label }: { value: string; label?: string }) 
       onClick={handleCopy}
       disabled={!value}
       className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-sm border transition-colors
-        border-[#BEBAB7] text-[#443C3C] hover:border-[#251D1C] hover:text-[#251D1C]
+        border-border text-foreground hover:border-border-strong hover:text-foreground
         disabled:opacity-40 disabled:cursor-not-allowed"
       title={label ?? t("copyToClipboard")}
     >
-      {copied ? <Check size={12} className="text-green-600" /> : <Copy size={12} />}
+      {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
       {copied ? t("copied") : t("copy")}
     </button>
   );

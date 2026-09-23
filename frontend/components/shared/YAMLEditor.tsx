@@ -4,12 +4,13 @@
 
 import React, { useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
 // Dynamically import Monaco Editor to avoid SSR issues
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-[400px] border border-gray-300 rounded-sm bg-gray-50">
-      <p className="text-sm text-gray-500">Loading editor...</p>
+    <div className="flex items-center justify-center h-[400px] border border-border rounded-sm bg-surface">
+      <p className="text-sm text-muted">Loading editor...</p>
     </div>
   ),
 });
@@ -40,6 +41,8 @@ export const YAMLEditor: React.FC<YAMLEditorProps> = ({
     getClientMounted,
     getServerMounted
   );
+  const { resolvedTheme } = useTheme();
+  const monacoTheme = resolvedTheme === "dark" ? "vs-dark" : "vs";
 
   const handleEditorChange = (value: string | undefined) => {
     if (onChange && value !== undefined) {
@@ -52,14 +55,14 @@ export const YAMLEditor: React.FC<YAMLEditorProps> = ({
       <div className="w-full">
         <div
           className={`border rounded-sm overflow-hidden ${
-            error ? "border-red-500" : "border-gray-300"
+            error ? "border-danger" : "border-border"
           }`}
         >
           <div className="flex items-center justify-center" style={{ height }}>
-            <p className="text-sm text-gray-500">Loading editor...</p>
+            <p className="text-sm text-muted">Loading editor...</p>
           </div>
         </div>
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-sm text-danger">{error}</p>}
       </div>
     );
   }
@@ -68,7 +71,7 @@ export const YAMLEditor: React.FC<YAMLEditorProps> = ({
     <div className="w-full">
       <div
         className={`border rounded-sm overflow-hidden ${
-          error ? "border-red-500" : "border-gray-300"
+          error ? "border-danger" : "border-border"
         }`}
       >
         <Editor
@@ -88,10 +91,10 @@ export const YAMLEditor: React.FC<YAMLEditorProps> = ({
             formatOnPaste: true,
             formatOnType: true,
           }}
-          theme="vs"
+          theme={monacoTheme}
         />
       </div>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-danger">{error}</p>}
     </div>
   );
 };

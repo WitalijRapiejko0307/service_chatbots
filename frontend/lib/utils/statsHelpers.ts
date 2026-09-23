@@ -8,17 +8,17 @@ export function formatChange(change: number): {
   colorClass: string;
 } {
   if (change === 0) {
-    return { text: "0", colorClass: "text-gray-500" };
+    return { text: "0", colorClass: "text-muted" };
   }
   if (change > 0) {
     return {
       text: `+${change}`,
-      colorClass: "text-green-600",
+      colorClass: "text-success",
     };
   }
   return {
     text: `${change}`,
-    colorClass: "text-red-600",
+    colorClass: "text-danger",
   };
 }
 

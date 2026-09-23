@@ -43,7 +43,7 @@ export default function AdminLayout({
   // Show nothing until auth check completes (avoids flash of admin content)
   if (!checked) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#EEEAE7]">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -55,11 +55,11 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen bg-[#FAFAFA] overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Mobile backdrop — closes sidebar when tapping outside */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          className="fixed inset-0 bg-overlay z-40 md:hidden"
           onClick={handleClose}
           aria-hidden="true"
         />
@@ -69,7 +69,7 @@ export default function AdminLayout({
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Header onSidebarToggle={handleToggle} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 bg-white">
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 bg-surface">
           {children}
         </main>
       </div>

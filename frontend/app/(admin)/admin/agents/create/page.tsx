@@ -36,8 +36,8 @@ export default function CreateAgentPage() {
   return (
     <div className="p-6">
       {hasDraft && (
-        <div className="mb-4 p-4 bg-[#EEEAE7]/10 border border-[#251D1C]/20 rounded-sm">
-          <p className="text-sm text-gray-700">
+        <div className="mb-4 p-4 bg-surface-hover border border-border rounded-sm">
+          <p className="text-sm text-muted">
             <strong>
               {(() => {
                 try {

@@ -28,12 +28,12 @@ export const Slider: React.FC<SliderProps> = ({
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
         {label && (
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-foreground">
             {label}
           </label>
         )}
         {showValue && (
-          <span className="text-sm font-medium text-[#251D1C]">{value}</span>
+          <span className="text-sm font-medium text-foreground">{value}</span>
         )}
       </div>
       <input
@@ -43,15 +43,15 @@ export const Slider: React.FC<SliderProps> = ({
         step={step}
         value={value}
         onChange={onChange}
-        className={`w-full h-2 bg-gray-200 rounded-sm appearance-none cursor-pointer accent-[#251D1C] ${
-          error ? "border-red-500" : ""
+        className={`w-full h-2 bg-border rounded-sm appearance-none cursor-pointer accent-accent ${
+          error ? "border-danger" : ""
         } ${className}`}
         style={{
-          background: `linear-gradient(to right, #251D1C 0%, #251D1C ${((value - min) / (max - min)) * 100}%, #E5E7EB ${((value - min) / (max - min)) * 100}%, #E5E7EB 100%)`,
+          background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((value - min) / (max - min)) * 100}%, var(--border) ${((value - min) / (max - min)) * 100}%, var(--border) 100%)`,
         }}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-danger">{error}</p>}
     </div>
   );
 };

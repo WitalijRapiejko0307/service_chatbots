@@ -19,8 +19,8 @@ interface PendingFile {
 }
 
 function fileIcon(type: string) {
-  if (type.startsWith("image/")) return <ImageIcon size={20} className="text-[#251D1C]" />;
-  return <FileText size={20} className="text-[#9A9590]" />;
+  if (type.startsWith("image/")) return <ImageIcon size={20} className="text-foreground" />;
+  return <FileText size={20} className="text-muted" />;
 }
 
 function humanSize(bytes: number) {
@@ -118,7 +118,7 @@ export default function AgentRAGPage() {
         <div
           key={f.id}
           className={`group flex items-center rounded-sm ${
-            selectedFolderId === f.id ? "bg-[#EEEAE7] text-[#251D1C] font-medium" : "hover:bg-[#EEEAE7]/50"
+            selectedFolderId === f.id ? "bg-surface-hover text-foreground font-medium" : "hover:bg-surface-hover"
           }`}
           style={{ paddingLeft: `${12 + depth * 16}px` }}
         >
@@ -131,14 +131,14 @@ export default function AgentRAGPage() {
           <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 pr-1">
             <button
               onClick={(e) => { e.stopPropagation(); onRenameFolder(f.id, f.name); }}
-              className="p-1 text-gray-500 hover:text-gray-700 text-xs"
+              className="p-1 text-muted hover:text-muted text-xs"
               title="Rename"
             >
               ✎
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDeleteFolder(f.id, f.name); }}
-              className="p-1 text-gray-500 hover:text-red-600 text-xs"
+              className="p-1 text-muted hover:text-danger text-xs"
               title="Delete"
             >
               ×
@@ -297,35 +297,35 @@ export default function AgentRAGPage() {
 
         {/* ── Mobile toggle button (hidden on desktop) ─────────────── */}
         <button
-          className="md:hidden w-full flex items-center justify-between px-3 py-2.5 border border-[#BEBAB7] rounded-sm bg-white text-sm font-medium text-gray-700"
+          className="md:hidden w-full flex items-center justify-between px-3 py-2.5 border border-border rounded-sm bg-surface text-sm font-medium text-muted"
           onClick={() => setIsFolderPanelOpen((v) => !v)}
           aria-expanded={isFolderPanelOpen}
         >
           <span className="flex items-center gap-2">
-            <FolderOpen size={16} className="text-[#9A9590]" />
+            <FolderOpen size={16} className="text-muted" />
             {selectedFolderId
               ? folders.find((f) => f.id === selectedFolderId)?.name ?? "Folder"
               : "All documents"}
             {folders.length > 0 && (
-              <span className="text-xs text-gray-400">({folders.length})</span>
+              <span className="text-xs text-muted-foreground">({folders.length})</span>
             )}
           </span>
           {isFolderPanelOpen ? (
-            <ChevronUp size={16} className="text-gray-400" />
+            <ChevronUp size={16} className="text-muted-foreground" />
           ) : (
-            <ChevronDown size={16} className="text-gray-400" />
+            <ChevronDown size={16} className="text-muted-foreground" />
           )}
         </button>
 
         {/* ── Folder tree (always visible on desktop, toggle on mobile) ── */}
         <div
-          className={`border border-[#BEBAB7] rounded-sm bg-white p-3 ${
+          className={`border border-border rounded-sm bg-surface p-3 ${
             isFolderPanelOpen ? "block" : "hidden"
           } md:block`}
         >
           <div className="hidden md:flex items-center gap-2 mb-3">
-            <FolderOpen size={16} className="text-[#9A9590]" />
-            <h3 className="font-semibold text-gray-900">Folders</h3>
+            <FolderOpen size={16} className="text-muted" />
+            <h3 className="font-semibold text-foreground">Folders</h3>
           </div>
           <button
             onClick={() => {
@@ -334,8 +334,8 @@ export default function AgentRAGPage() {
             }}
             className={`w-full text-left px-3 py-2 rounded-sm mb-1 text-sm ${
               selectedFolderId === null
-                ? "bg-[#EEEAE7] text-[#251D1C] font-medium"
-                : "hover:bg-[#EEEAE7]/50 text-gray-700"
+                ? "bg-surface-hover text-foreground font-medium"
+                : "hover:bg-surface-hover text-muted"
             }`}
           >
             All documents
@@ -371,8 +371,8 @@ export default function AgentRAGPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">RAG Documents</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">RAG Documents</h1>
+            <p className="text-sm text-muted mt-1">
               Agent: {agentId}
               {selectedFolderId && (
                 <span className="ml-2">
@@ -389,18 +389,18 @@ export default function AgentRAGPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-sm">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-danger/10 border-l-4 border-danger p-4 mb-4 rounded-sm">
+            <p className="text-sm text-danger">{error}</p>
           </div>
         )}
 
         {dropzoneRejections && (
-          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-4 rounded-sm">
-            <p className="text-sm text-amber-800">{dropzoneRejections}</p>
+          <div className="bg-warning/10 border-l-4 border-warning p-4 mb-4 rounded-sm">
+            <p className="text-sm text-warning">{dropzoneRejections}</p>
             <button
               type="button"
               onClick={() => setDropzoneRejections(null)}
-              className="mt-2 text-xs text-amber-700 underline hover:text-amber-900"
+              className="mt-2 text-xs text-warning underline hover:text-warning/80"
             >
               Dismiss
             </button>
@@ -408,19 +408,19 @@ export default function AgentRAGPage() {
         )}
 
         {uploadWarnings.length > 0 && (
-          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-4 rounded-sm">
-            <p className="text-sm font-medium text-amber-800 mb-1">
+          <div className="bg-warning/10 border-l-4 border-warning p-4 mb-4 rounded-sm">
+            <p className="text-sm font-medium text-warning mb-1">
               Files saved, but AI processing failed:
             </p>
-            <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
+            <ul className="text-xs text-warning space-y-1 list-disc list-inside">
               {uploadWarnings.map((w, i) => <li key={i}>{w}</li>)}
             </ul>
-            <p className="text-xs text-amber-600 mt-2">
+            <p className="text-xs text-warning mt-2">
               These files are stored but won&apos;t appear in semantic search. Check your Google AI Studio quota or switch to OpenAI embeddings.
             </p>
             <button
               onClick={() => setUploadWarnings([])}
-              className="mt-2 text-xs text-amber-700 underline hover:text-amber-900"
+              className="mt-2 text-xs text-warning underline hover:text-warning/80"
             >
               Dismiss
             </button>
@@ -432,29 +432,29 @@ export default function AgentRAGPage() {
           {...getRootProps()}
           className={`border-2 border-dashed rounded-sm p-5 text-center transition-all ${
             isDragActive
-              ? "border-[#251D1C] bg-[#EEEAE7]"
-              : "border-[#BEBAB7] bg-[#EEEAE7]/30 hover:border-[#443C3C]"
+              ? "border-border-strong bg-surface-hover"
+              : "border-border bg-surface-hover hover:border-border-strong"
           } ${uploading ? "opacity-60 pointer-events-none" : "cursor-pointer"}`}
         >
           <input {...getInputProps()} />
           {uploading ? (
             <div className="flex flex-col items-center gap-2 py-2">
               <LoadingSpinner size="sm" />
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted">
                 {uploadProgress
                   ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}...`
                   : "Uploading..."}
               </p>
             </div>
           ) : pendingFiles.length > 0 ? (
-            <p className="text-sm text-gray-500">Drop more files here to add to queue</p>
+            <p className="text-sm text-muted">Drop more files here to add to queue</p>
           ) : (
             <>
-              <Upload size={24} className="mx-auto mb-2 text-[#9A9590]" />
-              <p className="text-sm font-medium text-gray-700">
+              <Upload size={24} className="mx-auto mb-2 text-muted" />
+              <p className="text-sm font-medium text-muted">
                 Drag & drop files here, or click to select
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted mt-1">
                 Supports: .txt, .md, .json, .pdf, images (.jpg, .png, .gif, .webp)
               </p>
             </>
@@ -463,9 +463,9 @@ export default function AgentRAGPage() {
 
         {/* Pending files queue */}
         {pendingFiles.length > 0 && (
-          <div className="mt-3 border border-[#BEBAB7] rounded-sm bg-white overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#EEEAE7] bg-[#EEEAE7]/50">
-              <p className="text-sm font-medium text-gray-700">
+          <div className="mt-3 border border-border rounded-sm bg-surface overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-surface-hover">
+              <p className="text-sm font-medium text-muted">
                 Ready to upload ({pendingFiles.length} {pendingFiles.length === 1 ? "file" : "files"})
               </p>
               <div className="flex gap-2">
@@ -474,7 +474,7 @@ export default function AgentRAGPage() {
                     pendingFiles.forEach((pf) => { if (pf.preview) URL.revokeObjectURL(pf.preview); });
                     setPendingFiles([]);
                   }}
-                  className="text-xs text-gray-500 hover:text-gray-700"
+                  className="text-xs text-muted hover:text-muted"
                 >
                   Clear all
                 </button>
@@ -483,11 +483,11 @@ export default function AgentRAGPage() {
                 </Button>
               </div>
             </div>
-            <div className="divide-y divide-[#EEEAE7]">
+            <div className="divide-y divide-border">
               {pendingFiles.map((pf, i) => (
                 <div key={i} className="flex items-center gap-3 px-4 py-2.5">
                   {/* Preview or icon */}
-                  <div className="flex-shrink-0 w-12 h-12 rounded-sm overflow-hidden bg-[#EEEAE7] flex items-center justify-center">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-sm overflow-hidden bg-surface-hover flex items-center justify-center">
                     {pf.preview ? (
                       <img
                         src={pf.preview}
@@ -500,13 +500,13 @@ export default function AgentRAGPage() {
                   </div>
                   {/* File info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{pf.file.name}</p>
-                    <p className="text-xs text-gray-500">{humanSize(pf.file.size)}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{pf.file.name}</p>
+                    <p className="text-xs text-muted">{humanSize(pf.file.size)}</p>
                   </div>
                   {/* Remove */}
                   <button
                     onClick={() => removePending(i)}
-                    className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 rounded-sm transition-colors"
+                    className="flex-shrink-0 p-1 text-muted-foreground hover:text-danger rounded-sm transition-colors"
                     aria-label="Remove from queue"
                   >
                     <X size={16} />
@@ -524,19 +524,19 @@ export default function AgentRAGPage() {
               <LoadingSpinner size="lg" />
             </div>
           ) : documents.length === 0 ? (
-            <div className="text-center py-12 bg-[#EEEAE7]/30 rounded-sm border border-[#BEBAB7]">
-              <p className="text-gray-600">No documents yet. Upload files above.</p>
+            <div className="text-center py-12 bg-surface-hover rounded-sm border border-border">
+              <p className="text-muted">No documents yet. Upload files above.</p>
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {documents.map((doc) => (
                 <div
                   key={doc.document_id}
-                  className="border border-[#BEBAB7] rounded-sm bg-white overflow-hidden hover:border-[#443C3C] transition-colors"
+                  className="border border-border rounded-sm bg-surface overflow-hidden hover:border-border-strong transition-colors"
                 >
                   {/* Image preview */}
                   {doc.file_type === "image" && doc.file_url ? (
-                    <div className="aspect-video bg-[#EEEAE7]">
+                    <div className="aspect-video bg-surface-hover">
                       <img
                         src={doc.file_url}
                         alt={doc.title}
@@ -544,15 +544,15 @@ export default function AgentRAGPage() {
                       />
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center aspect-video bg-[#EEEAE7]/50">
-                      <FileText size={32} className="text-[#BEBAB7]" />
+                    <div className="flex items-center justify-center aspect-video bg-surface-hover">
+                      <FileText size={32} className="text-muted-foreground" />
                     </div>
                   )}
                   <div className="p-3">
-                    <p className="font-medium text-gray-900 truncate text-sm" title={doc.title}>
+                    <p className="font-medium text-foreground truncate text-sm" title={doc.title}>
                       {doc.title}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-muted mt-0.5">
                       {doc.file_type}
                       {doc.file_size && ` • ${humanSize(doc.file_size)}`}
                     </p>
@@ -584,10 +584,10 @@ export default function AgentRAGPage() {
 
       {/* Delete modal */}
       {deleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-sm p-6 max-w-md w-full mx-4 border border-[#BEBAB7]">
-            <h3 className="font-semibold text-gray-900 mb-2">Delete permanently?</h3>
-            <p className="text-sm text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50">
+          <div className="bg-surface rounded-sm p-6 max-w-md w-full mx-4 border border-border">
+            <h3 className="font-semibold text-foreground mb-2">Delete permanently?</h3>
+            <p className="text-sm text-muted mb-4">
               This will permanently delete &quot;{deleteModal.name}&quot;. This action cannot be undone.
             </p>
             <div className="flex gap-2 justify-end">
@@ -600,9 +600,9 @@ export default function AgentRAGPage() {
 
       {/* Rename modal */}
       {renameModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-sm p-6 max-w-md w-full mx-4 border border-[#BEBAB7]">
-            <h3 className="font-semibold text-gray-900 mb-2">Rename</h3>
+        <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50">
+          <div className="bg-surface rounded-sm p-6 max-w-md w-full mx-4 border border-border">
+            <h3 className="font-semibold text-foreground mb-2">Rename</h3>
             <Input
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}

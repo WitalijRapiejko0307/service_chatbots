@@ -5,6 +5,12 @@
     "toggleMenu": "Toggle navigation menu",
     "logoutAria": "Logout from admin panel"
   },
+  "Theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switchTo": "Switch theme (current: {mode})"
+  },
   "Nav": {
     "agents": "Agents",
     "conversations": "Conversations",

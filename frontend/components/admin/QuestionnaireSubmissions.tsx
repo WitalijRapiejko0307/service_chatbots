@@ -49,7 +49,7 @@ const VIEW_MODE_SEGMENTS: { value: SubmissionsViewMode; label: string }[] = [
   { value: "table", label: "Table with answers" },
 ];
 
-const CONTROL_BORDER = "border-[#BEBAB7]";
+const CONTROL_BORDER = "border-border";
 
 /** Column keys: template order first, then orphan keys from snapshots (sorted). */
 function tableColumnKeys(
@@ -191,7 +191,7 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 bg-white border border-[#BEBAB7] rounded-sm p-4 shadow-sm">
+      <div className="flex flex-col gap-4 bg-surface border border-border rounded-sm p-4 shadow-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           <Select
             label="Status"
@@ -230,12 +230,12 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
           onChange={(v) => setViewMode(v as SubmissionsViewMode)}
           aria-label="Submissions list view"
         />
-        <details className="group text-sm text-gray-600 border-t border-[#EEEAE7] pt-3">
-          <summary className="cursor-pointer text-[#443C3C] font-medium list-none flex items-center gap-1 [&::-webkit-details-marker]:hidden">
+        <details className="group text-sm text-muted border-t border-border pt-3">
+          <summary className="cursor-pointer text-foreground font-medium list-none flex items-center gap-1 [&::-webkit-details-marker]:hidden">
             <span className="select-none">How filters work</span>
-            <span className="text-xs text-gray-500 group-open:hidden">(show)</span>
+            <span className="text-xs text-muted group-open:hidden">(show)</span>
           </summary>
-          <p className="mt-2 text-xs leading-relaxed text-gray-600 pl-0.5">
+          <p className="mt-2 text-xs leading-relaxed text-muted pl-0.5">
             Value search looks at the latest answer in the session for each field. Keys that are no
             longer in the current questionnaire are loaded from saved answers — pick them in the
             Field list to search the archive.
@@ -244,8 +244,8 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
       </div>
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded-sm">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-danger/10 border-l-4 border-danger p-3 rounded-sm">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
@@ -254,15 +254,15 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
           <LoadingSpinner />
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-white border border-[#BEBAB7] rounded-sm p-6 text-center text-gray-600">
+        <div className="bg-surface border border-border rounded-sm p-6 text-center text-muted">
           {statusFilter || hasResponseFilters
             ? "No sessions match the selected filters."
             : "No one has filled this questionnaire yet."}
         </div>
       ) : viewMode === "compact" ? (
-        <div className="bg-white border border-[#BEBAB7] rounded-sm overflow-hidden">
+        <div className="bg-surface border border-border rounded-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-[#EEEAE7]/50 text-left text-[#443C3C]">
+            <thead className="bg-surface-hover text-left text-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">User</th>
                 <th className="px-4 py-3 font-medium">Channel</th>
@@ -277,10 +277,10 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
               {items.map(({ submission, answers_count }) => (
                 <tr
                   key={submission.submission_id}
-                  className="border-t border-[#BEBAB7]/60 hover:bg-[#EEEAE7]/30 cursor-pointer"
+                  className="border-t border-border hover:bg-surface-hover cursor-pointer"
                   onClick={() => openDetail(submission.submission_id)}
                 >
-                  <td className="px-4 py-3 font-mono text-xs text-gray-700">
+                  <td className="px-4 py-3 font-mono text-xs text-muted">
                     {submission.external_user_id}
                   </td>
                   <td className="px-4 py-3">{getChannelDisplay(submission.channel)}</td>
@@ -289,8 +289,8 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
                     <StatusBadge status={submission.status} />
                   </td>
                   <td className="px-4 py-3">{answers_count}</td>
-                  <td className="px-4 py-3 text-gray-600">{formatTime(submission.started_at)}</td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-4 py-3 text-muted">{formatTime(submission.started_at)}</td>
+                  <td className="px-4 py-3 text-muted">
                     {submission.completed_at
                       ? formatTime(submission.completed_at)
                       : submission.cancelled_at
@@ -303,17 +303,17 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
           </table>
         </div>
       ) : (
-        <div className="rounded-sm border border-[#BEBAB7] bg-white overflow-x-auto">
+        <div className="rounded-sm border border-border bg-surface overflow-x-auto">
           <table className="text-sm min-w-max w-full border-collapse">
-            <thead className="bg-[#EEEAE7]/50 text-left text-[#443C3C]">
+            <thead className="bg-surface-hover text-left text-foreground">
               <tr>
-                <th className="sticky left-0 z-30 px-3 py-3 font-medium min-w-[9rem] max-w-[9rem] bg-[#EEEAE7]/95 shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
+                <th className="sticky left-0 z-30 px-3 py-3 font-medium min-w-[9rem] max-w-[9rem] bg-surface-hover shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
                   User
                 </th>
-                <th className="sticky left-[9rem] z-20 px-3 py-3 font-medium min-w-[10rem] bg-[#EEEAE7]/95 shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
+                <th className="sticky left-[9rem] z-20 px-3 py-3 font-medium min-w-[10rem] bg-surface-hover shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
                   Started
                 </th>
-                <th className="sticky left-[19rem] z-10 px-3 py-3 font-medium min-w-[10rem] bg-[#EEEAE7]/95 shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
+                <th className="sticky left-[19rem] z-10 px-3 py-3 font-medium min-w-[10rem] bg-surface-hover shadow-[2px_0_4px_rgba(0,0,0,0.04)]">
                   Completed
                 </th>
                 <th className="px-3 py-3 font-medium whitespace-nowrap">Channel</th>
@@ -337,16 +337,16 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
                 return (
                   <tr
                     key={submission.submission_id}
-                    className="border-t border-[#BEBAB7]/60 hover:bg-[#EEEAE7]/30 cursor-pointer align-top"
+                    className="border-t border-border hover:bg-surface-hover cursor-pointer align-top"
                     onClick={() => openDetail(submission.submission_id)}
                   >
-                    <td className="sticky left-0 z-20 px-3 py-2.5 font-mono text-xs text-gray-800 min-w-[9rem] max-w-[9rem] bg-white shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
+                    <td className="sticky left-0 z-20 px-3 py-2.5 font-mono text-xs text-foreground min-w-[9rem] max-w-[9rem] bg-surface shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
                       {submission.external_user_id}
                     </td>
-                    <td className="sticky left-[9rem] z-10 px-3 py-2.5 text-gray-600 text-xs bg-white whitespace-nowrap">
+                    <td className="sticky left-[9rem] z-10 px-3 py-2.5 text-muted text-xs bg-surface whitespace-nowrap">
                       {formatTime(submission.started_at)}
                     </td>
-                    <td className="sticky left-[19rem] z-10 px-3 py-2.5 text-gray-600 text-xs bg-white whitespace-nowrap">
+                    <td className="sticky left-[19rem] z-10 px-3 py-2.5 text-muted text-xs bg-surface whitespace-nowrap">
                       {submission.completed_at
                         ? formatTime(submission.completed_at)
                         : submission.cancelled_at
@@ -366,7 +366,7 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
                       return (
                         <td
                           key={key}
-                          className="px-3 py-2.5 text-gray-800 max-w-[14rem] align-top"
+                          className="px-3 py-2.5 text-foreground max-w-[14rem] align-top"
                           title={raw || undefined}
                         >
                           <span className="line-clamp-3 break-words">{raw || "—"}</span>
@@ -398,10 +398,10 @@ export const QuestionnaireSubmissions: React.FC<Props> = ({ agentId, template })
 function StatusBadge({ status }: { status: string }) {
   const color =
     status === "completed"
-      ? "bg-green-100 text-green-800"
+      ? "bg-success/15 text-success"
       : status === "cancelled"
-      ? "bg-gray-100 text-gray-600"
-      : "bg-amber-100 text-amber-800";
+      ? "bg-surface-hover text-muted"
+      : "bg-warning/15 text-warning";
   return (
     <span className={`inline-block px-2 py-0.5 rounded-sm text-xs font-medium ${color}`}>
       {STATUS_LABEL[status] || status}
@@ -426,16 +426,16 @@ interface DrawerProps {
 
 const SubmissionDrawer: React.FC<DrawerProps> = ({ detail, labelByKey, onClose }) => {
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex justify-end bg-overlay" onClick={onClose}>
       <aside
-        className="w-full md:w-[520px] bg-white h-full overflow-y-auto shadow-xl border-l border-[#BEBAB7]"
+        className="w-full md:w-[520px] bg-surface h-full overflow-y-auto shadow-xl border-l border-border"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-[#BEBAB7] px-5 py-3 flex items-center justify-between">
-          <div className="font-semibold text-gray-900">Submission details</div>
+        <div className="sticky top-0 bg-surface border-b border-border px-5 py-3 flex items-center justify-between">
+          <div className="font-semibold text-foreground">Submission details</div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-800"
+            className="text-muted hover:text-foreground"
             aria-label="Close"
           >
             ✕
@@ -447,7 +447,7 @@ const SubmissionDrawer: React.FC<DrawerProps> = ({ detail, labelByKey, onClose }
               <LoadingSpinner />
             </div>
           ) : detail.responses.length === 0 ? (
-            <div className="text-sm text-gray-600">No answers yet.</div>
+            <div className="text-sm text-muted">No answers yet.</div>
           ) : (
             <SubmissionTimeline responses={detail.responses} labelByKey={labelByKey} />
           )}
@@ -467,12 +467,12 @@ function SubmissionTimeline({
   return (
     <ul className="space-y-3">
       {responses.map((r) => (
-        <li key={r.response_id} className="border border-[#BEBAB7] rounded-sm p-3">
-          <div className="text-sm font-medium text-gray-900">
+        <li key={r.response_id} className="border border-border rounded-sm p-3">
+          <div className="text-sm font-medium text-foreground">
             {labelByKey[r.field_key] || r.field_key}
           </div>
-          <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{r.value}</div>
-          <div className="mt-1 text-xs text-gray-500">{formatTime(r.created_at)}</div>
+          <div className="mt-1 text-sm text-muted whitespace-pre-wrap">{r.value}</div>
+          <div className="mt-1 text-xs text-muted">{formatTime(r.created_at)}</div>
         </li>
       ))}
     </ul>

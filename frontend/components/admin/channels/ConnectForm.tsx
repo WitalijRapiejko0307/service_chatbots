@@ -101,17 +101,17 @@ export function ConnectForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-4 p-4 bg-[#FAF9F8] border border-[#BEBAB7] rounded-sm space-y-3"
+      className="mt-4 p-4 bg-surface-hover border border-border rounded-sm space-y-3"
     >
       {err && (
-        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-sm px-3 py-2">
+        <div className="text-xs text-danger bg-danger/10 border border-danger/30 rounded-sm px-3 py-2">
           {err}
         </div>
       )}
 
       {channelType === "instagram" && (
         <>
-          <p className="text-xs text-[#443C3C] bg-[#EEEAE7]/60 rounded-sm px-3 py-2">
+          <p className="text-xs text-foreground bg-surface-hover/60 rounded-sm px-3 py-2">
             {t("instagram.pastePathActive")}
           </p>
           <div>
@@ -124,7 +124,7 @@ export function ConnectForm({
               placeholder="17841458318357324"
               autoComplete="off"
             />
-            <p className="text-xs text-[#9A9590] mt-1">{t("instagram.accountIdHint")}</p>
+            <p className="text-xs text-muted mt-1">{t("instagram.accountIdHint")}</p>
           </div>
           <div>
             <label className={LABEL_CLASS}>{t("instagram.pageToken")}</label>
@@ -182,7 +182,7 @@ export function ConnectForm({
               required
               autoComplete="new-password"
             />
-            <p className="text-xs text-[#9A9590] mt-1">{t("telegram.botTokenHint")}</p>
+            <p className="text-xs text-muted mt-1">{t("telegram.botTokenHint")}</p>
           </div>
           <div>
             <label className={LABEL_CLASS}>{t("telegram.botUsername")}</label>
@@ -193,7 +193,7 @@ export function ConnectForm({
               placeholder={t("telegram.botUsernamePlaceholder")}
             />
           </div>
-          <p className="text-xs text-[#9A9590]">{t("telegram.webhookAutoNote")}</p>
+          <p className="text-xs text-muted">{t("telegram.webhookAutoNote")}</p>
         </>
       )}
 
@@ -211,7 +211,7 @@ export function ConnectForm({
               required
               autoComplete="new-password"
             />
-            <p className="text-xs text-[#9A9590] mt-1">{t("viber.authTokenHint")}</p>
+            <p className="text-xs text-muted mt-1">{t("viber.authTokenHint")}</p>
           </div>
           <div>
             <label className={LABEL_CLASS}>{t("viber.accountName")}</label>
@@ -229,7 +229,7 @@ export function ConnectForm({
               placeholder={t("viber.accountNamePlaceholder")}
             />
           </div>
-          <p className="text-xs text-[#443C3C] bg-[#EEEAE7]/60 rounded-sm px-3 py-2">
+          <p className="text-xs text-foreground bg-surface-hover/60 rounded-sm px-3 py-2">
             {t("viber.httpsNote")}
           </p>
         </>
@@ -238,7 +238,7 @@ export function ConnectForm({
       {channelType === "tiktok" && (
         <>
           {tiktokPending && (
-            <p className="text-xs text-[#443C3C] bg-[#EEEAE7]/60 rounded-sm px-3 py-2">
+            <p className="text-xs text-foreground bg-surface-hover/60 rounded-sm px-3 py-2">
               {t("tiktok.pendingNote")}
             </p>
           )}
@@ -255,7 +255,7 @@ export function ConnectForm({
               required={!tiktokPending}
               autoComplete="off"
             />
-            <p className="text-xs text-[#9A9590] mt-1">{t("tiktok.businessIdHint")}</p>
+            <p className="text-xs text-muted mt-1">{t("tiktok.businessIdHint")}</p>
           </div>
           <div>
             <label className={LABEL_CLASS}>
@@ -270,10 +270,10 @@ export function ConnectForm({
               required={!tiktokPending}
               autoComplete="new-password"
             />
-            <p className="text-xs text-[#9A9590] mt-1">{t("tiktok.accessTokenHint")}</p>
+            <p className="text-xs text-muted mt-1">{t("tiktok.accessTokenHint")}</p>
           </div>
           {tiktokPending && (
-            <p className="text-xs text-[#9A9590]">{t("tiktok.placeholderSaveNote")}</p>
+            <p className="text-xs text-muted">{t("tiktok.placeholderSaveNote")}</p>
           )}
         </>
       )}
@@ -285,7 +285,7 @@ export function ConnectForm({
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-[#9A9590] hover:text-[#443C3C]"
+          className="px-4 py-2 text-sm text-muted hover:text-foreground"
         >
           {t("cancel")}
         </button>

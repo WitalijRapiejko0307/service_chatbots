@@ -314,17 +314,17 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="border-t border-[#251D1C]/20 p-4 bg-white">
+    <div className="border-t border-border p-4 bg-surface">
       {/* Image preview */}
       {previewUrl && (
-        <div className="mb-2 flex items-center gap-2 rounded-sm border border-gray-200 bg-gray-50 p-2">
+        <div className="mb-2 flex items-center gap-2 rounded-sm border border-border bg-surface-hover p-2">
           <img
             src={previewUrl}
             alt="Attachment preview"
             className="h-14 w-14 rounded object-cover"
           />
-          <span className="text-xs text-gray-600 flex-1 truncate">{pendingFile?.name}</span>
-          <button type="button" onClick={clearAttachment} className="text-sm text-red-600 hover:underline">
+          <span className="text-xs text-muted flex-1 truncate">{pendingFile?.name}</span>
+          <button type="button" onClick={clearAttachment} className="text-sm text-danger hover:underline">
             Remove
           </button>
         </div>
@@ -332,24 +332,24 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
       {/* Recording indicator */}
       {isRecording && (
-        <div className="mb-2 flex items-center gap-2 rounded-sm bg-red-50 border border-red-200 px-3 py-1.5">
-          <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" aria-hidden />
-          <span className="text-xs font-medium text-red-600">
+        <div className="mb-2 flex items-center gap-2 rounded-sm bg-danger/10 border border-danger/30 px-3 py-1.5">
+          <span className="h-2 w-2 rounded-full bg-danger animate-pulse" aria-hidden />
+          <span className="text-xs font-medium text-danger">
             Запись… {formatDuration(recordingSeconds)}
           </span>
-          <span className="text-xs text-red-500 ml-auto">Нажмите стоп чтобы отправить</span>
+          <span className="text-xs text-danger ml-auto">Нажмите стоп чтобы отправить</span>
         </div>
       )}
 
       {/* Transcribing indicator */}
       {isTranscribing && (
-        <div className="mb-2 flex items-center gap-2 rounded-sm bg-blue-50 border border-blue-200 px-3 py-1.5">
-          <span className="text-xs text-blue-600">Распознаю речь…</span>
+        <div className="mb-2 flex items-center gap-2 rounded-sm bg-accent/10 border border-accent/30 px-3 py-1.5">
+          <span className="text-xs text-accent">Распознаю речь…</span>
         </div>
       )}
 
       {/* Error */}
-      {voiceError && <p className="mb-1 text-xs text-red-500">{voiceError}</p>}
+      {voiceError && <p className="mb-1 text-xs text-danger">{voiceError}</p>}
 
       <div className="flex gap-2 items-end">
         {/* Image attach */}
@@ -365,7 +365,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isRecording || isTranscribing}
-          className="shrink-0 p-2.5 rounded-sm border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          className="shrink-0 p-2.5 rounded-sm border border-border text-muted hover:bg-surface-hover disabled:opacity-50"
           aria-label="Attach image"
         >
           <AttachmentIcon />
@@ -379,8 +379,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             disabled={disabled || isTranscribing}
             className={`shrink-0 p-2.5 rounded-sm border transition-colors disabled:opacity-50 ${
               isRecording
-                ? "border-red-400 bg-red-50 text-red-500"
-                : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                ? "border-danger bg-danger/10 text-danger"
+                : "border-border text-muted hover:bg-surface-hover"
             }`}
             aria-label={isRecording ? "Стоп" : "Голосовое сообщение"}
             title={isRecording ? "Остановить запись" : "Записать голосовое сообщение"}
@@ -400,11 +400,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             placeholder={isRecording ? "Говорите…" : isTranscribing ? "Распознаю…" : placeholder}
             rows={1}
             maxLength={maxLength}
-            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-sm bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:border-[#251D1C] resize-none disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] max-h-[120px] overflow-y-auto"
+            className="flex-1 px-4 py-2.5 border border-border rounded-sm bg-surface transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent resize-none disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] max-h-[120px] overflow-y-auto"
             aria-label="Message input"
           />
           {maxLength && (
-            <div className={`text-xs mt-1 px-1 ${isNearLimit ? "text-[#F59E0B]" : "text-gray-400"}`}>
+            <div className={`text-xs mt-1 px-1 ${isNearLimit ? "text-warning" : "text-muted-foreground"}`}>
               {remainingChars} characters remaining
             </div>
           )}

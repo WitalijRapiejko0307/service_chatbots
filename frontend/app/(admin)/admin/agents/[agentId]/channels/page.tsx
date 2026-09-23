@@ -55,24 +55,24 @@ export default function AgentChannelsPage() {
         <div>
           <Link
             href="/admin/agents"
-            className="text-sm text-[#6B6560] hover:text-[#251D1C] mb-1 inline-block"
+            className="text-sm text-muted hover:text-foreground mb-1 inline-block"
           >
             ← {t("backToAgents")}
           </Link>
-          <h1 className="text-2xl font-bold text-[#251D1C]">{t("title")}</h1>
-          <p className="text-sm text-[#9A9590] mt-1">{t("subtitle", { agentId })}</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-sm text-muted mt-1">{t("subtitle", { agentId })}</p>
         </div>
         <button
           type="button"
           onClick={() => void reload()}
-          className="flex items-center gap-1.5 text-sm text-[#9A9590] hover:text-[#443C3C] border border-[#BEBAB7] px-3 py-1.5 rounded-sm hover:border-[#443C3C] transition-colors"
+          className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground border border-border px-3 py-1.5 rounded-sm hover:border-border-strong transition-colors"
         >
           <RefreshCw size={13} /> {t("refresh")}
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-50 border-l-4 border-red-500 px-4 py-3 rounded-sm text-sm text-red-700">
+        <div className="mb-4 bg-danger/10 border-l-4 border-danger px-4 py-3 rounded-sm text-sm text-danger">
           {error}
         </div>
       )}

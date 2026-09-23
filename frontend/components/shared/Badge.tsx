@@ -12,11 +12,11 @@ interface BadgeProps {
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-[#EEEAE7] text-[#443C3C] border-[#BEBAB7]",
-  success: "bg-green-100 text-green-800 border-green-200",
-  warning: "bg-[#F59E0B]/20 text-[#D97706] border-[#F59E0B]/30",
-  error: "bg-red-100 text-red-800 border-red-200",
-  info: "bg-[#3B82F6]/20 text-[#2563EB] border-[#3B82F6]/30",
+  default: "bg-surface-hover text-foreground border-border",
+  success: "bg-success/15 text-success border-success/30",
+  warning: "bg-warning/20 text-warning border-warning/30",
+  error: "bg-danger/15 text-danger border-danger/30",
+  info: "bg-accent/20 text-accent border-accent/30",
 };
 
 const sizeClasses = {

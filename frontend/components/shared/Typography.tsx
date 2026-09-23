@@ -9,7 +9,7 @@ interface TypographyProps {
 
 export const Heading1: React.FC<TypographyProps> = ({ children, className = "" }) => {
   return (
-    <h1 className={`text-3xl font-bold leading-tight text-gray-900 ${className}`}>
+    <h1 className={`text-3xl font-bold leading-tight text-foreground ${className}`}>
       {children}
     </h1>
   );
@@ -17,7 +17,7 @@ export const Heading1: React.FC<TypographyProps> = ({ children, className = "" }
 
 export const Heading2: React.FC<TypographyProps> = ({ children, className = "" }) => {
   return (
-    <h2 className={`text-2xl font-semibold leading-tight text-gray-900 ${className}`}>
+    <h2 className={`text-2xl font-semibold leading-tight text-foreground ${className}`}>
       {children}
     </h2>
   );
@@ -25,7 +25,7 @@ export const Heading2: React.FC<TypographyProps> = ({ children, className = "" }
 
 export const Heading3: React.FC<TypographyProps> = ({ children, className = "" }) => {
   return (
-    <h3 className={`text-xl font-semibold leading-normal text-gray-900 ${className}`}>
+    <h3 className={`text-xl font-semibold leading-normal text-foreground ${className}`}>
       {children}
     </h3>
   );
@@ -33,7 +33,7 @@ export const Heading3: React.FC<TypographyProps> = ({ children, className = "" }
 
 export const Heading4: React.FC<TypographyProps> = ({ children, className = "" }) => {
   return (
-    <h4 className={`text-lg font-medium leading-normal text-gray-900 ${className}`}>
+    <h4 className={`text-lg font-medium leading-normal text-foreground ${className}`}>
       {children}
     </h4>
   );
@@ -44,7 +44,7 @@ export const Body: React.FC<TypographyProps & { variant?: "default" | "muted" }>
   variant = "default",
   className = "",
 }) => {
-  const colorClass = variant === "muted" ? "text-gray-600" : "text-gray-900";
+  const colorClass = variant === "muted" ? "text-muted" : "text-foreground";
   return (
     <p className={`text-base leading-normal ${colorClass} ${className}`}>
       {children}
@@ -57,7 +57,7 @@ export const Caption: React.FC<TypographyProps & { variant?: "default" | "muted"
   variant = "default",
   className = "",
 }) => {
-  const colorClass = variant === "muted" ? "text-gray-500" : "text-gray-700";
+  const colorClass = variant === "muted" ? "text-muted" : "text-foreground";
   return (
     <p className={`text-xs leading-normal ${colorClass} ${className}`}>
       {children}
@@ -70,7 +70,7 @@ export const Small: React.FC<TypographyProps & { variant?: "default" | "muted" }
   variant = "default",
   className = "",
 }) => {
-  const colorClass = variant === "muted" ? "text-gray-500" : "text-gray-700";
+  const colorClass = variant === "muted" ? "text-muted" : "text-foreground";
   return (
     <span className={`text-sm leading-normal ${colorClass} ${className}`}>
       {children}

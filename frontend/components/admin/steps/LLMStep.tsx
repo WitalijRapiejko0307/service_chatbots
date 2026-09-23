@@ -121,10 +121,10 @@ export const LLMStep: React.FC<LLMStepProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
           {t("llmTitle")}
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-muted mb-6">
           {t("llmDesc")}
         </p>
       </div>
@@ -148,12 +148,12 @@ export const LLMStep: React.FC<LLMStepProps> = ({
             error={getFieldError(errors, "llm_model")}
           />
           {selectedModel?.description && (
-            <p className="mt-1 text-xs text-gray-600 italic">
+            <p className="mt-1 text-xs text-muted italic">
               {selectedModel.description}
             </p>
           )}
           {provider === "google_ai_studio" && (
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-muted">
               {t("googleEnvHint")}
             </p>
           )}
@@ -169,7 +169,7 @@ export const LLMStep: React.FC<LLMStepProps> = ({
             onChange={(e) => onUpdate({ llm_temperature: parseFloat(e.target.value) })}
             error={getFieldError(errors, "llm_temperature")}
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted">
             {t("temperatureHint")}
           </p>
         </div>
@@ -189,22 +189,22 @@ export const LLMStep: React.FC<LLMStepProps> = ({
       </div>
 
       {/* Preview */}
-      <div className="mt-8 p-6 bg-[#EEEAE7]/10 border border-[#251D1C]/20 rounded-sm">
-        <h4 className="text-sm font-medium text-gray-700 mb-4">
+      <div className="mt-8 p-6 bg-surface-hover/50 border border-border rounded-sm">
+        <h4 className="text-sm font-medium text-foreground mb-4">
           {t("llmPreview")}
         </h4>
-        <div className="bg-white p-4 rounded-sm border border-[#251D1C]/20 space-y-2 text-sm">
-          <p className="text-gray-600">
+        <div className="bg-surface p-4 rounded-sm border border-border space-y-2 text-sm">
+          <p className="text-muted">
             <strong>{t("provider")}:</strong>{" "}
             {provider === "google_ai_studio" ? "Google AI Studio" : "OpenAI"}
           </p>
-          <p className="text-gray-600">
+          <p className="text-muted">
             <strong>{t("model")}:</strong> {currentModel}
           </p>
-          <p className="text-gray-600">
+          <p className="text-muted">
             <strong>{t("temperature")}:</strong> {config.llm_temperature ?? 0.2}
           </p>
-          <p className="text-gray-600">
+          <p className="text-muted">
             <strong>{t("maxOutputTokens")}:</strong> {config.llm_max_tokens ?? 600}
           </p>
         </div>

@@ -110,16 +110,16 @@ const AgentRow = memo(function AgentRow({
   const initials = useMemo(() => getAgentInitials(agent), [agent]);
 
   return (
-    <tr className="hover:bg-[#EEEAE7]/5 transition-colors duration-150">
+    <tr className="hover:bg-surface-hover/50 transition-colors duration-150">
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#EEEAE7]/20 flex items-center justify-center text-sm font-medium text-[#443C3C]">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center text-sm font-medium text-foreground">
             {initials}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-gray-900">{agentName}</span>
+            <span className="text-sm font-medium text-foreground">{agentName}</span>
             {companyName && (
-              <span className="text-xs text-gray-500">{companyName}</span>
+              <span className="text-xs text-muted">{companyName}</span>
             )}
           </div>
         </div>
@@ -129,22 +129,22 @@ const AgentRow = memo(function AgentRow({
           {agent.is_active ? t("active") : t("inactive")}
         </Badge>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
         {isLoadingChannels ? (
-          <span className="text-gray-400">{t("loading")}</span>
+          <span className="text-muted-foreground">{t("loading")}</span>
         ) : (
           <Link
             href={`/admin/agents/${agent.agent_id}/channels`}
-            className="text-[#251D1C] hover:text-[#443C3C] transition-colors duration-200"
+            className="text-accent hover:text-foreground transition-colors duration-200"
           >
             {t("channelCount", { count: channelCount ?? 0 })}
           </Link>
         )}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
         <Link
           href={`/admin/agents/${agent.agent_id}/rag`}
-          className="text-[#251D1C] hover:text-[#443C3C] transition-colors duration-200"
+          className="text-accent hover:text-foreground transition-colors duration-200"
         >
           {t("rag")}
         </Link>
@@ -154,7 +154,7 @@ const AgentRow = memo(function AgentRow({
           <Tooltip content={t("editAgent")}>
             <button
               onClick={() => onEdit(agent)}
-              className="inline-flex items-center justify-center w-8 h-8 text-[#251D1C] hover:text-[#443C3C] hover:bg-[#EEEAE7]/10 rounded-sm transition-all duration-200"
+              className="inline-flex items-center justify-center w-8 h-8 text-accent hover:text-foreground hover:bg-surface-hover rounded-sm transition-all duration-200"
               aria-label={t("editAgent")}
             >
               <EditIcon />
@@ -163,7 +163,7 @@ const AgentRow = memo(function AgentRow({
           <Tooltip content={t("cloneAgent")}>
             <button
               onClick={() => onClone(agent)}
-              className="inline-flex items-center justify-center w-8 h-8 text-[#251D1C] hover:text-[#443C3C] hover:bg-[#EEEAE7]/10 rounded-sm transition-all duration-200"
+              className="inline-flex items-center justify-center w-8 h-8 text-accent hover:text-foreground hover:bg-surface-hover rounded-sm transition-all duration-200"
               aria-label={t("cloneAgent")}
             >
               <CloneIcon />
@@ -172,7 +172,7 @@ const AgentRow = memo(function AgentRow({
           <Tooltip content={t("deleteAgent")}>
             <button
               onClick={() => onDelete(agent)}
-              className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-sm transition-all duration-200"
+              className="inline-flex items-center justify-center w-8 h-8 text-danger hover:text-danger hover:bg-danger/10 rounded-sm transition-all duration-200"
               aria-label={t("deleteAgent")}
             >
               <DeleteIcon />
@@ -332,9 +332,9 @@ export default function AgentsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Agents</h1>
+          <h1 className="text-2xl font-bold text-foreground">Agents</h1>
           {filteredAgents.length > 0 && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-muted mt-1">
               {filteredAgents.length} agent{filteredAgents.length !== 1 ? "s" : ""}
             </p>
           )}
@@ -358,8 +358,8 @@ export default function AgentsPage() {
       )}
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-sm" role="alert">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-danger/10 border-l-4 border-danger p-4 mb-4 rounded-sm" role="alert">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
@@ -381,29 +381,29 @@ export default function AgentsPage() {
           }
         />
       ) : (
-        <div className="bg-white rounded-sm shadow border border-[#251D1C]/20 overflow-hidden">
+        <div className="bg-surface rounded-sm shadow border border-border overflow-hidden">
           <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-[#EEEAE7]/10">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-surface-hover/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("agent")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("status")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("channels")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("rag")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {tCommon("actions")}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-surface divide-y divide-border">
               {filteredAgents.map((agent) => (
                 <AgentRow
                   key={agent.agent_id}

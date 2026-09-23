@@ -116,10 +116,10 @@ export default function ChatPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen p-4 bg-white">
+      <div className="flex items-center justify-center min-h-screen p-4 bg-background">
         <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Error</h2>
+          <p className="text-muted mb-4">{error}</p>
           <Button variant="primary" onClick={() => router.push("/")}>
             Go Back
           </Button>
@@ -132,7 +132,7 @@ export default function ChatPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Failed to create conversation</p>
+          <p className="text-muted mb-4">Failed to create conversation</p>
           <Button variant="primary" onClick={() => router.push("/")}>
             Go Back
           </Button>
@@ -146,21 +146,21 @@ export default function ChatPage() {
   const specialty = agent ? getAgentSpecialty(agent) : null;
 
   return (
-    <div className="h-screen flex flex-col bg-white">
-      <div className="border-b border-[#251D1C]/20 px-6 py-4 bg-white shadow-sm">
+    <div className="h-screen flex flex-col bg-background">
+      <div className="border-b border-border px-6 py-4 bg-surface shadow-sm">
         <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#EEEAE7]/20 flex items-center justify-center text-lg font-medium text-[#443C3C]">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-surface-hover flex items-center justify-center text-lg font-medium text-muted">
             {agentInitials}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-xl font-semibold text-foreground">
               {agentDisplayName}
             </h1>
             {specialty && (
-              <p className="text-sm text-gray-600">{specialty}</p>
+              <p className="text-sm text-muted">{specialty}</p>
             )}
             {newChatError && (
-              <p className="text-sm text-red-600 mt-1" role="alert">
+              <p className="text-sm text-danger mt-1" role="alert">
                 {newChatError}
               </p>
             )}

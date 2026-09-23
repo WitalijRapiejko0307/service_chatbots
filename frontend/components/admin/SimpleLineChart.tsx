@@ -22,8 +22,8 @@ export const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
 }) => {
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-48 bg-gray-50 rounded-sm border border-gray-200">
-        <p className="text-gray-500">No data available</p>
+      <div className="flex items-center justify-center h-48 bg-surface-hover rounded-sm border border-border">
+        <p className="text-muted">No data available</p>
       </div>
     );
   }
@@ -49,7 +49,7 @@ export const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
   const points = data.map((point, index) => `${getX(index)},${getY(point.value)}`).join(" ");
 
   return (
-    <div className="bg-white rounded-sm border border-[#251D1C]/20 p-4">
+    <div className="bg-surface rounded-sm border border-border p-4">
       <svg width={width} height={height} className="overflow-visible">
         {/* Grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
@@ -61,7 +61,7 @@ export const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
               y1={y}
               x2={width - padding}
               y2={y}
-              stroke="#E5E7EB"
+              stroke="var(--border)"
               strokeWidth="1"
             />
           );
@@ -98,7 +98,7 @@ export const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
                 x={getX(index)}
                 y={height - 10}
                 textAnchor="middle"
-                className="text-xs fill-gray-600"
+                className="text-xs fill-muted"
               >
                 {new Date(point.date).toLocaleDateString("en-US", {
                   month: "short",

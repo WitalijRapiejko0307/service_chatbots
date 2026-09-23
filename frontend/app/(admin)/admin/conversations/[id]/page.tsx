@@ -293,8 +293,8 @@ export default function ConversationDetailPage() {
 
   if (error || !conversation) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-sm" role="alert">
-        <p className="text-sm text-red-700">{error || t("notFound")}</p>
+      <div className="bg-danger/10 border-l-4 border-danger p-4 rounded-sm" role="alert">
+        <p className="text-sm text-danger">{error || t("notFound")}</p>
       </div>
     );
   }
@@ -314,8 +314,8 @@ export default function ConversationDetailPage() {
       {/* Page header — stacks on mobile, side-by-side on desktop */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-5">
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{t("title")}</h1>
-          <p className="text-xs md:text-sm text-gray-500 mt-1 font-mono truncate">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-xs md:text-sm text-muted mt-1 font-mono truncate">
             {getConversationDisplayId(conversation, "detail")}
           </p>
         </div>
@@ -324,18 +324,18 @@ export default function ConversationDetailPage() {
           <button
             type="button"
             onClick={() => setShowInfoCards((v) => !v)}
-            className="md:hidden min-h-[44px] inline-flex items-center px-3 text-sm border border-[#BEBAB7] rounded-sm text-gray-600 hover:bg-[#EEEAE7] active:bg-[#E5E0DC] transition-colors flex-shrink-0 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#251D1C] focus-visible:ring-offset-2"
+            className="md:hidden min-h-[44px] inline-flex items-center px-3 text-sm border border-border rounded-sm text-muted hover:bg-surface-hover active:bg-surface-hover transition-colors flex-shrink-0 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             {showInfoCards ? t("hideInfo") : t("showInfo")}
           </button>
           {!modeClosed && (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap w-full sm:w-auto min-w-0">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 min-w-0 w-full sm:w-auto">
-                <span className="text-xs text-gray-600 sm:whitespace-nowrap shrink-0">
+                <span className="text-xs text-muted sm:whitespace-nowrap shrink-0">
                   {t("responseModeLabel")}
                 </span>
                 <div
-                  className="flex w-full sm:w-auto rounded-sm border border-[#BEBAB7] overflow-hidden min-h-[44px] touch-manipulation"
+                  className="flex w-full sm:w-auto rounded-sm border border-border overflow-hidden min-h-[44px] touch-manipulation"
                   role="group"
                   aria-label={t("responseModeLabel")}
                 >
@@ -343,10 +343,10 @@ export default function ConversationDetailPage() {
                     type="button"
                     disabled={modeActionPending || isAgentMode}
                     onClick={handleReturnToAI}
-                    className={`min-h-[44px] flex-1 sm:flex-none sm:min-w-[5.5rem] px-3 text-sm font-medium transition-colors inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#251D1C] ${
+                    className={`min-h-[44px] flex-1 sm:flex-none sm:min-w-[5.5rem] px-3 text-sm font-medium transition-colors inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
                       isAgentMode
-                        ? "bg-[#251D1C] text-white"
-                        : "bg-white text-gray-700 hover:bg-[#EEEAE7] active:bg-[#E5E0DC]"
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-surface text-muted hover:bg-surface-hover active:bg-surface-hover"
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {t("modeAgent")}
@@ -355,10 +355,10 @@ export default function ConversationDetailPage() {
                     type="button"
                     disabled={modeActionPending || isHumanMode}
                     onClick={handleHandoff}
-                    className={`min-h-[44px] flex-1 sm:flex-none sm:min-w-[5.5rem] px-3 text-sm font-medium transition-colors border-l border-[#BEBAB7] inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#251D1C] ${
+                    className={`min-h-[44px] flex-1 sm:flex-none sm:min-w-[5.5rem] px-3 text-sm font-medium transition-colors border-l border-border inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
                       isHumanMode
-                        ? "bg-[#251D1C] text-white"
-                        : "bg-white text-gray-700 hover:bg-[#EEEAE7] active:bg-[#E5E0DC]"
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-surface text-muted hover:bg-surface-hover active:bg-surface-hover"
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {t("modeHuman")}
@@ -379,101 +379,101 @@ export default function ConversationDetailPage() {
         </div>
       </div>
       {conversation.agent_context_reset_at && (
-        <p className="text-xs text-gray-500 mb-3">
+        <p className="text-xs text-muted mb-3">
           {t("contextResetHint")}: {formatDateTime(conversation.agent_context_reset_at)}
         </p>
       )}
 
       {actionError && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-sm" role="alert">
-          <p className="text-sm text-red-700">{actionError}</p>
+        <div className="bg-danger/10 border-l-4 border-danger p-4 mb-4 rounded-sm" role="alert">
+          <p className="text-sm text-danger">{actionError}</p>
         </div>
       )}
 
       {/* Info Cards — always visible on desktop, toggle on mobile */}
       <div className={`${showInfoCards ? "grid" : "hidden"} md:grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 sm:mb-6`}>
         {/* Agent Info Card */}
-        <div className="bg-white rounded-sm shadow border border-[#251D1C]/20 p-4 sm:p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-3">{t("agentInfo")}</h3>
+        <div className="bg-surface rounded-sm shadow border border-border p-4 sm:p-6">
+          <h3 className="text-sm font-medium text-muted mb-3">{t("agentInfo")}</h3>
           {isLoadingAgent ? (
             <LoadingSpinner size="sm" />
           ) : (
             <div className="space-y-2">
               <div>
-                <p className="text-xs text-gray-500">{t("agentName")}</p>
-                <p className="text-sm font-medium text-gray-900">{agentDisplayName}</p>
+                <p className="text-xs text-muted">{t("agentName")}</p>
+                <p className="text-sm font-medium text-foreground">{agentDisplayName}</p>
               </div>
               {companyName && (
                 <div>
-                  <p className="text-xs text-gray-500">{t("company")}</p>
-                  <p className="text-sm font-medium text-gray-900">{companyName}</p>
+                  <p className="text-xs text-muted">{t("company")}</p>
+                  <p className="text-sm font-medium text-foreground">{companyName}</p>
                 </div>
               )}
               {agentProfileName && (
                 <div>
-                  <p className="text-xs text-gray-500">{t("agent")}</p>
-                  <p className="text-sm font-medium text-gray-900">{agentProfileName}</p>
+                  <p className="text-xs text-muted">{t("agent")}</p>
+                  <p className="text-sm font-medium text-foreground">{agentProfileName}</p>
                 </div>
               )}
               {specialty && (
                 <div>
-                  <p className="text-xs text-gray-500">{t("specialty")}</p>
-                  <p className="text-sm font-medium text-gray-900">{specialty}</p>
+                  <p className="text-xs text-muted">{t("specialty")}</p>
+                  <p className="text-sm font-medium text-foreground">{specialty}</p>
                 </div>
               )}
-              <div className="pt-2 border-t border-gray-200">
-                <p className="text-xs text-gray-500">{t("agentId")}</p>
-                <p className="text-xs font-mono text-gray-600">{conversation.agent_id}</p>
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs text-muted">{t("agentId")}</p>
+                <p className="text-xs font-mono text-muted">{conversation.agent_id}</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Conversation Info Card */}
-        <div className="bg-white rounded-sm shadow border border-[#251D1C]/20 p-4 sm:p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-3">{t("conversationInfo")}</h3>
+        <div className="bg-surface rounded-sm shadow border border-border p-4 sm:p-6">
+          <h3 className="text-sm font-medium text-muted mb-3">{t("conversationInfo")}</h3>
           <div className="space-y-2">
             <div>
-              <p className="text-xs text-gray-500">{t("status")}</p>
+              <p className="text-xs text-muted">{t("status")}</p>
               <div className="mt-1">
                 <StatusBadge status={toConversationStatus(conversation.status)} />
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-500">{t("channel")}</p>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-xs text-muted">{t("channel")}</p>
+              <p className="text-sm font-medium text-foreground">
                 {getChannelDisplay(conversation.channel)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">{t("created")}</p>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-xs text-muted">{t("created")}</p>
+              <p className="text-sm font-medium text-foreground">
                 {formatDateTime(conversation.created_at)}
               </p>
             </div>
             {conversation.closed_at && (
               <div>
-                <p className="text-xs text-gray-500">{t("closed")}</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-xs text-muted">{t("closed")}</p>
+                <p className="text-sm font-medium text-foreground">
                   {formatDateTime(conversation.closed_at)}
                 </p>
               </div>
             )}
             {conversation.handoff_reason && (
               <div>
-                <p className="text-xs text-gray-500">{t("handoffReason")}</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-xs text-muted">{t("handoffReason")}</p>
+                <p className="text-sm font-medium text-foreground">
                   {conversation.handoff_reason}
                 </p>
               </div>
             )}
             {crmStages.length > 0 && (
-              <div className="pt-2 border-t border-gray-200">
-                <p className="text-xs text-gray-500 mb-2">{t("crmStage")}</p>
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs text-muted mb-2">{t("crmStage")}</p>
                 {isUpdatingCrmStage ? (
                   <div className="flex items-center gap-2">
                     <LoadingSpinner size="sm" />
-                    <span className="text-xs text-gray-500">{t("updating")}</span>
+                    <span className="text-xs text-muted">{t("updating")}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -491,7 +491,7 @@ export default function ConversationDetailPage() {
                       onChange={(e) => {
                         if (e.target.value) void handleCrmStageChange(e.target.value);
                       }}
-                      className="text-sm border border-[#BEBAB7] rounded px-2 py-1 text-[#443C3C] bg-white outline-none focus:border-[#251D1C] w-full"
+                      className="text-sm border border-border rounded px-2 py-1 text-foreground bg-surface outline-none focus:border-border-strong w-full"
                     >
                       {!conversation.crm_stage_id && (
                         <option value="" disabled>
@@ -508,12 +508,12 @@ export default function ConversationDetailPage() {
                 )}
               </div>
             )}
-            <div className="pt-2 border-t border-gray-200">
-              <p className="text-xs text-gray-500 mb-2">{t("marketingStatus")}</p>
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-muted mb-2">{t("marketingStatus")}</p>
               {isUpdatingMarketingStatus ? (
                 <div className="flex items-center gap-2">
                   <LoadingSpinner size="sm" />
-                  <span className="text-xs text-gray-500">{t("updating")}</span>
+                  <span className="text-xs text-muted">{t("updating")}</span>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -533,9 +533,9 @@ export default function ConversationDetailPage() {
                     currentRejectionReason={conversation.rejection_reason}
                   />
                   {conversation.rejection_reason && conversation.marketing_status === "REJECTED" && (
-                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-sm">
-                      <p className="text-xs text-gray-500 mb-1">{t("rejectionReason")}</p>
-                      <p className="text-sm text-gray-900">{conversation.rejection_reason}</p>
+                    <div className="mt-2 p-2 bg-danger/10 border border-danger/30 rounded-sm">
+                      <p className="text-xs text-muted mb-1">{t("rejectionReason")}</p>
+                      <p className="text-sm text-foreground">{conversation.rejection_reason}</p>
                     </div>
                   )}
                 </div>
@@ -543,9 +543,9 @@ export default function ConversationDetailPage() {
             </div>
             {/* User Info — shown for all channels with external data */}
             {(conversation.external_user_id || conversation.external_user_name) && (
-              <div className="pt-2 border-t border-gray-200">
+              <div className="pt-2 border-t border-border">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted">
                     {isInstagramChannel(conversation.channel) ? t("instagramUser") :
                      conversation.channel === "telegram" ? t("telegramUser") :
                      conversation.channel === "viber" ? t("viberUser") :
@@ -574,17 +574,17 @@ export default function ConversationDetailPage() {
                   )}
                   <div className="flex flex-col">
                     {conversation.external_user_name && (
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {conversation.external_user_name}
                       </p>
                     )}
                     {conversation.external_user_username && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted">
                         @{conversation.external_user_username}
                       </p>
                     )}
                     {conversation.external_user_id && (
-                      <p className="text-xs text-gray-400 font-mono mt-0.5">
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5">
                         {isPhoneChannel(conversation.channel)
                           ? `📞 +${conversation.external_user_id}`
                           : `ID: ${conversation.external_user_id}`}
@@ -593,13 +593,13 @@ export default function ConversationDetailPage() {
                   </div>
                 </div>
                 {isInstagramChannel(conversation.channel) && !conversation.external_user_name && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted mt-1">
                     {t("refreshProfileHint")}
                   </p>
                 )}
                 {conversation.external_conversation_id && (
                   <div className="mt-2">
-                    <p className="text-xs text-gray-400 font-mono truncate">
+                    <p className="text-xs text-muted-foreground font-mono truncate">
                       Thread: {conversation.external_conversation_id}
                     </p>
                   </div>
@@ -611,8 +611,8 @@ export default function ConversationDetailPage() {
       </div>
 
       {/* Messages Section */}
-      <div className="bg-white rounded-sm shadow border border-[#251D1C]/20 p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("messages")}</h2>
+      <div className="bg-surface rounded-sm shadow border border-border p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">{t("messages")}</h2>
         <div className="space-y-4 mb-4 min-h-[200px]">
           {messages.length === 0 ? (
             <EmptyState
@@ -631,18 +631,18 @@ export default function ConversationDetailPage() {
                         role="separator"
                         aria-label={t("contextResetDividerAria")}
                       >
-                        <div className="h-px min-w-[1.25rem] flex-1 bg-amber-300/90" />
-                        <div className="min-w-0 max-w-[min(100%,20rem)] shrink rounded-sm border border-amber-400/80 bg-amber-50 px-2.5 py-2 text-center shadow-sm sm:px-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-950">
+                        <div className="h-px min-w-[1.25rem] flex-1 bg-warning/50" />
+                        <div className="min-w-0 max-w-[min(100%,20rem)] shrink rounded-sm border border-warning/80 bg-warning/10 px-2.5 py-2 text-center shadow-sm sm:px-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-warning">
                             {t("contextResetDividerTitle")}
                           </p>
-                          <p className="text-xs text-amber-900 mt-1 leading-snug break-words">
+                          <p className="text-xs text-warning mt-1 leading-snug break-words">
                             {t("contextResetDividerCaption", {
                               time: formatDateTime(contextResetAt),
                             })}
                           </p>
                         </div>
-                        <div className="h-px min-w-[1.25rem] flex-1 bg-amber-300/90" />
+                        <div className="h-px min-w-[1.25rem] flex-1 bg-warning/50" />
                       </div>
                     )}
                   <MessageBubble message={message} />
@@ -656,18 +656,18 @@ export default function ConversationDetailPage() {
                     role="separator"
                     aria-label={t("contextResetDividerAria")}
                   >
-                    <div className="h-px min-w-[1.25rem] flex-1 bg-amber-300/90" />
-                    <div className="min-w-0 max-w-[min(100%,20rem)] shrink rounded-sm border border-amber-400/80 bg-amber-50 px-2.5 py-2 text-center shadow-sm sm:px-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-950">
+                    <div className="h-px min-w-[1.25rem] flex-1 bg-warning/50" />
+                    <div className="min-w-0 max-w-[min(100%,20rem)] shrink rounded-sm border border-warning/80 bg-warning/10 px-2.5 py-2 text-center shadow-sm sm:px-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-warning">
                         {t("contextResetDividerTitle")}
                       </p>
-                      <p className="text-xs text-amber-900 mt-1 leading-snug break-words">
+                      <p className="text-xs text-warning mt-1 leading-snug break-words">
                         {t("contextResetDividerNoNewMessages", {
                           time: formatDateTime(contextResetAt),
                         })}
                       </p>
                     </div>
-                    <div className="h-px min-w-[1.25rem] flex-1 bg-amber-300/90" />
+                    <div className="h-px min-w-[1.25rem] flex-1 bg-warning/50" />
                   </div>
                 )}
             </>
@@ -675,22 +675,22 @@ export default function ConversationDetailPage() {
         </div>
 
         {canSendAdminMessage && (
-          <div className="border-t border-gray-200 pt-4 mt-4">
+          <div className="border-t border-border pt-4 mt-4">
             {/* Pending media preview */}
             {pendingMedia && (
-              <div className="flex items-center gap-3 mb-3 p-3 bg-[#EEEAE7]/60 border border-[#BEBAB7] rounded-sm">
+              <div className="flex items-center gap-3 mb-3 p-3 bg-surface-hover border border-border rounded-sm">
                 {pendingMedia.type === "image" ? (
                   <img src={pendingMedia.url} alt="attachment" className="w-14 h-14 object-cover rounded-sm flex-shrink-0" />
                 ) : (
                   <span className="text-2xl flex-shrink-0">📎</span>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#251D1C] truncate">{pendingMedia.name}</p>
-                  <p className="text-xs text-gray-500">{pendingMedia.type}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{pendingMedia.name}</p>
+                  <p className="text-xs text-muted">{pendingMedia.type}</p>
                 </div>
                 <button
                   onClick={() => setPendingMedia(null)}
-                  className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
+                  className="text-muted-foreground hover:text-danger transition-colors text-lg leading-none"
                   title={t("removeAttachment")}
                 >
                   ×
@@ -711,10 +711,10 @@ export default function ConversationDetailPage() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingMedia}
                 title="Attach file"
-                className="flex-shrink-0 p-2 text-gray-400 hover:text-[#251D1C] hover:bg-[#EEEAE7] rounded-sm transition-colors disabled:opacity-50"
+                className="flex-shrink-0 p-2 text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded-sm transition-colors disabled:opacity-50"
               >
                 {isUploadingMedia ? (
-                  <span className="inline-block w-5 h-5 border-2 border-[#251D1C] border-t-transparent rounded-full animate-spin" />
+                  <span className="inline-block w-5 h-5 border-2 border-border-strong border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />

@@ -31,7 +31,7 @@ export const StatCardGroup: React.FC<StatCardGroupProps> = ({
 
   return (
     <div className="mb-8">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">{title}</h2>
+      <h2 className="text-lg font-semibold text-foreground mb-4">{title}</h2>
       <div className={`grid ${gridCols[columns as keyof typeof gridCols] || gridCols[5]} gap-4`}>
         {cards.map((card) => (
           <StatCard key={card.label} {...card} />

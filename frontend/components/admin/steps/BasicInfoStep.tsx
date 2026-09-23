@@ -62,10 +62,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
           {t("basicInfoTitle")}
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-muted mb-6">
           {t("basicInfoDesc")}
         </p>
       </div>
@@ -94,10 +94,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {t("languages")} <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            {t("languages")} <span className="text-danger">*</span>
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-gray-300 rounded-sm bg-white">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-border rounded-sm bg-surface">
             {languageOptions.map((option) => (
               <Checkbox
                 key={option.value}
@@ -107,11 +107,11 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
               />
             ))}
           </div>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted">
             {t("languagesHint")}
           </p>
           {getFieldError(errors, "languages") && (
-            <p className="mt-1 text-sm text-red-600">
+            <p className="mt-1 text-sm text-danger">
               {getFieldError(errors, "languages")}
             </p>
           )}
@@ -120,33 +120,33 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
       {/* Preview Card */}
       {(config.company_display_name || config.agent_display_name) && (
-        <div className="mt-8 p-6 bg-[#EEEAE7]/10 border border-[#251D1C]/20 rounded-sm">
-          <h4 className="text-sm font-medium text-gray-700 mb-4">{t("preview")}</h4>
-          <div className="bg-white p-4 rounded-sm border border-[#251D1C]/20">
+        <div className="mt-8 p-6 bg-surface-hover/50 border border-border rounded-sm">
+          <h4 className="text-sm font-medium text-foreground mb-4">{t("preview")}</h4>
+          <div className="bg-surface p-4 rounded-sm border border-border">
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
-                <h5 className="text-lg font-semibold text-gray-900 truncate">
+                <h5 className="text-lg font-semibold text-foreground truncate">
                   {config.company_display_name || t("companyName")}
                 </h5>
                 {config.agent_display_name && (
-                  <p className="text-sm text-gray-600 truncate">
+                  <p className="text-sm text-muted truncate">
                     {config.agent_display_name}
                   </p>
                 )}
               </div>
             </div>
             {config.languages && config.languages.length > 0 && (
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-muted mt-2">
                 Languages: {config.languages.join(", ")}
               </p>
             )}
             {config.agent_id && (
-              <p className="text-xs text-gray-400 mt-1 font-mono break-all">
+              <p className="text-xs text-muted-foreground mt-1 font-mono break-all">
                 ID: {config.agent_id}
               </p>
             )}
             <div className="mt-3">
-              <span className="px-3 py-1 rounded-sm text-xs font-medium bg-[#EEEAE7]/20 text-[#443C3C] border border-[#251D1C]/30">
+              <span className="px-3 py-1 rounded-sm text-xs font-medium bg-surface-hover text-foreground border border-border">
                 {t("active")}
               </span>
             </div>

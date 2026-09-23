@@ -19,7 +19,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   value,
   change,
   icon,
-  colorClass = "bg-[#EEEAE7]/10 text-[#443C3C] border-[#251D1C]/30",
+  colorClass = "bg-surface-hover text-foreground border-border",
   href,
 }) => {
   const changeDisplay = change !== undefined ? formatChange(change) : null;
@@ -45,13 +45,13 @@ export const StatCard: React.FC<StatCardProps> = ({
     </>
   );
 
-  const shellClass = `p-6 rounded-sm border border-[#251D1C]/20 bg-white shadow-sm hover:shadow-md transition-all duration-200 ${colorClass}`;
+  const shellClass = `p-6 rounded-sm border border-border bg-surface shadow-sm hover:shadow-md transition-all duration-200 ${colorClass}`;
 
   if (href) {
     return (
       <Link
         href={href}
-        className={`${shellClass} block focus:outline-none focus-visible:ring-2 focus-visible:ring-[#251D1C] focus-visible:ring-offset-2`}
+        className={`${shellClass} block focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`}
       >
         {inner}
       </Link>

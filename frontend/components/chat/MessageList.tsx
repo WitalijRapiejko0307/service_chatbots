@@ -14,10 +14,10 @@ export const MessageList: React.FC<MessageListProps> = ({
   messagesEndRef,
 }) => {
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-white">
+    <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-surface">
       {messages.length === 0 ? (
         <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500">No messages yet. Start the conversation!</p>
+          <p className="text-muted">No messages yet. Start the conversation!</p>
         </div>
       ) : (
         messages.map((message) => (

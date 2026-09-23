@@ -19,20 +19,20 @@ export const Textarea: React.FC<TextareaProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-foreground mb-1">
           {label}
         </label>
       )}
       <textarea
-        className={`w-full px-3 py-2 border rounded-sm bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#251D1C] focus:border-[#251D1C] ${
-          error ? "border-red-500 focus:ring-red-500" : "border-gray-300"
+        className={`w-full px-3 py-2 border rounded-sm bg-surface transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent ${
+          error ? "border-danger focus:ring-danger" : "border-border"
         } ${className}`}
         {...props}
       />
       {helperText && !error && (
-        <p className="mt-1 text-xs text-gray-500">{helperText}</p>
+        <p className="mt-1 text-xs text-muted">{helperText}</p>
       )}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-danger">{error}</p>}
     </div>
   );
 };

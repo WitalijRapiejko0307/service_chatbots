@@ -120,21 +120,21 @@ export function NotificationConfigModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-sm shadow-lg max-w-md w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+    <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50">
+      <div className="bg-surface rounded-sm shadow-lg max-w-md w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           {config ? "Edit Notification Config" : "Add Notification Config"}
         </h2>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-sm">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-danger/10 border-l-4 border-danger p-4 mb-4 rounded-sm">
+            <p className="text-sm text-danger">{error}</p>
           </div>
         )}
 
         {successMessage && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4 rounded-sm">
-            <p className="text-sm text-green-700">{successMessage}</p>
+          <div className="bg-success/10 border-l-4 border-success p-4 mb-4 rounded-sm">
+            <p className="text-sm text-success">{successMessage}</p>
           </div>
         )}
 
@@ -169,7 +169,7 @@ export function NotificationConfigModal({
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-muted mb-1"
               >
                 Description (optional)
               </label>
@@ -179,7 +179,7 @@ export function NotificationConfigModal({
                 rows={3}
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-sm shadow-sm focus:outline-none focus:ring-[#251D1C] focus:border-[#251D1C]"
+                className="w-full px-3 py-2 border border-border rounded-sm shadow-sm focus:outline-none focus:ring-accent focus:border-border-strong"
                 placeholder="e.g., Admin notifications, Team alerts, etc."
               />
             </div>

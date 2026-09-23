@@ -84,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   return (
     <aside
       className={[
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-[#BEBAB7]",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-border",
         "flex flex-col flex-shrink-0",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "-translate-x-full",
@@ -92,17 +92,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ].join(" ")}
       aria-label={t("adminNav")}
     >
-      <div className="relative flex items-center h-[72px] px-6 border-b border-[#BEBAB7] flex-shrink-0">
+      <div className="relative flex items-center h-[72px] px-6 border-b border-border flex-shrink-0">
         <Link
           href="/admin/agents"
-          className="text-lg font-semibold text-[#251D1C] hover:opacity-80"
+          className="text-lg font-semibold text-foreground hover:opacity-80"
           onClick={() => onClose()}
         >
           Service ChatBot
         </Link>
         <button
           onClick={onClose}
-          className="absolute right-4 top-1/2 -translate-y-1/2 md:hidden p-1.5 rounded-sm text-gray-400 hover:text-gray-600 hover:bg-[#EEEAE7] transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 md:hidden p-1.5 rounded-sm text-muted-foreground hover:text-muted hover:bg-surface-hover transition-colors"
           aria-label={t("closeMenu")}
         >
           <X size={20} />
@@ -122,8 +122,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               onClick={onClose}
               className={`group flex items-center justify-between gap-3 px-4 py-3 md:py-2 rounded-sm transition-all duration-200 ${
                 isActive
-                  ? "bg-[#EEEAE7] text-[#443C3C] font-medium border-l-2 border-[#251D1C]"
-                  : "text-gray-700 hover:bg-[#EEEAE7]/50 hover:text-[#251D1C]"
+                  ? "bg-surface-hover text-foreground font-medium border-l-2 border-border-strong"
+                  : "text-foreground hover:bg-surface-hover/50 hover:text-foreground"
               }`}
               aria-current={isActive ? "page" : undefined}
               aria-label={
@@ -135,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={`flex items-center justify-center transition-colors duration-200 group-hover:text-[#251D1C] ${isActive ? "text-[#251D1C]" : "text-gray-500"}`}
+                  className={`flex items-center justify-center transition-colors duration-200 group-hover:text-foreground ${isActive ? "text-foreground" : "text-muted"}`}
                   aria-hidden="true"
                 >
                   {item.icon}
@@ -144,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </div>
               {showBadge && (
                 <span
-                  className="bg-[#F59E0B] text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center"
+                  className="bg-warning text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center"
                   aria-label={t("requireAttention", { count: needsHumanCount })}
                 >
                   {needsHumanCount > 99 ? "99+" : needsHumanCount}
@@ -155,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         })}
       </nav>
 
-      <div className="flex-shrink-0 p-4 border-t border-[#BEBAB7] [&_button]:w-full [&_button]:justify-center">
+      <div className="flex-shrink-0 p-4 border-t border-border [&_button]:w-full [&_button]:justify-center">
         <LanguageSwitcher />
       </div>
     </aside>

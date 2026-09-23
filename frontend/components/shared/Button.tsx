@@ -26,13 +26,13 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      "bg-[#251D1C] text-white hover:bg-[#443C3C] focus:ring-[#251D1C] shadow-sm hover:shadow-md",
+      "bg-accent text-accent-foreground hover:opacity-90 focus:ring-accent shadow-sm hover:shadow-md",
     secondary:
-      "bg-white text-gray-900 border border-[#251D1C] hover:bg-[#EEEAE7] hover:border-[#443C3C] focus:ring-[#251D1C]",
+      "bg-surface text-foreground border border-border-strong hover:bg-surface-hover hover:border-border-strong focus:ring-accent",
     danger:
-      "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm hover:shadow-md",
+      "bg-danger text-danger-foreground hover:opacity-90 focus:ring-danger shadow-sm hover:shadow-md",
     ghost:
-      "bg-transparent text-[#251D1C] hover:bg-[#EEEAE7] focus:ring-[#251D1C]",
+      "bg-transparent text-foreground hover:bg-surface-hover focus:ring-accent",
   };
 
   const sizeStyles = {
@@ -130,6 +130,6 @@ export const Button: React.FC<ButtonProps> = ({
 
 /** Use on ``<Link>`` to match ``Button`` ``variant="secondary"`` ``size="sm"`` (no ``asChild`` on ``Button``). */
 export const linkButtonSecondarySmClassName =
-  "inline-flex items-center justify-center font-medium rounded-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#251D1C] bg-white text-gray-900 border border-[#251D1C] hover:bg-[#EEEAE7] hover:border-[#443C3C] px-3 py-1.5 text-sm gap-2";
+  "inline-flex items-center justify-center font-medium rounded-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent bg-surface text-foreground border border-border-strong hover:bg-surface-hover hover:border-border-strong px-3 py-1.5 text-sm gap-2";
 
 

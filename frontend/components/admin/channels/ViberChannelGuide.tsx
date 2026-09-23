@@ -18,13 +18,13 @@ export function ViberChannelGuide({
 
   return (
     <div className="space-y-4">
-      <div className="text-xs text-[#9A9590] bg-[#EEEAE7]/60 rounded-sm p-3 space-y-1">
-        <div className="font-semibold text-[#443C3C] mb-1.5">{t("needTitle")}</div>
+      <div className="text-xs text-muted bg-surface-hover/60 rounded-sm p-3 space-y-1">
+        <div className="font-semibold text-foreground mb-1.5">{t("needTitle")}</div>
         <div>• {t("viber.needItem1")}</div>
         <div>• {t("viber.needItem2")}</div>
         <div>• {t("viber.needItem3")}</div>
       </div>
-      <p className="text-xs text-[#443C3C] bg-[#EEEAE7]/60 rounded-sm px-3 py-2">
+      <p className="text-xs text-foreground bg-surface-hover/60 rounded-sm px-3 py-2">
         {t("viber.httpsNote")}
       </p>
       {!appBase && <AppUrlWarning />}
@@ -44,7 +44,7 @@ export function ViberChannelGuide({
           {viberWebhook ? (
             <CopyField value={viberWebhook} />
           ) : appBase ? (
-            <p className="text-xs text-[#9A9590] mt-1">{t("webhookAppearsAfterConnect")}</p>
+            <p className="text-xs text-muted mt-1">{t("webhookAppearsAfterConnect")}</p>
           ) : (
             <AppUrlWarning />
           )}

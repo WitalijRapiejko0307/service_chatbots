@@ -59,8 +59,8 @@ function MediaAttachment({
       rel="noopener noreferrer"
       className={`flex items-center gap-2 my-1 px-3 py-2 rounded-sm border text-sm underline-offset-2 hover:opacity-80 transition-opacity ${
         isUser
-          ? "border-white/30 text-white"
-          : "border-[#251D1C]/20 text-[#251D1C]"
+          ? "border-accent-foreground/30 text-accent-foreground"
+          : "border-border text-foreground"
       }`}
     >
       <span className="text-base">📎</span>
@@ -114,10 +114,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = memo(({ message }) =>
       <div
         className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-lg ${
           isUser
-            ? "bg-[#251D1C]/20"
+            ? "bg-accent/20"
             : isAdmin
-            ? "bg-[#443C3C]/20"
-            : "bg-[#EEEAE7]/20"
+            ? "bg-muted/20"
+            : "bg-surface-hover"
         }`}
         aria-label={getRoleLabel(message.role)}
       >
@@ -127,7 +127,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = memo(({ message }) =>
       {/* Message content */}
       <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[70%]`}>
         {(isAdmin || isAgent) && (
-          <span className={`text-xs font-medium mb-1 ${isAdmin ? "text-[#443C3C]" : "text-[#251D1C]"}`}>
+          <span className={`text-xs font-medium mb-1 ${isAdmin ? "text-muted" : "text-foreground"}`}>
             {getRoleLabel(message.role)}
           </span>
         )}
@@ -135,10 +135,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = memo(({ message }) =>
         <div
           className={`rounded-sm px-4 py-2.5 transition-all duration-200 ${
             isUser
-              ? "bg-[#251D1C] text-white shadow-sm"
+              ? "bg-accent text-accent-foreground shadow-sm"
               : isAdmin
-              ? "bg-[#443C3C] text-white shadow-sm border border-[#251D1C]"
-              : "bg-white text-gray-900 border border-[#251D1C]/30 shadow-sm"
+              ? "bg-accent/80 text-accent-foreground shadow-sm border border-border-strong"
+              : "bg-surface-hover text-foreground border border-border shadow-sm"
           }`}
         >
           {/* Media attachment */}
@@ -164,7 +164,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = memo(({ message }) =>
           )}
         </div>
 
-        <p className={`text-xs mt-1 px-1 ${isUser || isAdmin ? "text-gray-500" : "text-gray-400"}`}>
+        <p className={`text-xs mt-1 px-1 ${isUser || isAdmin ? "text-muted" : "text-muted-foreground"}`}>
           {formatMessageTime(message.timestamp)}
         </p>
       </div>

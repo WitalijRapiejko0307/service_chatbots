@@ -34,13 +34,13 @@ export function BindingRow({
 }) {
   const t = useTranslations("Channels");
   return (
-    <div className="rounded-sm border border-[#BEBAB7] bg-white text-sm overflow-hidden">
+    <div className="rounded-sm border border-border bg-surface text-sm overflow-hidden">
       <div className="flex items-center gap-3 p-3">
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-[#251D1C] truncate">
+          <div className="font-medium text-foreground truncate">
             {binding.channel_username || binding.channel_account_id}
           </div>
-          <div className="text-xs text-[#9A9590]">
+          <div className="text-xs text-muted">
             {t("idLabel", { id: binding.channel_account_id })}
             {channelType === "instagram" && binding.metadata?.connected_via === "oauth"
               ? ` · ${t("instagram.pathOauth")}`
@@ -55,7 +55,7 @@ export function BindingRow({
             <button
               type="button"
               onClick={onVerify}
-              className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded-sm border border-blue-200 hover:border-blue-400"
+              className="text-xs text-accent hover:opacity-80 px-2 py-1 rounded-sm border border-border-strong hover:border-accent"
             >
               {t("verify")}
             </button>
@@ -63,11 +63,11 @@ export function BindingRow({
           <button
             type="button"
             onClick={onToggle}
-            className="text-[#9A9590] hover:text-[#443C3C]"
+            className="text-muted hover:text-foreground"
             title={binding.is_active ? t("deactivate") : t("activate")}
           >
             {binding.is_active ? (
-              <ToggleRight size={18} className="text-green-500" />
+              <ToggleRight size={18} className="text-success" />
             ) : (
               <ToggleLeft size={18} />
             )}
@@ -75,7 +75,7 @@ export function BindingRow({
           <button
             type="button"
             onClick={onDelete}
-            className="text-[#9A9590] hover:text-red-500"
+            className="text-muted hover:text-danger"
             title={t("removeConnection")}
           >
             <Trash2 size={14} />
@@ -84,7 +84,7 @@ export function BindingRow({
       </div>
       {webhookUrl && (
         <div className="px-3 pb-3">
-          <div className="text-xs font-medium text-[#443C3C]">{t("webhookUrl")}</div>
+          <div className="text-xs font-medium text-foreground">{t("webhookUrl")}</div>
           <CopyField value={webhookUrl} />
         </div>
       )}

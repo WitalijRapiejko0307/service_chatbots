@@ -39,14 +39,14 @@ function StatusDot({ status }: { status: string }) {
     CLOSED: t("closed"),
   };
   const colors: Record<string, string> = {
-    AI_ACTIVE: "bg-green-500",
-    NEEDS_HUMAN: "bg-amber-500",
-    HUMAN_ACTIVE: "bg-blue-500",
-    CLOSED: "bg-gray-400",
+    AI_ACTIVE: "bg-success",
+    NEEDS_HUMAN: "bg-warning",
+    HUMAN_ACTIVE: "bg-accent",
+    CLOSED: "bg-muted-foreground",
   };
   return (
     <span
-      className={`inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 ${colors[status] ?? "bg-gray-400"}`}
+      className={`inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 ${colors[status] ?? "bg-muted-foreground"}`}
       title={labels[status] ?? status}
     />
   );
@@ -58,9 +58,9 @@ function ChannelBadge({ channel }: { channel?: string | null }) {
   if (channel === "instagram") return <span className="text-xs text-pink-600 font-medium">IG</span>;
   if (channel === "telegram") return <span className="text-xs text-blue-500 font-medium">TG</span>;
   if (channel === "viber") return <span className="text-xs text-purple-600 font-medium">VB</span>;
-  if (channel === "tiktok") return <span className="text-xs text-gray-800 font-medium">TT</span>;
-  if (channel === "web_chat") return <span className="text-xs text-[#9A9590] font-medium">Web</span>;
-  return <span className="text-xs text-[#9A9590] font-medium">Web</span>;
+  if (channel === "tiktok") return <span className="text-xs text-foreground font-medium">TT</span>;
+  if (channel === "web_chat") return <span className="text-xs text-muted font-medium">Web</span>;
+  return <span className="text-xs text-muted font-medium">Web</span>;
 }
 
 // ── Conversation card ─────────────────────────────────────────────────────────
@@ -79,8 +79,8 @@ function ConversationCard({ conversation: c, isDragging }: CardProps) {
 
   return (
     <div
-      className={`bg-white rounded-md border border-[#BEBAB7] p-3 space-y-2 select-none transition-shadow ${
-        isDragging ? "shadow-lg opacity-80 rotate-1 border-[#251D1C]" : "shadow-sm hover:shadow-md"
+      className={`bg-surface rounded-md border border-border p-3 space-y-2 select-none transition-shadow ${
+        isDragging ? "shadow-lg opacity-80 rotate-1 border-border-strong" : "shadow-sm hover:shadow-md"
       }`}
     >
       {/* Top row: status + channel + id + time */}
@@ -88,21 +88,21 @@ function ConversationCard({ conversation: c, isDragging }: CardProps) {
         <div className="flex items-center gap-1.5">
           <StatusDot status={c.status} />
           <ChannelBadge channel={c.channel} />
-          <span className="text-xs text-[#9A9590] font-mono">
+          <span className="text-xs text-muted font-mono">
             #{c.conversation_id.slice(-6)}
           </span>
         </div>
-        <span className="text-xs text-[#9A9590] flex-shrink-0">
+        <span className="text-xs text-muted flex-shrink-0">
           {formatRelativeTime(c.updated_at)}
         </span>
       </div>
 
       {/* Contact name */}
-      <div className="font-medium text-sm text-[#251D1C] truncate">{contactName}</div>
+      <div className="font-medium text-sm text-foreground truncate">{contactName}</div>
 
       {/* Request type / handoff reason as context */}
       {(c.request_type || c.handoff_reason) && (
-        <div className="text-xs text-[#9A9590] truncate">
+        <div className="text-xs text-muted truncate">
           {c.request_type
             ? `${t("type")} ${c.request_type}`
             : `${t("reason")} ${c.handoff_reason}`}
@@ -112,7 +112,7 @@ function ConversationCard({ conversation: c, isDragging }: CardProps) {
       {/* Waiting time (only for NEEDS_HUMAN) + open link */}
       <div className="flex items-center justify-between pt-0.5">
         {c.status === "NEEDS_HUMAN" ? (
-          <span className="text-xs text-amber-600 font-medium">
+          <span className="text-xs text-warning font-medium">
             {t("waiting")} {getWaitingTime(c.updated_at)}
           </span>
         ) : (
@@ -120,7 +120,7 @@ function ConversationCard({ conversation: c, isDragging }: CardProps) {
         )}
         <Link
           href={`/admin/conversations/${c.conversation_id}`}
-          className="flex items-center gap-1 text-xs text-[#443C3C] hover:text-[#251D1C] font-medium"
+          className="flex items-center gap-1 text-xs text-foreground hover:text-foreground font-medium"
           onClick={(e) => e.stopPropagation()}
         >
           {t("open")} <ExternalLink size={10} />
@@ -214,21 +214,21 @@ function KanbanColumn({ stage, conversations, onRename, onDelete, onColorChange 
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 text-sm font-semibold text-[#251D1C] bg-[#EEEAE7] px-1.5 py-0.5 rounded border border-[#BEBAB7] outline-none min-w-0"
+                className="flex-1 text-sm font-semibold text-foreground bg-surface-hover px-1.5 py-0.5 rounded border border-border outline-none min-w-0"
               />
-              <button onClick={handleRenameSubmit} className="text-green-600 hover:text-green-800">
+              <button onClick={handleRenameSubmit} className="text-success hover:text-success/80">
                 <Check size={14} />
               </button>
               <button
                 onClick={() => { setEditing(false); setEditName(stage.name); }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-muted-foreground hover:text-muted"
               >
                 <X size={14} />
               </button>
             </div>
           ) : (
             <button
-              className="text-sm font-semibold text-[#251D1C] truncate hover:text-[#443C3C] text-left"
+              className="text-sm font-semibold text-foreground truncate hover:text-foreground text-left"
               onClick={() => setEditing(true)}
               title="Click to rename"
             >
@@ -236,7 +236,7 @@ function KanbanColumn({ stage, conversations, onRename, onDelete, onColorChange 
             </button>
           )}
 
-          <span className="text-xs text-[#9A9590] flex-shrink-0">
+          <span className="text-xs text-muted flex-shrink-0">
             ({conversations.length})
           </span>
         </div>
@@ -244,7 +244,7 @@ function KanbanColumn({ stage, conversations, onRename, onDelete, onColorChange 
         <div className="flex items-center gap-1">
           <button
             onClick={() => setEditing(true)}
-            className="text-[#9A9590] hover:text-[#443C3C] p-0.5"
+            className="text-muted hover:text-foreground p-0.5"
             title={t("rename")}
           >
             <Pencil size={12} />
@@ -252,7 +252,7 @@ function KanbanColumn({ stage, conversations, onRename, onDelete, onColorChange 
           {!stage.is_default && (
             <button
               onClick={() => onDelete(stage.id)}
-              className="text-[#9A9590] hover:text-red-500 p-0.5"
+              className="text-muted hover:text-danger p-0.5"
               title={t("deleteStage")}
             >
               <Trash2 size={12} />
@@ -271,7 +271,7 @@ function KanbanColumn({ stage, conversations, onRename, onDelete, onColorChange 
       <div
         ref={setNodeRef}
         className={`flex min-h-[8rem] flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden overscroll-y-contain rounded-md p-2 touch-pan-y transition-colors [scrollbar-width:thin] ${
-          isOver ? "bg-[#EEEAE7]/70 ring-2 ring-[#251D1C]/20" : "bg-[#F7F5F3]"
+          isOver ? "bg-surface-hover ring-2 ring-accent/20" : "bg-background"
         }`}
       >
         <SortableContext
@@ -284,7 +284,7 @@ function KanbanColumn({ stage, conversations, onRename, onDelete, onColorChange 
         </SortableContext>
 
         {conversations.length === 0 && (
-          <div className="flex items-center justify-center h-16 text-xs text-[#BEBAB7]">
+          <div className="flex items-center justify-center h-16 text-xs text-muted-foreground">
             {t("dropCardsHere")}
           </div>
         )}
@@ -321,7 +321,7 @@ function AddStageButton({ onAdd }: { onAdd: (name: string, color: string) => voi
       <div className="w-[min(100%,18rem)] flex-shrink-0 sm:w-72">
         <button
           onClick={() => setOpen(true)}
-          className="w-full flex items-center gap-2 px-4 py-3 rounded-md border-2 border-dashed border-[#BEBAB7] text-[#9A9590] hover:border-[#443C3C] hover:text-[#443C3C] transition-colors text-sm font-medium"
+          className="w-full flex items-center gap-2 px-4 py-3 rounded-md border-2 border-dashed border-border text-muted hover:border-border-strong hover:text-foreground transition-colors text-sm font-medium"
         >
           <Plus size={16} />
           {t("addStage")}
@@ -331,8 +331,8 @@ function AddStageButton({ onAdd }: { onAdd: (name: string, color: string) => voi
   }
 
   return (
-    <div className="h-fit w-[min(100%,18rem)] sm:w-72 flex-shrink-0 bg-white rounded-md border border-[#BEBAB7] p-3 space-y-3">
-      <div className="text-sm font-semibold text-[#251D1C]">{t("newStage")}</div>
+    <div className="h-fit w-[min(100%,18rem)] sm:w-72 flex-shrink-0 bg-surface rounded-md border border-border p-3 space-y-3">
+      <div className="text-sm font-semibold text-foreground">{t("newStage")}</div>
       <input
         ref={inputRef}
         value={name}
@@ -342,26 +342,26 @@ function AddStageButton({ onAdd }: { onAdd: (name: string, color: string) => voi
           if (e.key === "Escape") setOpen(false);
         }}
         placeholder={t("stageNamePlaceholder")}
-        className="w-full text-sm px-2.5 py-1.5 border border-[#BEBAB7] rounded outline-none focus:border-[#251D1C]"
+        className="w-full text-sm px-2.5 py-1.5 border border-border rounded outline-none focus:border-border-strong"
       />
       <div className="flex items-center gap-2">
-        <label className="text-xs text-[#9A9590]">{t("color")}</label>
+        <label className="text-xs text-muted">{t("color")}</label>
         <input
           type="color"
           value={color}
           onChange={(e) => setColor(e.target.value)}
-          className="w-8 h-8 cursor-pointer rounded border border-[#BEBAB7]"
+          className="w-8 h-8 cursor-pointer rounded border border-border"
         />
         <div className="flex gap-2 ml-auto">
           <button
             onClick={() => setOpen(false)}
-            className="text-xs text-[#9A9590] hover:text-[#443C3C]"
+            className="text-xs text-muted hover:text-foreground"
           >
             {tCommon("cancel")}
           </button>
           <button
             onClick={handleSubmit}
-            className="text-xs font-medium text-white bg-[#251D1C] px-3 py-1 rounded hover:bg-[#443C3C]"
+            className="text-xs font-medium text-accent-foreground bg-accent px-3 py-1 rounded hover:bg-accent/90"
           >
             {tCommon("create")}
           </button>
@@ -522,17 +522,17 @@ export default function CRMPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-red-600 text-sm">{error}</div>
+      <div className="p-8 text-center text-danger text-sm">{error}</div>
     );
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Header — stacks on mobile, side-by-side on desktop */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-[#BEBAB7] bg-white flex-shrink-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-border bg-surface flex-shrink-0">
         <div className="min-w-0">
-          <h1 className="text-lg sm:text-xl font-bold text-[#251D1C]">{t("title")}</h1>
-          <p className="text-xs sm:text-sm text-[#9A9590]">{t("subtitle")}</p>
+          <h1 className="text-lg sm:text-xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-xs sm:text-sm text-muted">{t("subtitle")}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -540,7 +540,7 @@ export default function CRMPage() {
           <select
             value={selectedAgentId}
             onChange={(e) => setSelectedAgentId(e.target.value)}
-            className="flex-1 min-w-[140px] sm:flex-initial sm:min-w-0 text-sm border border-[#BEBAB7] rounded px-3 py-1.5 text-[#443C3C] bg-white outline-none focus:border-[#251D1C]"
+            className="flex-1 min-w-[140px] sm:flex-initial sm:min-w-0 text-sm border border-border rounded px-3 py-1.5 text-foreground bg-surface outline-none focus:border-border-strong"
           >
             <option value="">{tCommon("allAgents")}</option>
             {agents.map((a) => (
@@ -554,7 +554,7 @@ export default function CRMPage() {
 
           <button
             onClick={load}
-            className="flex items-center justify-center gap-1.5 text-sm text-[#9A9590] hover:text-[#251D1C] border border-[#BEBAB7] px-3 py-1.5 rounded hover:border-[#443C3C] transition-colors flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 text-sm text-muted hover:text-foreground border border-border px-3 py-1.5 rounded hover:border-border-strong transition-colors flex-shrink-0"
           >
             <RefreshCw size={14} />
             {tCommon("refresh")}
@@ -564,13 +564,13 @@ export default function CRMPage() {
 
       {/* Delete confirmation banner */}
       {deleteConfirm && (
-        <div className="px-4 sm:px-6 py-2 bg-red-50 border-b border-red-200 flex items-center justify-between text-sm">
-          <span className="text-red-700">
+        <div className="px-4 sm:px-6 py-2 bg-danger/10 border-b border-danger/30 flex items-center justify-between text-sm">
+          <span className="text-danger">
             {t("deleteConfirm", { name: stages.find((s) => s.id === deleteConfirm)?.name ?? "" })}
           </span>
           <button
             onClick={() => setDeleteConfirm(null)}
-            className="text-red-400 hover:text-red-600"
+            className="text-danger/70 hover:text-danger"
           >
             <X size={14} />
           </button>

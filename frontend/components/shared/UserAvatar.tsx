@@ -58,14 +58,14 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 
   return (
     <div
-      className={`flex-shrink-0 rounded-full flex items-center justify-center font-medium bg-[#EEEAE7] text-[#443C3C] ${sizeClasses[size]} relative ${className}`}
+      className={`flex-shrink-0 rounded-full flex items-center justify-center font-medium bg-surface-hover text-foreground ${sizeClasses[size]} relative ${className}`}
       role="img"
       aria-label={name ? `Avatar for ${name}` : "User avatar"}
     >
       {showImage ? (
         <>
           {!imageLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#EEEAE7] text-[#443C3C] rounded-full">
+            <div className="absolute inset-0 flex items-center justify-center bg-surface-hover text-foreground rounded-full">
               {initials}
             </div>
           )}

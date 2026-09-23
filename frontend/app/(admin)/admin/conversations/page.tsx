@@ -84,7 +84,7 @@ function CRMStageSelector({
             onChange={handleChange}
             className={
               selectClassName ??
-              "text-xs border border-[#BEBAB7] rounded px-1.5 py-0.5 text-[#443C3C] bg-white outline-none focus:border-[#251D1C] max-w-[130px]"
+              "text-xs border border-border rounded px-1.5 py-0.5 text-foreground bg-surface outline-none focus:border-border-strong max-w-[130px]"
             }
           >
             {!currentStageId && (
@@ -259,12 +259,12 @@ export default function ConversationsPage() {
   return (
     <div className="w-full min-w-0 max-w-full">
       <header className="mb-4 min-w-0 sm:mb-5">
-        <h1 className="min-w-0 break-words text-xl font-bold text-gray-900 sm:text-2xl">
+        <h1 className="min-w-0 break-words text-xl font-bold text-foreground sm:text-2xl">
           {t("title")}
         </h1>
-        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+        <p className="text-xs sm:text-sm text-muted mt-1">
           {needsHumanCount > 0 && (
-            <span className="text-[#F59E0B] font-medium">
+            <span className="text-warning font-medium">
               {t("requireAttentionCount", { count: needsHumanCount })}
             </span>
           )}
@@ -275,29 +275,29 @@ export default function ConversationsPage() {
       </header>
 
       <section
-        className="mb-6 min-w-0 rounded-sm border border-[#251D1C]/15 bg-[#FAF9F8] p-3 shadow-sm sm:p-5"
+        className="mb-6 min-w-0 rounded-sm border border-border bg-background p-3 shadow-sm sm:p-5"
         aria-label={t("filtersPanelAria")}
       >
         <div
           className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
-            filtersExpanded ? "border-b border-[#251D1C]/10 pb-4 mb-5" : ""
+            filtersExpanded ? "border-b border-border pb-4 mb-5" : ""
           }`}
         >
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#443C3C]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
             {t("filtersPanelTitle")}
           </h2>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <div
               className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium ${
                 isConnected
-                  ? "border-emerald-200/80 bg-white text-emerald-900 shadow-sm"
-                  : "border-gray-200 bg-white text-gray-600"
+                  ? "border-success/30 bg-surface text-success shadow-sm"
+                  : "border-border bg-surface text-muted"
               }`}
               title={isConnected ? t("liveConnection") : t("pollingMode")}
             >
               <span
                 className={`h-2 w-2 shrink-0 rounded-full ${
-                  isConnected ? "bg-emerald-500" : "bg-gray-400"
+                  isConnected ? "bg-success" : "bg-muted-foreground"
                 }`}
                 aria-hidden
               />
@@ -306,7 +306,7 @@ export default function ConversationsPage() {
             <button
               type="button"
               onClick={() => setFiltersExpanded((v) => !v)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-sm border border-[#251D1C]/20 bg-white px-3 py-2 text-xs font-medium text-[#443C3C] shadow-sm transition-colors hover:border-[#251D1C]/40 hover:bg-[#EEEAE7]/50"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-2 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-border hover:bg-surface-hover"
               aria-expanded={filtersExpanded}
               aria-controls="conversations-filters-body"
             >
@@ -374,8 +374,8 @@ export default function ConversationsPage() {
             </div>
             </div>
 
-            <div className="border-t border-[#251D1C]/10 pt-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#443C3C] mb-3">
+            <div className="border-t border-border pt-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground mb-3">
                 {t("dateRangeSection")}
               </p>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
@@ -390,7 +390,7 @@ export default function ConversationsPage() {
                     />
                   </div>
                   <span
-                    className="hidden shrink-0 self-center pb-2 text-sm text-gray-400 sm:block"
+                    className="hidden shrink-0 self-center pb-2 text-sm text-muted-foreground sm:block"
                     aria-hidden
                   >
                     —
@@ -418,18 +418,18 @@ export default function ConversationsPage() {
                   </Button>
                 </div>
 
-                <div className="lg:border-l lg:border-[#251D1C]/10 lg:pl-6">
-                  <span className="mb-1 block text-sm font-medium text-gray-700">
+                <div className="lg:border-l lg:border-border lg:pl-6">
+                  <span className="mb-1 block text-sm font-medium text-muted">
                     {t("fieldOptions")}
                   </span>
-                  <label className="flex min-h-[42px] cursor-pointer items-center gap-3 rounded-sm border border-gray-300 bg-white px-3 py-2 shadow-sm transition-colors hover:border-gray-400">
+                  <label className="flex min-h-[42px] cursor-pointer items-center gap-3 rounded-sm border border-border bg-surface px-3 py-2 shadow-sm transition-colors hover:border-border-strong">
                     <input
                       type="checkbox"
                       checked={attentionFirst}
                       onChange={(e) => setAttentionFirst(e.target.checked)}
-                      className="h-4 w-4 shrink-0 rounded border-gray-300 text-[#251D1C] focus:ring-[#251D1C]"
+                      className="h-4 w-4 shrink-0 rounded border-border text-foreground focus:ring-accent"
                     />
-                    <span className="text-sm text-gray-800 select-none">{t("attentionFirst")}</span>
+                    <span className="text-sm text-foreground select-none">{t("attentionFirst")}</span>
                   </label>
                 </div>
               </div>
@@ -438,8 +438,8 @@ export default function ConversationsPage() {
       </section>
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-sm" role="alert">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-danger/10 border-l-4 border-danger p-4 mb-4 rounded-sm" role="alert">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
@@ -465,9 +465,9 @@ export default function ConversationsPage() {
               return (
                 <article
                   key={conv.conversation_id}
-                  className={`min-w-0 rounded-sm border border-[#251D1C]/20 bg-white p-4 shadow-sm ${
+                  className={`min-w-0 rounded-sm border border-border bg-surface p-4 shadow-sm ${
                     needsAttention
-                      ? "border-l-4 border-l-[#F59E0B] bg-[#F59E0B]/[0.07]"
+                      ? "border-l-4 border-l-warning bg-warning/10"
                       : ""
                   }`}
                 >
@@ -488,7 +488,7 @@ export default function ConversationsPage() {
                       <div className="flex min-w-0 flex-1 flex-col">
                         <p
                           className={`truncate text-sm ${
-                            needsAttention ? "font-bold text-gray-900" : "font-medium text-gray-900"
+                            needsAttention ? "font-bold text-foreground" : "font-medium text-foreground"
                           }`}
                         >
                           {conv.external_user_name
@@ -496,15 +496,15 @@ export default function ConversationsPage() {
                             : getConversationDisplayId(conv, "list")}
                         </p>
                         {conv.external_user_username && (
-                          <p className="truncate text-xs text-gray-500">@{conv.external_user_username}</p>
+                          <p className="truncate text-xs text-muted">@{conv.external_user_username}</p>
                         )}
                         {!conv.external_user_username &&
                           conv.external_user_id &&
                           (conv.channel === "telegram" || conv.channel === "viber") && (
-                            <p className="truncate text-xs text-gray-500">📞 +{conv.external_user_id}</p>
+                            <p className="truncate text-xs text-muted">📞 +{conv.external_user_id}</p>
                           )}
                         {!conv.external_user_name && (
-                          <p className="truncate font-mono text-xs text-gray-500">
+                          <p className="truncate font-mono text-xs text-muted">
                             {conv.conversation_id.substring(0, 8)}…
                           </p>
                         )}
@@ -513,7 +513,7 @@ export default function ConversationsPage() {
                     <Tooltip content={`${t("viewConversation")} ${conv.conversation_id}`}>
                       <Link
                         href={`/admin/conversations/${conv.conversation_id}`}
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-[#251D1C] transition-colors hover:bg-[#EEEAE7]/40"
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-foreground transition-colors hover:bg-surface-hover"
                         aria-label={t("viewConversation")}
                       >
                         <ViewIcon />
@@ -521,19 +521,19 @@ export default function ConversationsPage() {
                     </Tooltip>
                   </div>
 
-                  <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-gray-100 pt-4 text-sm">
+                  <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-border pt-4 text-sm">
                     <div className="min-w-0">
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-[#443C3C]/80">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-foreground">
                         {t("agent")}
                       </dt>
-                      <dd className="mt-0.5 min-w-0 break-words text-gray-900">
+                      <dd className="mt-0.5 min-w-0 break-words text-foreground">
                         {isLoadingAgents ? (
-                          <span className="text-gray-400">{tCommon("loading")}</span>
+                          <span className="text-muted-foreground">{tCommon("loading")}</span>
                         ) : (
                           <>
                             <span className="font-medium">{agentName}</span>
                             {agentCompany && (
-                              <span className="mt-0.5 block text-xs text-gray-500">{agentCompany}</span>
+                              <span className="mt-0.5 block text-xs text-muted">{agentCompany}</span>
                             )}
                           </>
                         )}
@@ -541,13 +541,13 @@ export default function ConversationsPage() {
                     </div>
                     <div className="flex flex-wrap gap-x-6 gap-y-2">
                       <div>
-                        <dt className="text-xs font-semibold uppercase tracking-wide text-[#443C3C]/80">
+                        <dt className="text-xs font-semibold uppercase tracking-wide text-foreground">
                           {t("channel")}
                         </dt>
-                        <dd className="mt-0.5 text-gray-700">{getChannelDisplay(conv.channel)}</dd>
+                        <dd className="mt-0.5 text-muted">{getChannelDisplay(conv.channel)}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs font-semibold uppercase tracking-wide text-[#443C3C]/80">
+                        <dt className="text-xs font-semibold uppercase tracking-wide text-foreground">
                           {t("status")}
                         </dt>
                         <dd className="mt-0.5">
@@ -556,7 +556,7 @@ export default function ConversationsPage() {
                       </div>
                     </div>
                     <div className="min-w-0">
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-[#443C3C]/80">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-foreground">
                         {t("crmStage")}
                       </dt>
                       <dd className="mt-1 min-w-0">
@@ -567,32 +567,32 @@ export default function ConversationsPage() {
                             conversationId={conv.conversation_id}
                             onChanged={refresh}
                             noStageLabel={tCommon("noStage")}
-                            selectClassName="w-full max-w-full min-w-0 text-xs border border-[#BEBAB7] rounded px-1.5 py-0.5 text-[#443C3C] bg-white outline-none focus:border-[#251D1C]"
+                            selectClassName="w-full max-w-full min-w-0 text-xs border border-border rounded px-1.5 py-0.5 text-foreground bg-surface outline-none focus:border-border-strong"
                           />
                         ) : (
-                          <span className="text-xs text-gray-400">—</span>
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </dd>
                     </div>
                     <div className="flex flex-wrap gap-x-6 gap-y-2">
                       <div>
-                        <dt className="text-xs font-semibold uppercase tracking-wide text-[#443C3C]/80">
+                        <dt className="text-xs font-semibold uppercase tracking-wide text-foreground">
                           {t("created")}
                         </dt>
-                        <dd className="mt-0.5 text-gray-600">{formatDate(conv.created_at)}</dd>
+                        <dd className="mt-0.5 text-muted">{formatDate(conv.created_at)}</dd>
                       </div>
                       {showWaitingCol && (
                         <div>
-                          <dt className="text-xs font-semibold uppercase tracking-wide text-[#443C3C]/80">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-foreground">
                             {t("waiting")}
                           </dt>
                           <dd className="mt-0.5">
                             {needsAttention ? (
-                              <span className="font-medium text-[#F59E0B]">
+                              <span className="font-medium text-warning">
                                 {getWaitingTime(conv.updated_at)}
                               </span>
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
                           </dd>
                         </div>
@@ -601,7 +601,7 @@ export default function ConversationsPage() {
                   </dl>
 
                   {needsAttention && (
-                    <div className="mt-4 border-t border-gray-100 pt-4">
+                    <div className="mt-4 border-t border-border pt-4">
                       <Button
                         variant="primary"
                         size="sm"
@@ -619,40 +619,40 @@ export default function ConversationsPage() {
           </div>
 
           {/* Tablet/desktop: table */}
-          <div className="hidden min-w-0 overflow-hidden rounded-sm border border-[#251D1C]/20 bg-white shadow-sm md:block">
+          <div className="hidden min-w-0 overflow-hidden rounded-sm border border-border bg-surface shadow-sm md:block">
           <div className="overflow-x-auto">
-          <table className="min-w-[640px] w-full divide-y divide-gray-200">
-            <thead className="bg-[#EEEAE7]/10">
+          <table className="min-w-[640px] w-full divide-y divide-border">
+            <thead className="bg-surface-hover">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("conversation")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("agent")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("channel")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("status")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("crmStage")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {t("created")}
                 </th>
                 {(filter === "all" || filter === "needs_attention") && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     {t("waiting")}
                   </th>
                 )}
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                   {tCommon("actions")}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-surface divide-y divide-border">
               {filteredConversations.map((conv) => {
                 const { needsAttention, agentName, agentCompany } = getConversationListDerived(
                   conv,
@@ -664,8 +664,8 @@ export default function ConversationsPage() {
                     key={conv.conversation_id}
                     className={`transition-colors duration-150 ${
                       needsAttention
-                        ? "bg-[#F59E0B]/10 hover:bg-[#F59E0B]/15 border-l-4 border-[#F59E0B]"
-                        : "hover:bg-[#EEEAE7]/5"
+                        ? "bg-warning/10 hover:bg-warning/15 border-l-4 border-warning"
+                        : "hover:bg-surface-hover"
                     }`}
                   >
                     <td className="px-6 py-4">
@@ -686,7 +686,7 @@ export default function ConversationsPage() {
                         <div className="flex flex-col">
                           <span
                             className={`text-sm ${
-                              needsAttention ? "font-bold text-gray-900" : "font-medium text-gray-900"
+                              needsAttention ? "font-bold text-foreground" : "font-medium text-foreground"
                             }`}
                           >
                             {conv.external_user_name
@@ -694,19 +694,19 @@ export default function ConversationsPage() {
                               : getConversationDisplayId(conv, "list")}
                           </span>
                           {conv.external_user_username && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-muted">
                               @{conv.external_user_username}
                             </span>
                           )}
                           {/* Show phone for Telegram/Viber */}
                           {!conv.external_user_username && conv.external_user_id &&
                             (conv.channel === "telegram" || conv.channel === "viber") && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-muted">
                               📞 +{conv.external_user_id}
                             </span>
                           )}
                           {!conv.external_user_name && (
-                            <span className="text-xs text-gray-500 font-mono">
+                            <span className="text-xs text-muted font-mono">
                               {conv.conversation_id.substring(0, 8)}...
                             </span>
                           )}
@@ -715,19 +715,19 @@ export default function ConversationsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {isLoadingAgents ? (
-                        <span className="text-sm text-gray-400">{tCommon("loading")}</span>
+                        <span className="text-sm text-muted-foreground">{tCommon("loading")}</span>
                       ) : (
                         <div className="flex flex-col">
-                          <span className="text-sm text-gray-900 font-medium" title={conv.agent_id}>
+                          <span className="text-sm text-foreground font-medium" title={conv.agent_id}>
                             {agentName}
                           </span>
                           {agentCompany && (
-                            <span className="text-xs text-gray-500">{agentCompany}</span>
+                            <span className="text-xs text-muted">{agentCompany}</span>
                           )}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                       {getChannelDisplay(conv.channel)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -744,21 +744,21 @@ export default function ConversationsPage() {
                             noStageLabel={tCommon("noStage")}
                           />
                         ) : (
-                          <span className="text-xs text-gray-400">—</span>
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                       {formatDate(conv.created_at)}
                     </td>
                     {(filter === "all" || filter === "needs_attention") && (
                       <td className="px-6 py-4 whitespace-nowrap">
                         {needsAttention ? (
-                          <span className="text-[#F59E0B] font-medium">
+                          <span className="text-warning font-medium">
                             {getWaitingTime(conv.updated_at)}
                           </span>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </td>
                     )}
@@ -777,7 +777,7 @@ export default function ConversationsPage() {
                         <Tooltip content={`${t("viewConversation")} ${conv.conversation_id}`}>
                           <Link
                             href={`/admin/conversations/${conv.conversation_id}`}
-                            className="inline-flex items-center justify-center w-8 h-8 text-[#251D1C] hover:text-[#443C3C] hover:bg-[#EEEAE7]/10 rounded-sm transition-all duration-200"
+                            className="inline-flex items-center justify-center w-8 h-8 text-foreground hover:text-foreground hover:bg-surface-hover rounded-sm transition-all duration-200"
                             aria-label={t("viewConversation")}
                           >
                             <ViewIcon />

@@ -122,19 +122,19 @@ export default function NotificationsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex items-center justify-center min-h-screen bg-surface">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-[#EEEAE7]/5 to-[#251D1C]/10">
+    <div className="min-h-screen bg-gradient-to-br from-surface via-surface-hover/50 to-background">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-foreground">Notifications</h1>
+            <p className="text-muted mt-1">
               Configure Telegram notifications for escalation alerts
             </p>
           </div>
@@ -144,8 +144,8 @@ export default function NotificationsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-sm">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-danger/10 border-l-4 border-danger p-4 mb-6 rounded-sm">
+            <p className="text-sm text-danger">{error}</p>
           </div>
         )}
 

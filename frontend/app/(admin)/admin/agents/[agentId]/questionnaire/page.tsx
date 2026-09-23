@@ -93,19 +93,19 @@ export default function AgentQuestionnairePage() {
   if (!template) {
     return (
       <div>
-        <div className="text-sm text-gray-500 mb-1">
+        <div className="text-sm text-muted mb-1">
           <Link href="/admin/questionnaires" className="hover:underline">
             Questionnaires
           </Link>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Agent questionnaire</h1>
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-sm max-w-xl">
-          <p className="text-sm text-red-700">{error || "Failed to load questionnaire"}</p>
+        <h1 className="text-2xl font-bold text-foreground mb-4">Agent questionnaire</h1>
+        <div className="bg-danger/10 border-l-4 border-danger p-4 rounded-sm max-w-xl">
+          <p className="text-sm text-danger">{error || "Failed to load questionnaire"}</p>
         </div>
         <button
           type="button"
           onClick={() => void load()}
-          className="mt-4 inline-flex items-center rounded-sm border border-[#251D1C] bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-[#EEEAE7]"
+          className="mt-4 inline-flex items-center rounded-sm border border-border-strong bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-hover"
         >
           Retry
         </button>
@@ -117,23 +117,23 @@ export default function AgentQuestionnairePage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <div className="text-sm text-gray-500 mb-1">
+          <div className="text-sm text-muted mb-1">
             <Link href="/admin/questionnaires" className="hover:underline">
               Questionnaires
             </Link>{" "}
             /
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Agent questionnaire</h1>
-          <p className="text-gray-600 mt-1">
-            <span className="font-medium text-gray-800">{agentDisplayName || agentId}</span>
+          <h1 className="text-2xl font-bold text-foreground">Agent questionnaire</h1>
+          <p className="text-muted mt-1">
+            <span className="font-medium text-foreground">{agentDisplayName || agentId}</span>
             {agentDisplayName && agentDisplayName !== agentId ? (
-              <span className="block text-xs text-gray-500 mt-0.5 font-mono">{agentId}</span>
+              <span className="block text-xs text-muted mt-0.5 font-mono">{agentId}</span>
             ) : null}
           </p>
         </div>
       </div>
 
-      <div className="mb-6 border-b border-[#BEBAB7]">
+      <div className="mb-6 border-b border-border">
         <nav className="flex gap-1">
           <TabButton active={activeTab === "editor"} onClick={() => setActiveTab("editor")}>
             Editor
@@ -148,13 +148,13 @@ export default function AgentQuestionnairePage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-sm">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-danger/10 border-l-4 border-danger p-4 mb-6 rounded-sm">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-sm">
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="bg-success/10 border-l-4 border-success p-4 mb-6 rounded-sm">
+          <p className="text-sm text-success">{successMsg}</p>
         </div>
       )}
 
@@ -181,8 +181,8 @@ function TabButton({
       onClick={onClick}
       className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
         active
-          ? "border-[#251D1C] text-[#251D1C]"
-          : "border-transparent text-gray-600 hover:text-[#251D1C]"
+          ? "border-border-strong text-foreground"
+          : "border-transparent text-muted hover:text-foreground"
       }`}
     >
       {children}

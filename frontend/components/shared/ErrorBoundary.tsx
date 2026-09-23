@@ -35,17 +35,17 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex items-center justify-center min-h-screen p-4 bg-white">
+        <div className="flex items-center justify-center min-h-screen p-4 bg-background">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
               Something went wrong
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-muted mb-4">
               {this.state.error?.message || "An unexpected error occurred"}
             </p>
             <button
               onClick={() => this.setState({ hasError: false })}
-              className="px-4 py-2 bg-[#251D1C] text-white rounded-sm hover:bg-[#443C3C] transition-all duration-200 shadow-sm hover:shadow-md"
+              className="px-4 py-2 bg-accent text-accent-foreground rounded-sm hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md"
               aria-label="Try again after error"
             >
               Try again

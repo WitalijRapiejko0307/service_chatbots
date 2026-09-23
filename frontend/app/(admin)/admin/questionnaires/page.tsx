@@ -74,27 +74,27 @@ export default function QuestionnairesIndexPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Questionnaires</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl font-bold text-foreground">Questionnaires</h1>
+        <p className="text-muted mt-1">
           Edit each agent’s questionnaire and review user submissions. The bot can start the
           questionnaire from chat when the user asks to fill it in.
         </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-sm">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-danger/10 border-l-4 border-danger p-4 mb-6 rounded-sm">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
       {rows.length === 0 ? (
-        <div className="bg-white border border-[#BEBAB7] rounded-sm p-8 text-center text-gray-600">
+        <div className="bg-surface border border-border rounded-sm p-8 text-center text-muted">
           No agents yet. Create an agent to set up a questionnaire.
         </div>
       ) : (
-        <div className="bg-white border border-[#BEBAB7] rounded-sm overflow-hidden">
+        <div className="bg-surface border border-border rounded-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-[#EEEAE7]/50 text-left text-[#443C3C]">
+            <thead className="bg-surface-hover text-left text-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">Agent</th>
                 <th className="px-4 py-3 font-medium">Fields</th>
@@ -107,20 +107,20 @@ export default function QuestionnairesIndexPage() {
               {rows.map((row) => (
                 <tr
                   key={row.agent.agent_id}
-                  className="border-t border-[#BEBAB7]/60 hover:bg-[#EEEAE7]/30"
+                  className="border-t border-border hover:bg-surface-hover"
                 >
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-foreground">
                       {row.agent.config?.profile?.agent_display_name ||
                         row.agent.config?.profile?.doctor_display_name ||
                         row.agent.agent_id}
                     </div>
-                    <div className="text-xs text-gray-500">{row.agent.agent_id}</div>
+                    <div className="text-xs text-muted">{row.agent.agent_id}</div>
                   </td>
                   <td className="px-4 py-3">{row.fields_count}</td>
                   <td className="px-4 py-3">{row.submissions_count}</td>
-                  <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
-                    {row.welcome_preview || <span className="italic text-gray-400">not set</span>}
+                  <td className="px-4 py-3 text-muted max-w-xs truncate">
+                    {row.welcome_preview || <span className="italic text-muted-foreground">not set</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link

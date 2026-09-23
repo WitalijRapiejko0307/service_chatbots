@@ -90,9 +90,9 @@ export const QuestionnaireEditor: React.FC<Props> = ({ template, onSave, isSavin
 
   return (
     <div className="space-y-6">
-      <section className="bg-white border border-[#BEBAB7] rounded-sm p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Welcome message</h2>
-        <p className="text-sm text-gray-600 mb-3">
+      <section className="bg-surface border border-border rounded-sm p-4">
+        <h2 className="text-lg font-semibold text-foreground mb-2">Welcome message</h2>
+        <p className="text-sm text-muted mb-3">
           Shown before the first question. Keep it short and clear.
         </p>
         <Textarea
@@ -104,9 +104,9 @@ export const QuestionnaireEditor: React.FC<Props> = ({ template, onSave, isSavin
         />
       </section>
 
-      <section className="bg-white border border-[#BEBAB7] rounded-sm p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Completion message</h2>
-        <p className="text-sm text-gray-600 mb-3">
+      <section className="bg-surface border border-border rounded-sm p-4">
+        <h2 className="text-lg font-semibold text-foreground mb-2">Completion message</h2>
+        <p className="text-sm text-muted mb-3">
           Sent after the user answers every question. A summary of their answers is added
           automatically. If left empty, a default “Thank you, your answers are saved” message is
           used.
@@ -120,9 +120,9 @@ export const QuestionnaireEditor: React.FC<Props> = ({ template, onSave, isSavin
         />
       </section>
 
-      <section className="bg-white border border-[#BEBAB7] rounded-sm p-4">
+      <section className="bg-surface border border-border rounded-sm p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">Questionnaire fields</h2>
+          <h2 className="text-lg font-semibold text-foreground">Questionnaire fields</h2>
           <Button
             variant="secondary"
             size="sm"
@@ -134,7 +134,7 @@ export const QuestionnaireEditor: React.FC<Props> = ({ template, onSave, isSavin
           </Button>
         </div>
         {fields.length === 0 && (
-          <div className="text-sm text-gray-500 border border-dashed border-[#BEBAB7] rounded-sm p-4 text-center">
+          <div className="text-sm text-muted border border-dashed border-border rounded-sm p-4 text-center">
             No fields yet. Click “Add field” to create the first question.
           </div>
         )}
@@ -199,14 +199,14 @@ const FieldCard: React.FC<FieldCardProps> = ({
   };
 
   return (
-    <div className="border border-[#BEBAB7] rounded-sm p-3 bg-[#FAFAF8]">
+    <div className="border border-border rounded-sm p-3 bg-background">
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="text-sm text-gray-500">Field #{index + 1}</div>
+        <div className="text-sm text-muted">Field #{index + 1}</div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => onMove(-1)}
             disabled={index === 0}
-            className="p-1 rounded-sm hover:bg-[#EEEAE7] disabled:opacity-30"
+            className="p-1 rounded-sm hover:bg-surface-hover disabled:opacity-30"
             aria-label="Move up"
           >
             <ArrowUp size={16} />
@@ -214,14 +214,14 @@ const FieldCard: React.FC<FieldCardProps> = ({
           <button
             onClick={() => onMove(1)}
             disabled={index === total - 1}
-            className="p-1 rounded-sm hover:bg-[#EEEAE7] disabled:opacity-30"
+            className="p-1 rounded-sm hover:bg-surface-hover disabled:opacity-30"
             aria-label="Move down"
           >
             <ArrowDown size={16} />
           </button>
           <button
             onClick={onRemove}
-            className="p-1 rounded-sm text-red-600 hover:bg-red-50"
+            className="p-1 rounded-sm text-danger hover:bg-danger/10"
             aria-label="Delete"
           >
             <Trash2 size={16} />
@@ -257,25 +257,25 @@ const FieldCard: React.FC<FieldCardProps> = ({
       />
 
       <div className="flex items-center justify-between mt-3">
-        <span className="text-sm text-gray-700">Required field</span>
+        <span className="text-sm text-muted">Required field</span>
         <Toggle checked={field.required} onChange={(v) => onPatch({ required: v })} />
       </div>
 
       <div className="mt-3">
-        <div className="text-sm font-medium text-gray-700 mb-1">Quick replies (buttons)</div>
-        <p className="text-xs text-gray-500 mb-2">
+        <div className="text-sm font-medium text-muted mb-1">Quick replies (buttons)</div>
+        <p className="text-xs text-muted mb-2">
           Shown as inline buttons next to the question. Up to 8. Leave empty for free-text answers.
         </p>
         <div className="flex flex-wrap gap-2 mb-2">
           {field.quick_replies.map((qr, i) => (
             <span
               key={i}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-sm bg-[#EEEAE7] text-sm text-[#443C3C] border border-[#BEBAB7]"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-sm bg-surface-hover text-sm text-foreground border border-border"
             >
               {qr}
               <button
                 onClick={() => removeQuickReply(i)}
-                className="hover:text-red-600"
+                className="hover:text-danger"
                 aria-label="Remove option"
               >
                 <X size={14} />
@@ -303,7 +303,7 @@ const FieldCard: React.FC<FieldCardProps> = ({
           </div>
         )}
         {errors[`qr:${index}`] && (
-          <p className="text-sm text-red-600 mt-1">{errors[`qr:${index}`]}</p>
+          <p className="text-sm text-danger mt-1">{errors[`qr:${index}`]}</p>
         )}
       </div>
     </div>

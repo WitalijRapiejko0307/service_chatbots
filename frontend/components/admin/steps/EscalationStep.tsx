@@ -60,20 +60,20 @@ export const EscalationStep: React.FC<EscalationStepProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <h3 className="text-lg font-semibold text-foreground mb-2">
           {t("escalationTitle")}
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted">
           {t("escalationDesc")}
         </p>
       </div>
 
       {/* Master switch: LLM escalation classifier */}
-      <div className="p-4 border border-[#BEBAB7] rounded-sm bg-white space-y-3">
+      <div className="p-4 border border-border rounded-sm bg-surface space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-gray-900">{t("escalationLlmEnabled")}</p>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-sm font-medium text-foreground">{t("escalationLlmEnabled")}</p>
+            <p className="text-xs text-muted mt-0.5">
               {t("escalationLlmEnabledHint")}
             </p>
           </div>
@@ -87,11 +87,11 @@ export const EscalationStep: React.FC<EscalationStepProps> = ({
       </div>
 
       {/* Built-in: contact detection */}
-      <div className="p-4 border border-[#BEBAB7] rounded-sm bg-white space-y-3">
+      <div className="p-4 border border-border rounded-sm bg-surface space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-gray-900">{t("contactDetection")}</p>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-sm font-medium text-foreground">{t("contactDetection")}</p>
+            <p className="text-xs text-muted mt-0.5">
               {t("contactDetectionHint")}
             </p>
           </div>
@@ -107,10 +107,10 @@ export const EscalationStep: React.FC<EscalationStepProps> = ({
       {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs text-gray-400 uppercase tracking-wider">
+          <span className="bg-surface px-3 text-xs text-muted-foreground uppercase tracking-wider">
             {t("customRules")}
           </span>
         </div>
@@ -119,9 +119,9 @@ export const EscalationStep: React.FC<EscalationStepProps> = ({
       {/* Custom rules list */}
       <div className="space-y-4">
         {rules.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 border border-dashed border-gray-300 rounded-sm bg-gray-50 text-center px-4">
-            <p className="text-sm text-gray-500 mb-1">{t("noCustomRules")}</p>
-            <p className="text-xs text-gray-400">
+          <div className="flex flex-col items-center justify-center py-8 border border-dashed border-border rounded-sm bg-surface-hover text-center px-4">
+            <p className="text-sm text-muted mb-1">{t("noCustomRules")}</p>
+            <p className="text-xs text-muted-foreground">
               {t("addRuleHint")}
             </p>
           </div>
@@ -129,16 +129,16 @@ export const EscalationStep: React.FC<EscalationStepProps> = ({
           rules.map((rule, index) => (
             <div
               key={rule.id}
-              className="relative p-4 border border-[#BEBAB7] rounded-sm bg-white space-y-3"
+              className="relative p-4 border border-border rounded-sm bg-surface space-y-3"
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-[#9A9590] uppercase tracking-wider">
+                <span className="text-xs font-semibold text-muted uppercase tracking-wider">
                   {t("ruleN", { n: index + 1 })}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleDeleteRule(rule.id)}
-                  className="flex items-center justify-center w-7 h-7 rounded-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-150"
+                  className="flex items-center justify-center w-7 h-7 rounded-sm text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors duration-150"
                   aria-label={t("ruleN", { n: index + 1 })}
                 >
                   <X size={16} />
@@ -176,14 +176,14 @@ export const EscalationStep: React.FC<EscalationStepProps> = ({
       >
         {t("addRule")}
         {rules.length > 0 && (
-          <span className="ml-1 text-gray-400 font-normal">
+          <span className="ml-1 text-muted-foreground font-normal">
             ({rules.length}/{MAX_RULES})
           </span>
         )}
       </Button>
 
       {rules.length >= MAX_RULES && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           {t("maxRulesReached", { max: MAX_RULES })}
         </p>
       )}

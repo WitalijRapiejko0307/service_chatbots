@@ -81,10 +81,10 @@ export const RAGStep: React.FC<RAGStepProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
           {t("ragTitle")}
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-muted mb-6">
           {t("ragDesc")}
         </p>
       </div>
@@ -139,7 +139,7 @@ export const RAGStep: React.FC<RAGStepProps> = ({
                   onUpdate({ rag_score_threshold: parseFloat(e.target.value) })
                 }
               />
-              <p className="mt-1 text-xs text-gray-500">{t("ragScoreThresholdHint")}</p>
+              <p className="mt-1 text-xs text-muted">{t("ragScoreThresholdHint")}</p>
             </div>
           </div>
           {(config.rag_vision_provider || "openai") === "google_ai_studio" && (
@@ -155,25 +155,25 @@ export const RAGStep: React.FC<RAGStepProps> = ({
                 options={googleVisionModelOptions}
                 className={selectTouchClass}
               />
-              <p className="mt-1 text-xs text-gray-500 break-words">{t("visionModelHint")}</p>
-              <p className="mt-1 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-sm px-2 py-1.5 break-words leading-snug">
+              <p className="mt-1 text-xs text-muted break-words">{t("visionModelHint")}</p>
+              <p className="mt-1 text-xs text-warning bg-warning/10 border border-warning/30 rounded-sm px-2 py-1.5 break-words leading-snug">
                 {t("visionModelPreviewNote")}
               </p>
             </div>
           )}
-          <div className="p-4 bg-gray-50 rounded-sm border border-gray-200">
+          <div className="p-4 bg-surface-hover rounded-sm border border-border">
           {agentId ? (
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-foreground">
               <Link
                 href={`/admin/agents/${agentId}/rag`}
-                className="text-[#251D1C] hover:text-[#443C3C] underline font-medium"
+                className="text-foreground hover:text-muted underline font-medium"
               >
                 {t("manageDocuments")}
               </Link>
               {" "}{t("manageDocumentsHint")}
             </p>
           ) : (
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-foreground">
               {t("ragAfterCreate")}
             </p>
           )}

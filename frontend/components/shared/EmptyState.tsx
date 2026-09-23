@@ -26,9 +26,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {typeof icon === "string" ? <span>{icon}</span> : icon}
         </div>
       )}
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
       {description && (
-        <p className="text-sm text-gray-600 mb-6 max-w-md">{description}</p>
+        <p className="text-sm text-muted mb-6 max-w-md">{description}</p>
       )}
       {action && <div>{action}</div>}
     </div>

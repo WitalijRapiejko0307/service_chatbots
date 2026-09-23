@@ -32,8 +32,8 @@ interface StepPanelProps {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-b border-[#EEEAE7] pb-4 mb-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9A9590] mb-3">
+    <div className="border-b border-border pb-4 mb-4">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-3">
         {title}
       </p>
       {children}
@@ -77,7 +77,7 @@ function QuickRepliesSection({
   return (
     <Section title="Быстрые ответы">
       <div className="space-y-3">
-        <p className="text-xs text-[#9A9590]">
+        <p className="text-xs text-muted">
           Необязательно. Кнопки отобразятся в чате и Telegram после ответа агента на этом шаге. Пользователь может нажать кнопку или написать свой ответ.
         </p>
 
@@ -86,13 +86,13 @@ function QuickRepliesSection({
             {quickReplies.map((label) => (
               <span
                 key={label}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-[#251D1C]/8 border border-[#251D1C]/20 text-[#251D1C]"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-surface-hover border border-border text-foreground"
               >
                 {label}
                 <button
                   type="button"
                   onClick={() => removeReply(label)}
-                  className="hover:text-red-500 transition-colors"
+                  className="hover:text-danger transition-colors"
                   aria-label={`Удалить кнопку "${label}"`}
                 >
                   <X size={11} />
@@ -111,13 +111,13 @@ function QuickRepliesSection({
               onKeyDown={handleKeyDown}
               placeholder="Текст кнопки..."
               maxLength={40}
-              className="flex-1 text-sm px-3 py-1.5 border border-[#251D1C]/30 rounded-sm focus:outline-none focus:border-[#251D1C]/60 bg-white text-[#251D1C] placeholder:text-[#9A9590]"
+              className="flex-1 text-sm px-3 py-1.5 border border-border-strong rounded-sm focus:outline-none focus:border-border-strong bg-surface text-foreground placeholder:text-muted"
             />
             <button
               type="button"
               onClick={addReply}
               disabled={!inputValue.trim()}
-              className="px-2.5 py-1.5 rounded-sm border border-[#251D1C]/30 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-2.5 py-1.5 rounded-sm border border-border-strong hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               aria-label="Добавить кнопку"
             >
               <Plus size={14} />
@@ -126,7 +126,7 @@ function QuickRepliesSection({
         )}
 
         {quickReplies.length >= MAX_QUICK_REPLIES && (
-          <p className="text-xs text-[#9A9590]">Максимум {MAX_QUICK_REPLIES} кнопок.</p>
+          <p className="text-xs text-muted">Максимум {MAX_QUICK_REPLIES} кнопок.</p>
         )}
       </div>
     </Section>
@@ -156,14 +156,14 @@ function TimerSection({
           checked={!!timer}
           onChange={() => onUpdate(timer ? null : defaultTimer)}
         />
-        <span className="text-sm text-[#443C3C] flex items-center gap-1">
-          <Clock size={13} className="text-blue-500" />
+        <span className="text-sm text-foreground flex items-center gap-1">
+          <Clock size={13} className="text-accent" />
           Автоматическое сообщение
         </span>
       </div>
 
       {timer && (
-        <div className="space-y-3 pl-2 border-l-2 border-blue-200">
+        <div className="space-y-3 pl-2 border-l-2 border-accent/30">
           <Input
             label="Задержка (секунды)"
             type="number"
@@ -175,8 +175,8 @@ function TimerSection({
           />
 
           <div>
-            <p className="text-xs font-medium text-[#443C3C] mb-1.5">Тип действия</p>
-            <div className="flex rounded border border-[#BEBAB7] overflow-hidden text-xs w-fit">
+            <p className="text-xs font-medium text-foreground mb-1.5">Тип действия</p>
+            <div className="flex rounded border border-border overflow-hidden text-xs w-fit">
               {(["static", "agent"] as const).map((type) => (
                 <button
                   key={type}
@@ -184,9 +184,9 @@ function TimerSection({
                   onClick={() => onUpdate({ ...timer, action_type: type })}
                   className={`px-3 py-1.5 transition-colors ${
                     (timer.action_type || "static") === type
-                      ? "bg-[#251D1C] text-white"
-                      : "bg-white text-[#443C3C] hover:bg-[#EEEAE7]"
-                  } ${type === "agent" ? "border-l border-[#BEBAB7]" : ""}`}
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-surface text-foreground hover:bg-surface-hover"
+                  } ${type === "agent" ? "border-l border-border" : ""}`}
                 >
                   {type === "static" ? "Фиксированный текст" : "Ответ агента (AI)"}
                 </button>
@@ -212,7 +212,7 @@ function TimerSection({
             />
           )}
 
-          <p className="text-[10px] text-[#9A9590]">
+          <p className="text-[10px] text-muted">
             {(timer.action_type || "static") === "static"
               ? "Поддерживается подстановка {переменных} из собранных данных шага."
               : "Агент сформулирует сообщение по инструкции с учётом истории диалога."}
@@ -244,14 +244,14 @@ function TransitionRow({
   const is_fallback = (edge.data as { is_fallback?: boolean })?.is_fallback ?? false;
 
   return (
-    <div className={`border rounded-md p-3 space-y-2 bg-white ${is_fallback ? "border-[#9A9590]" : "border-[#BEBAB7]"}`}>
+    <div className={`border rounded-md p-3 space-y-2 bg-surface ${is_fallback ? "border-muted" : "border-border"}`}>
       {targetStep && (
         <div className="flex items-center justify-between">
-          <p className="text-[10px] text-[#9A9590]">
-            → <span className="font-medium text-[#443C3C]">{targetStep.name || targetStep.id}</span>
+          <p className="text-[10px] text-muted">
+            → <span className="font-medium text-foreground">{targetStep.name || targetStep.id}</span>
           </p>
           {is_fallback && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#EEEAE7] text-[#9A9590] font-medium">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-hover text-muted font-medium">
               Иначе
             </span>
           )}
@@ -271,12 +271,12 @@ function TransitionRow({
             }
           }}
         />
-        <span className="text-xs text-[#443C3C]">Ветка «Иначе» (если ни одно условие не выполнено)</span>
+        <span className="text-xs text-foreground">Ветка «Иначе» (если ни одно условие не выполнено)</span>
       </div>
 
       {/* Warning: duplicate fallback */}
       {is_fallback && hasDuplicateFallback && (
-        <p className="text-[10px] text-amber-600">
+        <p className="text-[10px] text-warning">
           Уже есть другая ветка «Иначе» из этого шага. Сработает первая по порядку.
         </p>
       )}
@@ -299,12 +299,12 @@ function TransitionRow({
             checked={is_forced}
             onChange={() => onUpdate(edge.id, { condition, is_forced: !is_forced, is_fallback: false })}
           />
-          <span className="text-xs text-[#443C3C]">Жёсткое (нельзя пропустить)</span>
+          <span className="text-xs text-foreground">Жёсткое (нельзя пропустить)</span>
         </div>
         <button
           type="button"
           onClick={() => onDelete(edge.id)}
-          className="text-[#9A9590] hover:text-red-500 transition-colors"
+          className="text-muted hover:text-danger transition-colors"
           title="Удалить переход"
         >
           <Trash2 size={13} />
@@ -330,16 +330,16 @@ export function StepPanel({
   if (!selectedStep && !selectedEdge) return null;
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-[#BEBAB7] overflow-y-auto">
+    <div className="flex flex-col h-full bg-surface border-l border-border overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#EEEAE7] flex-shrink-0">
-        <p className="text-sm font-semibold text-[#251D1C]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
+        <p className="text-sm font-semibold text-foreground">
           {selectedStep ? "Настройка шага" : "Настройка перехода"}
         </p>
         <button
           type="button"
           onClick={onClose}
-          className="text-[#9A9590] hover:text-[#251D1C] transition-colors"
+          className="text-muted hover:text-foreground transition-colors"
           title="Закрыть"
         >
           <X size={16} />
@@ -376,7 +376,7 @@ export function StepPanel({
                         onUpdateStep(selectedStep.id, { required: !selectedStep.required })
                       }
                     />
-                    <span className="text-sm text-[#443C3C]">
+                    <span className="text-sm text-foreground">
                       Обязательный шаг (нельзя пропустить)
                     </span>
                   </div>
@@ -398,8 +398,8 @@ export function StepPanel({
               {/* ── One-time step (questionnaire integration) ── */}
               <Section title="Одноразовый шаг">
                 <div className="space-y-3">
-                  <div className="flex items-start gap-2 text-xs text-[#9A9590] bg-[#EEEAE7]/50 rounded-sm p-2.5 border border-[#BEBAB7]/50">
-                    <ShieldCheck size={13} className="text-emerald-500 mt-0.5 shrink-0" />
+                  <div className="flex items-start gap-2 text-xs text-muted bg-surface-hover/50 rounded-sm p-2.5 border border-border/50">
+                    <ShieldCheck size={13} className="text-success mt-0.5 shrink-0" />
                     <span>
                       Если пользователь уже проходил этот шаг в другом диалоге — он будет пропущен.
                       Удобно для согласия с политикой конфиденциальности.
@@ -416,9 +416,9 @@ export function StepPanel({
                     placeholder="Например: privacy_consent"
                   />
                   {(selectedStep.skip_if_questionnaire_field ?? "").length > 0 && (
-                    <p className="text-[10px] text-[#9A9590]">
+                    <p className="text-[10px] text-muted">
                       Шаг пропускается при старте, если поле{" "}
-                      <code className="bg-[#EEEAE7] px-1 rounded">{selectedStep.skip_if_questionnaire_field}</code>{" "}
+                      <code className="bg-surface-hover px-1 rounded">{selectedStep.skip_if_questionnaire_field}</code>{" "}
                       уже заполнено. Переход — по первой ветке «Иначе» или первому переходу.
                     </p>
                   )}
@@ -431,10 +431,10 @@ export function StepPanel({
                         })
                       }
                     />
-                    <span className="text-sm text-[#443C3C]">Записывать ответы в анкету</span>
+                    <span className="text-sm text-foreground">Записывать ответы в анкету</span>
                   </div>
                   {(selectedStep.collect_to_questionnaire ?? false) && (
-                    <p className="text-[10px] text-[#9A9590]">
+                    <p className="text-[10px] text-muted">
                       После извлечения поля из поля «Переменные для сбора» значения сохраняются
                       в анкету пользователя и видны в разделе «Анкеты».
                     </p>
@@ -450,12 +450,12 @@ export function StepPanel({
                         })
                       }
                     />
-                    <span className="text-sm text-[#443C3C]">
+                    <span className="text-sm text-foreground">
                       Условные переходы при неполном сборе
                     </span>
                   </div>
                   {(selectedStep.evaluate_transition_conditions_when_collect_incomplete ?? false) && (
-                    <p className="text-[10px] text-[#9A9590]">
+                    <p className="text-[10px] text-muted">
                       Если включено, переходы с текстовым условием оцениваются даже пока не все поля из
                       «Переменные для сбора» заполнены (например «достаточно данных для ответа»).
                     </p>
@@ -466,7 +466,7 @@ export function StepPanel({
               {/* ── Outgoing transitions ── */}
               <Section title="Переходы из этого шага">
                 {outgoing.length === 0 ? (
-                  <p className="text-xs text-[#9A9590]">
+                  <p className="text-xs text-muted">
                     Нет переходов. Соедините этот шаг со следующим на канве, затем настройте условие здесь.
                   </p>
                 ) : (
@@ -498,7 +498,7 @@ export function StepPanel({
                 <button
                   type="button"
                   onClick={() => onDeleteStep(selectedStep.id)}
-                  className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 transition-colors"
+                  className="flex items-center gap-2 text-sm text-danger hover:opacity-80 transition-colors"
                 >
                   <Trash2 size={14} />
                   Удалить шаг
@@ -517,15 +517,15 @@ export function StepPanel({
             <>
               <Section title="Настройка перехода">
                 <div className="space-y-3">
-                  <div className="text-xs text-[#9A9590] mb-2">
+                  <div className="text-xs text-muted mb-2">
                     {(() => {
                       const from = steps.find((s) => s.id === selectedEdge.source);
                       const to = steps.find((s) => s.id === selectedEdge.target);
                       return from && to ? (
                         <span>
-                          <span className="font-medium text-[#443C3C]">{from.name || from.id}</span>
+                          <span className="font-medium text-foreground">{from.name || from.id}</span>
                           {" → "}
-                          <span className="font-medium text-[#443C3C]">{to.name || to.id}</span>
+                          <span className="font-medium text-foreground">{to.name || to.id}</span>
                         </span>
                       ) : null;
                     })()}
@@ -543,7 +543,7 @@ export function StepPanel({
                         }
                       }}
                     />
-                    <span className="text-sm text-[#443C3C]">Ветка «Иначе» (если ни одно условие не выполнено)</span>
+                    <span className="text-sm text-foreground">Ветка «Иначе» (если ни одно условие не выполнено)</span>
                   </div>
 
                   {/* Condition — hidden when fallback */}
@@ -575,7 +575,7 @@ export function StepPanel({
                         })
                       }
                     />
-                    <span className="text-sm text-[#443C3C]">
+                    <span className="text-sm text-foreground">
                       Жёсткое условие (пользователь не перейдёт дальше без выполнения)
                     </span>
                   </div>
@@ -586,7 +586,7 @@ export function StepPanel({
                 <button
                   type="button"
                   onClick={() => onDeleteEdge(selectedEdge.id)}
-                  className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 transition-colors"
+                  className="flex items-center gap-2 text-sm text-danger hover:opacity-80 transition-colors"
                 >
                   <Trash2 size={14} />
                   Удалить переход

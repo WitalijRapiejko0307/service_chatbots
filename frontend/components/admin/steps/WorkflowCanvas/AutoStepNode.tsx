@@ -25,7 +25,7 @@ export function AutoStepNode({ data, selected }: NodeProps) {
   return (
     <div
       className={`
-        relative bg-white rounded-lg shadow-sm select-none
+        relative bg-surface rounded-lg shadow-sm select-none
         transition-all duration-150
         ${selected ? "border-[#7C3AED] shadow-md border-2" : "border-[#C4B5FD] hover:border-[#7C3AED] border-2"}
       `}
@@ -43,7 +43,7 @@ export function AutoStepNode({ data, selected }: NodeProps) {
           background: "#C4B5FD",
           width: 10,
           height: 10,
-          border: "2px solid #fff",
+          border: "2px solid var(--surface)",
         }}
       />
 
@@ -65,7 +65,7 @@ export function AutoStepNode({ data, selected }: NodeProps) {
           `}
           title={autoStep?.name}
         >
-          {autoStep?.name || <span className="italic text-[#9A9590]">Авто-шаг</span>}
+          {autoStep?.name || <span className="italic text-muted">Авто-шаг</span>}
         </span>
         {delayLabel && (
           <span
@@ -85,14 +85,14 @@ export function AutoStepNode({ data, selected }: NodeProps) {
           className={`
             inline-block text-[10px] font-medium px-1.5 py-0.5 rounded mb-1
             ${autoStep?.action_type === "agent"
-              ? "bg-blue-50 text-blue-600"
-              : "bg-gray-50 text-gray-600"}
+              ? "bg-accent/10 text-accent"
+              : "bg-surface-hover text-muted"}
           `}
         >
           {autoStep?.action_type === "agent" ? "Агент" : "Текст"}
         </span>
         {autoStep?.condition && (
-          <p className="text-[10px] text-amber-600 truncate" title={autoStep.condition}>
+          <p className="text-[10px] text-warning truncate" title={autoStep.condition}>
             📋 {autoStep.condition}
           </p>
         )}
@@ -106,7 +106,7 @@ export function AutoStepNode({ data, selected }: NodeProps) {
           background: "#7C3AED",
           width: 10,
           height: 10,
-          border: "2px solid #fff",
+          border: "2px solid var(--surface)",
         }}
       />
     </div>

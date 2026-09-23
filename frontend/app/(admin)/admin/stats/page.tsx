@@ -56,8 +56,8 @@ export default function StatsPage() {
 
   if (error || !stats) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4">
-        <p className="text-sm text-red-700">{error || t("failedToLoad")}</p>
+      <div className="bg-danger/10 border-l-4 border-danger p-4">
+        <p className="text-sm text-danger">{error || t("failedToLoad")}</p>
       </div>
     );
   }
@@ -65,7 +65,7 @@ export default function StatsPage() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
         <div className="w-full sm:w-48">
           <Select
             value={period}
@@ -106,9 +106,9 @@ export default function StatsPage() {
               id="comparison-toggle"
               checked={includeComparison}
               onChange={(e) => setIncludeComparison(e.target.checked)}
-              className="h-4 w-4 text-[#251D1C] focus:ring-[#251D1C] border-gray-300 rounded"
+              className="h-4 w-4 text-accent focus:ring-accent border-border rounded"
             />
-            <label htmlFor="comparison-toggle" className="text-sm font-medium text-gray-700">
+            <label htmlFor="comparison-toggle" className="text-sm font-medium text-muted">
               {t("showComparison")}
             </label>
           </div>
@@ -123,19 +123,19 @@ export default function StatsPage() {
             value: stats.total_conversations,
             change: stats.comparison?.total_conversations,
             icon: "💬",
-            colorClass: "bg-[#EEEAE7]/10 text-[#443C3C] border-[#251D1C]/30",
+            colorClass: "bg-surface-hover text-foreground border-border",
           },
           {
             label: t("uniqueEndUsers"),
             value: stats.unique_end_users ?? 0,
             icon: "👥",
-            colorClass: "bg-[#E8F4EC]/30 text-[#251D1C] border-[#251D1C]/25",
+            colorClass: "bg-success/10 text-foreground border-success/30",
             href: "/admin/stats/users",
           },
         ]}
         columns={2}
       />
-      <p className="text-xs text-gray-500 -mt-6 mb-8 max-w-3xl">{t("uniqueEndUsersHint")}</p>
+      <p className="text-xs text-muted -mt-6 mb-8 max-w-3xl">{t("uniqueEndUsersHint")}</p>
 
       <StatCardGroup
         title={t("technicalStatuses")}
@@ -145,28 +145,28 @@ export default function StatsPage() {
             value: stats.ai_active,
             change: stats.comparison?.ai_active,
             icon: "🤖",
-            colorClass: "bg-[#EEEAE7]/20 text-[#443C3C] border-[#251D1C]/40",
+            colorClass: "bg-surface-hover text-foreground border-border",
           },
           {
             label: t("needsHuman"),
             value: stats.needs_human,
             change: stats.comparison?.needs_human,
             icon: "👤",
-            colorClass: "bg-[#F59E0B]/10 text-[#D97706] border-[#F59E0B]/30",
+            colorClass: "bg-warning/10 text-warning border-warning/30",
           },
           {
             label: t("humanActive"),
             value: stats.human_active,
             change: stats.comparison?.human_active,
             icon: "✋",
-            colorClass: "bg-[#3B82F6]/10 text-[#2563EB] border-[#3B82F6]/30",
+            colorClass: "bg-accent/10 text-accent border-accent/30",
           },
           {
             label: t("closed"),
             value: stats.closed,
             change: stats.comparison?.closed,
             icon: "✅",
-            colorClass: "bg-gray-50 text-gray-700 border-gray-200",
+            colorClass: "bg-surface-hover text-muted border-border",
           },
         ]}
         columns={4}
@@ -175,12 +175,12 @@ export default function StatsPage() {
       {/* Dynamic CRM Pipeline stats */}
       {stats.crm_stage_stats && stats.crm_stage_stats.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-base font-semibold text-[#443C3C] mb-3">{t("crmPipeline")}</h2>
+          <h2 className="text-base font-semibold text-foreground mb-3">{t("crmPipeline")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.crm_stage_stats.map((stage: CRMStageStat) => (
               <div
                 key={stage.id}
-                className="bg-white rounded-sm border p-4 flex flex-col gap-1"
+                className="bg-surface rounded-sm border p-4 flex flex-col gap-1"
                 style={{ borderColor: stage.color, borderLeftWidth: 4 }}
               >
                 <div className="flex items-center gap-2">
@@ -188,12 +188,12 @@ export default function StatsPage() {
                     className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
                     style={{ backgroundColor: stage.color }}
                   />
-                  <span className="text-xs font-medium text-[#443C3C] uppercase tracking-wide truncate">
+                  <span className="text-xs font-medium text-foreground uppercase tracking-wide truncate">
                     {stage.name}
                   </span>
                 </div>
-                <span className="text-2xl font-bold text-[#251D1C]">{stage.count}</span>
-                <span className="text-xs text-[#9A9590]">{t("conversations")}</span>
+                <span className="text-2xl font-bold text-foreground">{stage.count}</span>
+                <span className="text-xs text-muted">{t("conversations")}</span>
               </div>
             ))}
           </div>

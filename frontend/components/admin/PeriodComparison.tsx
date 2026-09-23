@@ -33,7 +33,7 @@ export const PeriodComparison: React.FC<PeriodComparisonProps> = ({
       <div className="mb-6">
         <div className="flex items-center gap-2">
           <Toggle checked={enabled} onChange={onToggle} />
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-muted">
             Show comparison with previous period
           </label>
         </div>
@@ -42,12 +42,12 @@ export const PeriodComparison: React.FC<PeriodComparisonProps> = ({
   }
 
   return (
-    <div className="mb-6 bg-gray-50 rounded-sm border border-gray-200 p-4">
+    <div className="mb-6 bg-surface-hover rounded-sm border border-border p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900">Period Comparison</h3>
+        <h3 className="text-sm font-semibold text-foreground">Period Comparison</h3>
         <div className="flex items-center gap-2">
           <Toggle checked={enabled} onChange={onToggle} />
-          <label className="text-xs text-gray-600">Enabled</label>
+          <label className="text-xs text-muted">Enabled</label>
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -70,8 +70,8 @@ export const PeriodComparison: React.FC<PeriodComparisonProps> = ({
 
           return (
             <div key={key} className="text-center">
-              <p className="text-xs text-gray-600 mb-1">{label}</p>
-              <p className="text-lg font-bold text-gray-900">{current}</p>
+              <p className="text-xs text-muted mb-1">{label}</p>
+              <p className="text-lg font-bold text-foreground">{current}</p>
               <p className={`text-xs font-medium ${changeDisplay.colorClass}`}>
                 {changeDisplay.text} ({formatPercentageChange(percentageChange)})
               </p>

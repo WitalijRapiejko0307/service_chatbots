@@ -29,10 +29,10 @@ export const AuditLogRow: React.FC<AuditLogRowProps> = ({ log }) => {
   return (
     <>
       <tr
-        className="hover:bg-[#EEEAE7]/5 transition-colors duration-150 cursor-pointer"
+        className="hover:bg-surface-hover transition-colors duration-150 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
           <div className="flex items-center gap-2">
             <span className="text-xs">{actionDisplay.icon}</span>
             <span
@@ -42,16 +42,16 @@ export const AuditLogRow: React.FC<AuditLogRowProps> = ({ log }) => {
             </span>
           </div>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
           {formatRelativeTimeDetailed(log.timestamp)}
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-muted mt-1">
             {formatDateTime(log.timestamp)}
           </div>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
           {log.admin_id}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
           {getResourceTypeLabel(log.resource_type)}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -59,24 +59,24 @@ export const AuditLogRow: React.FC<AuditLogRowProps> = ({ log }) => {
             <Link
               href={resourceLink}
               onClick={(e) => e.stopPropagation()}
-              className="text-[#443C3C] hover:text-[#251D1C] hover:underline"
+              className="text-foreground hover:text-foreground hover:underline"
             >
               {log.resource_id.substring(0, 8)}...
             </Link>
           ) : (
-            <span className="text-gray-500">
+            <span className="text-muted">
               {log.resource_id.substring(0, 8)}...
             </span>
           )}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
           {hasMetadata && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setIsExpanded(!isExpanded);
               }}
-              className="text-[#443C3C] hover:text-[#251D1C]"
+              className="text-foreground hover:text-foreground"
             >
               {isExpanded ? "▼" : "▶"}
             </button>
@@ -85,10 +85,10 @@ export const AuditLogRow: React.FC<AuditLogRowProps> = ({ log }) => {
       </tr>
       {isExpanded && hasMetadata && (
         <tr>
-          <td colSpan={6} className="px-6 py-4 bg-gray-50">
+          <td colSpan={6} className="px-6 py-4 bg-surface-hover">
             <div className="text-sm">
-              <h4 className="font-medium text-gray-700 mb-2">Metadata</h4>
-              <pre className="bg-white p-3 rounded border border-gray-200 overflow-x-auto text-xs">
+              <h4 className="font-medium text-muted mb-2">Metadata</h4>
+              <pre className="bg-surface p-3 rounded border border-border overflow-x-auto text-xs">
                 {JSON.stringify(log.metadata, null, 2)}
               </pre>
             </div>

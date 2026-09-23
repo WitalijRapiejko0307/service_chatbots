@@ -60,12 +60,12 @@ export default function StatsEndUsersPage() {
         <div>
           <Link
             href="/admin/stats"
-            className="text-sm text-[#6B6560] hover:text-[#251D1C] mb-1 inline-block"
+            className="text-sm text-muted hover:text-foreground mb-1 inline-block"
           >
             ← {t("endUsersBack")}
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">{t("endUsersTitle")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t("uniqueEndUsersHint")}</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("endUsersTitle")}</h1>
+          <p className="text-sm text-muted mt-1">{t("uniqueEndUsersHint")}</p>
         </div>
       </div>
 
@@ -76,20 +76,20 @@ export default function StatsEndUsersPage() {
       )}
 
       {!loading && error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-danger/10 border-l-4 border-danger p-4">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
       {!loading && !error && items.length === 0 && (
-        <p className="text-sm text-gray-600">{t("endUsersEmpty")}</p>
+        <p className="text-sm text-muted">{t("endUsersEmpty")}</p>
       )}
 
       {!loading && !error && items.length > 0 && (
         <>
-          <div className="overflow-x-auto rounded-sm border border-gray-200 bg-white">
+          <div className="overflow-x-auto rounded-sm border border-border bg-surface">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+              <thead className="bg-surface-hover text-left text-xs font-semibold uppercase tracking-wide text-muted">
                 <tr>
                   <th className="px-4 py-3">{t("colAgent")}</th>
                   <th className="px-4 py-3">{t("colChannel")}</th>
@@ -100,19 +100,19 @@ export default function StatsEndUsersPage() {
                   <th className="px-4 py-3 text-right">{t("colConversations")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {items.map((row) => (
-                  <tr key={`${row.agent_id}:${row.channel}:${row.external_user_id}`} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-900">
+                  <tr key={`${row.agent_id}:${row.channel}:${row.external_user_id}`} className="hover:bg-surface-hover">
+                    <td className="px-4 py-2 text-foreground">
                       {row.agent_display_name || row.agent_id}
                     </td>
-                    <td className="px-4 py-2 text-gray-700">{getChannelDisplay(row.channel)}</td>
-                    <td className="px-4 py-2 font-mono text-xs text-gray-800 break-all max-w-[180px]">
+                    <td className="px-4 py-2 text-muted">{getChannelDisplay(row.channel)}</td>
+                    <td className="px-4 py-2 font-mono text-xs text-foreground break-all max-w-[180px]">
                       {row.external_user_id}
                     </td>
-                    <td className="px-4 py-2 text-gray-700">{row.display_name || "—"}</td>
-                    <td className="px-4 py-2 text-gray-700">{row.username || "—"}</td>
-                    <td className="px-4 py-2 text-gray-600 whitespace-nowrap">
+                    <td className="px-4 py-2 text-muted">{row.display_name || "—"}</td>
+                    <td className="px-4 py-2 text-muted">{row.username || "—"}</td>
+                    <td className="px-4 py-2 text-muted whitespace-nowrap">
                       {formatSeen(row.last_seen_at)}
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums">{row.conversation_count}</td>
@@ -122,14 +122,14 @@ export default function StatsEndUsersPage() {
             </table>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
             <span>{t("pageRange", { from, to, total })}</span>
             <div className="flex gap-2">
               <button
                 type="button"
                 disabled={!canPrev}
                 onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
-                className="rounded border border-gray-300 px-3 py-1.5 font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="rounded border border-border px-3 py-1.5 font-medium text-foreground hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {t("prevPage")}
               </button>
@@ -137,7 +137,7 @@ export default function StatsEndUsersPage() {
                 type="button"
                 disabled={!canNext}
                 onClick={() => setOffset((o) => o + PAGE_SIZE)}
-                className="rounded border border-gray-300 px-3 py-1.5 font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="rounded border border-border px-3 py-1.5 font-medium text-foreground hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {t("nextPage")}
               </button>

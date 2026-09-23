@@ -17,13 +17,13 @@ export function TikTokChannelGuide({
 
   return (
     <div className="space-y-4">
-      <div className="text-xs text-[#9A9590] bg-[#EEEAE7]/60 rounded-sm p-3 space-y-1">
-        <div className="font-semibold text-[#443C3C] mb-1.5">{t("needTitle")}</div>
+      <div className="text-xs text-muted bg-surface-hover/60 rounded-sm p-3 space-y-1">
+        <div className="font-semibold text-foreground mb-1.5">{t("needTitle")}</div>
         <div>• {t("tiktok.needItem1")}</div>
         <div>• {t("tiktok.needItem2")}</div>
         <div>• {t("tiktok.needItem3")}</div>
       </div>
-      <p className="text-xs text-[#9A9590]">
+      <p className="text-xs text-muted">
         {tiktokPendingAccess ? t("tiktok.introPending") : t("tiktok.introEnabled")}
       </p>
       <div className="space-y-3">
@@ -44,7 +44,7 @@ export function TikTokChannelGuide({
           {tiktokWebhook ? (
             <CopyField value={tiktokWebhook} />
           ) : (
-            <p className="text-xs text-[#9A9590] mt-1">{t("webhookAppearsAfterConnect")}</p>
+            <p className="text-xs text-muted mt-1">{t("webhookAppearsAfterConnect")}</p>
           )}
         </Step>
       </div>

@@ -174,15 +174,15 @@ export default function AuditPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+        <h1 className="text-2xl font-bold text-foreground">Audit Logs</h1>
         <Button onClick={exportToCSV} variant="secondary">
           Export CSV
         </Button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-sm">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="bg-danger/10 border-l-4 border-danger p-4 mb-4 rounded-sm">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
@@ -190,43 +190,43 @@ export default function AuditPage() {
 
       {logs.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600">No audit logs found</p>
+          <p className="text-muted">No audit logs found</p>
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-sm shadow border border-[#251D1C]/20 overflow-hidden">
+          <div className="bg-surface rounded-sm shadow border border-border overflow-hidden">
             <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-[#EEEAE7]/10">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-surface-hover">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Action
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Timestamp
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Admin
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Resource Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Resource ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#443C3C] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Details
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-surface divide-y divide-border">
                 {displayedLogs.map((group) => (
                   <React.Fragment key={group.day}>
-                    <tr className="bg-gray-50">
+                    <tr className="bg-surface-hover">
                       <td colSpan={6} className="px-6 py-2">
-                        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted">
                           <span>{group.day}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted">
                             ({group.logs.length} {group.logs.length === 1 ? "log" : "logs"})
                           </span>
                         </div>
