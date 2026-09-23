@@ -127,7 +127,6 @@ async def websocket_endpoint(websocket: WebSocket, conversation_id: str):
         # Get dependencies (simplified - in production use proper DI)
         from app.dependencies import get_db
 
-        settings = get_settings()
         db = get_db()
 
         # Verify conversation exists

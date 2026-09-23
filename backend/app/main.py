@@ -263,8 +263,12 @@ def create_app() -> FastAPI:
     app.include_router(viber.router, prefix="/api/v1", tags=["viber"])
     app.include_router(instagram.router, prefix="/api/v1", tags=["instagram"])
     app.include_router(tiktok.router, prefix="/api/v1", tags=["tiktok"])
-    app.include_router(websocket.router, tags=["websocket"])
+    # admin_websocket (literal "/ws/admin") MUST be registered before websocket
+    # (parametrized "/ws/{conversation_id}") — Starlette resolves routes in
+    # registration order, so the parametrized route would otherwise shadow
+    # "/ws/admin" by matching it with conversation_id="admin".
     app.include_router(admin_websocket.router, tags=["admin-websocket"])
+    app.include_router(websocket.router, tags=["websocket"])
 
     return app
 
