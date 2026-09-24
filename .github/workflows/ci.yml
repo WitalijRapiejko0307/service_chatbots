@@ -73,7 +73,16 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Print Node/npm versions
+        run: node -v && npm -v
+
       - name: Install dependencies
+        # Uses `npm ci`, matching docker/Dockerfile.frontend and Railway's build.
+        # Runs on Node 20 (matching node:20-alpine) so a package-lock.json
+        # regenerated with a different npm major version (e.g. npm 12 on a
+        # Node 24 dev host) fails here in ~1 minute instead of surfacing as a
+        # silent, hard-to-diagnose Railway deploy failure. See
+        # docs/fix/frontend-lockfile-docker-sync.md.
         working-directory: frontend
         run: npm ci
 
