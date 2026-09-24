@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Legal");
@@ -15,6 +16,7 @@ export default async function PrivacyPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SiteHeader />
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-20">
         <p className="text-sm text-muted">
           <Link href="/" className="hover:text-foreground">
